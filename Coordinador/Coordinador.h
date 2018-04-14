@@ -6,9 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ALGORITMO_CIRC = 1;
-#define ALGORITMO_LRU = 2;
-#define ALGORITMO_BSU = 3;
+#define ALGORITMO_LSU 1;
+#define ALGORITMO_EL 2;
+#define ALGORITMO_KE 3;
 
 typedef struct {
 	int puerto;

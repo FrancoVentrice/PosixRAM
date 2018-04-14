@@ -24,14 +24,21 @@ int cargarConfiguracion() {
 	}
 
 	configuracion->puerto = config_get_int_value(fd_configuracion, "PUERTO_ESCUCHA");
-	configuracion->algoritmoDistribucion = config_get_string_value(fd_configuracion, "ALGORITMO_DISTRIBUCION");
+	char *algoritmo = config_get_string_value(fd_configuracion, "ALGORITMO_DISTRIBUCION");
+	if (strcmp(algoritmo, "LSU") == 0) {
+		configuracion->algoritmoDistribucion = ALGORITMO_LSU;
+	} else if (strcmp(algoritmo, "EL") == 0) {
+		configuracion->algoritmoDistribucion = ALGORITMO_EL;
+	} else if (strcmp(algoritmo, "KE") == 0) {
+		configuracion->algoritmoDistribucion = ALGORITMO_KE;
+	}
 	configuracion->cantidadDeEntradas = config_get_int_value(fd_configuracion, "CANTIDAD_ENTRADAS");
 	configuracion->tamanioDeEntrada = config_get_int_value(fd_configuracion, "TAMANIO_ENTRADA");
 	configuracion->retardo = config_get_int_value(fd_configuracion, "RETARDO");
 
 	log_info(logger,
 		"\nPUERTO_ESCUCHA: %d\n"
-		"ALGORITMO_DISTRIBUCION: %s\n"
+		"ALGORITMO_DISTRIBUCION: %d\n"
 		"CANTIDAD_ENTRADAS: %d\n"
 		"TAMANIO_ENTRADA: %d\n"
 		"RETARDO: %d\n" ,
