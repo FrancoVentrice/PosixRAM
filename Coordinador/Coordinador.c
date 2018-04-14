@@ -1,8 +1,11 @@
-/*
- * Coordinador.c
- *
- *  Created on: 14 abr. 2018
- *      Author: utnso
- */
+#include "Coordinador.h"
 
+int main() {
+	cargarConfiguracion();
+	finalizar(0);
+}
 
+void finalizar(int codigo) {
+	limpiarConfiguracion();
+	exit(codigo);
+}
