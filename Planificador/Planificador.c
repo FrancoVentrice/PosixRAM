@@ -2,6 +2,7 @@
 
 int main() {
 	cargarConfiguracion();
+	consola();
 	finalizar(0);
 }
 

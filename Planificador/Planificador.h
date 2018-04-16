@@ -25,6 +25,7 @@ t_log *logger;
 int cargarConfiguracion();
 void limpiarConfiguracion();
 void finalizar(int codigo);
+void consola();
 
 
 
