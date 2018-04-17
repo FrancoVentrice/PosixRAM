@@ -4,9 +4,18 @@
  * (c) PosixRAM */
 
 #include "ESI.h"
+#include "..//shared/protocolo.h"
+#include "..//shared/sockets.c"
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
+
+	int puertoConexion = configuracion->puertoPlanificador;
+	logger = log_create("cliente.log", "CLIENTE", 1, LOG_LEVEL_TRACE);
+	int socket_servidor = connectToServer("127.0.0.1", puertoConexion, logger);
 	finalizar(0);
 }
 
