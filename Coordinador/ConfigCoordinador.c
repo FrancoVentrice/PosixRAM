@@ -13,9 +13,9 @@ int cargarConfiguracion() {
 	configuracion = malloc(sizeof(t_configuracion));
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Coordinador
-	fd_configuracion = config_create("../config");
+	fd_configuracion = config_create("../Coordinador.config");
 	if (fd_configuracion == NULL) {
-		fd_configuracion = config_create("config");
+		fd_configuracion = config_create("Coordinador.config");
 	}
 
 	if (fd_configuracion == NULL || !configValida(fd_configuracion)) {

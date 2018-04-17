@@ -12,9 +12,9 @@ int cargarConfiguracion() {
 	configuracion = malloc(sizeof(t_configuracion));
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /ESI
-	fd_configuracion = config_create("../config");
+	fd_configuracion = config_create("../ESI.config");
 	if (fd_configuracion == NULL) {
-		fd_configuracion = config_create("config");
+		fd_configuracion = config_create("ESI.config");
 	}
 
 	if (fd_configuracion == NULL || !configValida(fd_configuracion)) {

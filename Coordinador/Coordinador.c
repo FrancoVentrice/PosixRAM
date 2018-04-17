@@ -5,7 +5,7 @@
 
 #include "Coordinador.h"
 
-int main() {
+int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	finalizar(0);
 }

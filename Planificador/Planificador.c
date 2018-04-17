@@ -5,7 +5,7 @@
 
 #include "Planificador.h"
 
-int main() {
+int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	consola();
 	finalizar(0);
