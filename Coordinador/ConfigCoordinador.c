@@ -1,4 +1,4 @@
-#include"Coordinador.h"
+#include "Coordinador.h"
 
 int configValida(t_config* fd_configuracion) {
 	return (config_has_property(fd_configuracion, "PUERTO_ESCUCHA")
