@@ -13,9 +13,9 @@ int cargarConfiguracion() {
 	configuracion = malloc(sizeof(t_configuracion));
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Coordinador
-	fd_configuracion = config_create("../Coordinador.config");
+	fd_configuracion = config_create("../Coordinador.conf");
 	if (fd_configuracion == NULL) {
-		fd_configuracion = config_create("Coordinador.config");
+		fd_configuracion = config_create("Coordinador.conf");
 	}
 
 	if (fd_configuracion == NULL || !configValida(fd_configuracion)) {
@@ -23,7 +23,7 @@ int cargarConfiguracion() {
 		return -1;
 	}
 
-	configuracion->puerto = config_get_int_value(fd_configuracion, "PUERTO_ESCUCHA");
+	configuracion->puertoEscucha = config_get_int_value(fd_configuracion, "PUERTO_ESCUCHA");
 	char *algoritmo = config_get_string_value(fd_configuracion, "ALGORITMO_DISTRIBUCION");
 	if (strcmp(algoritmo, "LSU") == 0) {
 		configuracion->algoritmoDistribucion = ALGORITMO_LSU;
@@ -42,7 +42,7 @@ int cargarConfiguracion() {
 		"CANTIDAD_ENTRADAS: %d\n"
 		"TAMANIO_ENTRADA: %d\n"
 		"RETARDO: %d\n" ,
-		configuracion->puerto, configuracion->algoritmoDistribucion , configuracion->cantidadDeEntradas ,
+		configuracion->puertoEscucha, configuracion->algoritmoDistribucion , configuracion->cantidadDeEntradas ,
 		configuracion->tamanioDeEntrada, configuracion->retardo);
 	return 0;
 }

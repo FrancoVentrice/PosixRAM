@@ -11,7 +11,7 @@
 #define ALGORITMO_KE 3;
 
 typedef struct {
-	int puerto;
+	int puertoEscucha;
 	int algoritmoDistribucion;
 	int cantidadDeEntradas;
 	int tamanioDeEntrada;

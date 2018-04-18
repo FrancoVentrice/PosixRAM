@@ -56,3 +56,4 @@ LogCoordinador
 LogPlanificador
 LogInstancia
 LogESI
+*.log
