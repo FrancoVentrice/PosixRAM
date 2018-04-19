@@ -13,9 +13,24 @@
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 
-	int puertoConexion = configuracion->puertoPlanificador;
+	int puertoConexion = 8000;
+	int bytesEnviados;
 	logger = log_create("cliente.log", "CLIENTE", 1, LOG_LEVEL_TRACE);
-	int socket_servidor = connectToServer("127.0.0.1", puertoConexion, logger);
+	int socketServidor = connectToServer("127.0.0.1", puertoConexion, logger);
+
+	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
+	solicitud->mensaje=malloc(100);
+	strcpy(solicitud->mensaje,"HOLA SOY ESI!!!");
+	tPaquete pkgHandshake;
+	pkgHandshake.type = E_HANDSHAKE;
+
+	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
+			pkgHandshake.type, solicitud->mensaje);
+
+	puts("Se envia path al FS");
+	bytesEnviados = enviarPaquete(socketServidor, &pkgHandshake,
+			logger, "Se envia solicitud de ejecucion");
+	printf("Se envian %d bytes\n", bytesEnviados);
 	finalizar(0);
 }
 

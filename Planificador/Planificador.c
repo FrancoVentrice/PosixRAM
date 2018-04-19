@@ -42,15 +42,39 @@ int main(int argn, char *argv[]) {
 	tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
 	int recibidos;
 
-	puts("Escuchando");
-	iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
-			iSocketEscucha, &tipoMensaje, &sPayloadRespuesta, logPlanificador);
+	while (1) {
+		puts("Escuchando");
+		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
+				iSocketEscucha, &tipoMensaje, &sPayloadRespuesta,
+				logPlanificador);
 
-	consola();
-	finalizar(0);
-}
+		printf("Socket comunicacion: %d \n", iSocketComunicacion);
 
-void finalizar(int codigo) {
-	limpiarConfiguracion();
-	exit(codigo);
-}
+		if (iSocketComunicacion != -1) {
+
+			switch (tipoMensaje) {
+
+
+						case E_HANDSHAKE:
+
+							puts("HANDSHAKE CON ESI");
+							tSolicitudESI *mensaje= malloc(100);
+							char* encabezado=malloc(10);
+							deserializar(sPayloadRespuesta, "%c%s",encabezado,mensaje);
+									solicitud->mensaje=mensaje;
+									printf("MENSAJE DE ESI: %s\n",mensaje);
+
+							break;
+
+							break;
+						}
+					}
+				}
+				consola();
+				finalizar(0);
+			}
+
+			void finalizar(int codigo) {
+				limpiarConfiguracion();
+				exit(codigo);
+			}
