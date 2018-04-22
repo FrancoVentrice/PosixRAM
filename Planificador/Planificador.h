@@ -3,6 +3,7 @@
 
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,16 @@ void finalizar(int codigo);
 void levantarConsola();
 void consola();
 void escucharESIs();
+
+//metodos de la consola
+void pause();
+void play();
+void lock(char *comando);
+void unlock(char *comando);
+void list(char *comando);
+void kill(char *comando);
+void status(char *comando);
+void deadlock();
 
 
 
