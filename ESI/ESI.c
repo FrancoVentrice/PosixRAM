@@ -13,10 +13,8 @@
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 
-	int puertoConexion = 8000;
 	int bytesEnviados;
-	logger = log_create("cliente.log", "CLIENTE", 1, LOG_LEVEL_TRACE);
-	int socketServidor = connectToServer("127.0.0.1", puertoConexion, logger);
+	int socketServidor = connectToServer(configuracion->ipPlanificador, configuracion->puertoPlanificador, logger);
 
 	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
 	solicitud->mensaje=malloc(100);

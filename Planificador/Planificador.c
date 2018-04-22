@@ -4,17 +4,14 @@
  * (c) PosixRAM */
 
 #include "Planificador.h"
-#include "..//shared/protocolo.h"
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
-	int puerto_escucha = 8000;
+	levantarConsola();
 	fd_set master;
 	fd_set read_fds;
 	int *fdmax;
 	int bytesEnviados;
-	t_log *logPlanificador = log_create("planificador.log", "PLANIFICADOR",
-	true, LOG_LEVEL_INFO);
 	int maxSock;
 	int iSocketEscucha;
 	int iSocketComunicacion;
@@ -24,7 +21,7 @@ int main(int argn, char *argv[]) {
 	FD_ZERO(&setSocketsOrquestador);
 
 	// Inicializacion de sockets y actualizacion del log
-	iSocketEscucha = crearSocketEscucha(8000, logPlanificador);
+	iSocketEscucha = crearSocketEscucha(configuracion->puerto, logger);
 
 	FD_SET(iSocketEscucha, &setSocketsOrquestador);
 	maxSock = iSocketEscucha;
@@ -46,7 +43,7 @@ int main(int argn, char *argv[]) {
 		puts("Escuchando");
 		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
 				iSocketEscucha, &tipoMensaje, &sPayloadRespuesta,
-				logPlanificador);
+				logger);
 
 		printf("Socket comunicacion: %d \n", iSocketComunicacion);
 
@@ -55,26 +52,35 @@ int main(int argn, char *argv[]) {
 			switch (tipoMensaje) {
 
 
-						case E_HANDSHAKE:
+			case E_HANDSHAKE:
 
-							puts("HANDSHAKE CON ESI");
-							tSolicitudESI *mensaje= malloc(100);
-							char* encabezado=malloc(10);
-							deserializar(sPayloadRespuesta, "%c%s",encabezado,mensaje);
-									solicitud->mensaje=mensaje;
-									printf("MENSAJE DE ESI: %s\n",mensaje);
+				puts("HANDSHAKE CON ESI");
+				tSolicitudESI *mensaje= malloc(100);
+				char* encabezado=malloc(10);
+				deserializar(sPayloadRespuesta, "%c%s",encabezado,mensaje);
+				solicitud->mensaje=mensaje;
+				printf("MENSAJE DE ESI: %s\n",mensaje);
 
-							break;
+				break;
 
-							break;
-						}
-					}
-				}
-				consola();
-				finalizar(0);
+				break;
 			}
+		}
+	}
+	finalizar(0);
+}
 
-			void finalizar(int codigo) {
-				limpiarConfiguracion();
-				exit(codigo);
-			}
+void finalizar(int codigo) {
+	pthread_join(hiloConsola, NULL);
+	limpiarConfiguracion();
+	exit(codigo);
+}
+
+void levantarConsola() {
+	int respHilo = 0;
+	respHilo = pthread_create(&hiloConsola, NULL, consola, NULL);
+	if (respHilo) {
+		log_error(logger, "Error al levantar la consola");
+		finalizar(EXIT_FAILURE);
+	}
+}

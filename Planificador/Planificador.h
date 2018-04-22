@@ -3,8 +3,10 @@
 
 #include <commons/config.h>
 #include <commons/log.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include "..//shared/protocolo.h"
 
 #define ALGORITMO_SJF_CD 1;
 #define ALGORITMO_SJF_SD 2;
@@ -26,10 +28,12 @@ typedef struct{
 t_configuracion* configuracion;
 t_config* fd_configuracion;
 t_log *logger;
+pthread_t hiloConsola;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
 void finalizar(int codigo);
+void levantarConsola();
 void consola();
 
 
