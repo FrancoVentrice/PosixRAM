@@ -35,6 +35,7 @@ void limpiarConfiguracion();
 void finalizar(int codigo);
 void levantarConsola();
 void consola();
+void escucharESIs();
 
 
 
