@@ -18,6 +18,11 @@ typedef struct {
 	int retardo;
 } t_configuracion;
 
+typedef struct{
+	char* mensaje;
+
+}tSolicitudESI;
+
 t_configuracion* configuracion;
 t_config* fd_configuracion;
 t_log *logger;
