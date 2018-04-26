@@ -21,74 +21,91 @@ void finalizar(int codigo) {
 	exit(codigo);
 }
 void inicarConexiones() {
+	int bytesEnviados;
+	t_log *logESI = log_create("esi.log", "ESI",
+		true, LOG_LEVEL_INFO);
+	int socketServidor = connectToServer("127.0.0.1",
+			configuracion->puertoPlanificador, logESI);
+
+	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
+	solicitud->mensaje = malloc(100);
+	strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
+	tPaquete pkgHandshake;
+	pkgHandshake.type = E_HANDSHAKE;
+	tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));
+	tRespuestaPlanificador *respuestaCoordinador = malloc(sizeof(tRespuestaPlanificador));
+
+
+	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
+			pkgHandshake.type, solicitud->mensaje);
+
+	puts("Se envia solicitud al Planificador");
+	bytesEnviados = enviarPaquete(socketServidor, &pkgHandshake, logESI,
+			"Se envia solicitud de ejecucion");
+	printf("Se envian %d bytes\n", bytesEnviados);
+
+	//Manejo los mensajes del Planificador o del Coordinador
+	char * sPayloadRespuestaHand = malloc(100);
+
+	tMensaje tipoMensaje;
+
+	int bytesRecibidos = recibirPaquete(socketServidor, &tipoMensaje,
+			&sPayloadRespuestaHand, logESI, "Hand Respuesta");
+	printf("RECIBIDOS:%d\n", bytesRecibidos);
+
+	switch (tipoMensaje) {
+
+	case P_HANDSHAKE:
+
+		respuesta->mensaje = malloc(10);
+		char encabezado_mensaje;
+
+		deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
+				respuesta->mensaje);
+		printf("RESPUESTA: %s \n", respuesta->mensaje);
+
+		//Conexion al Coordinador
+		int puertoConexion2 = configuracion->puertoCoordinador;
 		int bytesEnviados;
-		int socketServidor = connectToServer(configuracion->ipPlanificador,
-				configuracion->puertoPlanificador, logger);
+		int socketServidor2 = connectToServer("127.0.0.1", puertoConexion2,
+				logESI);
 
-		tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
-		solicitud->mensaje = malloc(100);
-		strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
-		tPaquete pkgHandshake;
-		pkgHandshake.type = E_HANDSHAKE;
-		tRespuestaPlanificador *respuesta = malloc(
-				sizeof(tRespuestaPlanificador));
+		tSolicitudESI* solicitud2 = malloc(sizeof(tSolicitudESI));
+		solicitud2->mensaje = malloc(100);
+		strcpy(solicitud2->mensaje, "HOLA SOY ESI!!!");
+		tPaquete pkgHandshake2;
+		pkgHandshake2.type = E_HANDSHAKE;
 
-		pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
-				pkgHandshake.type, solicitud->mensaje);
+		pkgHandshake2.length = serializar(pkgHandshake2.payload, "%c%s",
+				pkgHandshake2.type, solicitud2->mensaje);
 
-		puts("Se envia solicitud al Planificador");
-		bytesEnviados = enviarPaquete(socketServidor, &pkgHandshake, logger,
+		puts("Se envia solicitud de ejecucion al Coordinador");
+		bytesEnviados = enviarPaquete(socketServidor2, &pkgHandshake2, logESI,
 				"Se envia solicitud de ejecucion");
 		printf("Se envian %d bytes\n", bytesEnviados);
 
-		//Manejo los mensajes del Planificador o del Coordinador
-		char * sPayloadRespuestaHand = malloc(100);
+		//RECIBIR RESPUESTA DEL COORDINADOR
+		tMensaje tipoMensajeCoordinador;
+		char * sPayloadRespuestaHandC = malloc(100);
 
-		tMensaje tipoMensaje;
-
-		int bytesRecibidos = recibirPaquete(socketServidor, &tipoMensaje,
-				&sPayloadRespuestaHand, logger, "Hand Respuesta");
+		int bytesRecibidos = recibirPaquete(socketServidor2, &tipoMensajeCoordinador,
+				&sPayloadRespuestaHandC, logESI, "Hand Respuesta Coordinador");
 		printf("RECIBIDOS:%d\n", bytesRecibidos);
+		respuestaCoordinador->mensaje = malloc(10);
+		char encabezadoMensaje;
 
-		switch (tipoMensaje) {
 
-		case P_HANDSHAKE:
+		deserializar(sPayloadRespuestaHandC, "%c%s", &encabezadoMensaje,
+				respuestaCoordinador->mensaje);
 
-			respuesta->mensaje = malloc(10);
-			char encabezado_mensaje;
+		printf("RESPUESTA COORDINADOR: %s \n", respuestaCoordinador->mensaje);
 
-			deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
-					respuesta->mensaje);
-			printf("RESPUESTA: %s \n", respuesta->mensaje);
+		break;
 
-			//Conexion al Coordinador
-			int puertoConexion2 = 8001;
-			int bytesEnviados;
-			logger = log_create("cliente.log", "CLIENTE", 1, LOG_LEVEL_TRACE);
-			int socketServidor2 = connectToServer("127.0.0.1", puertoConexion2,
-					logger);
-
-			tSolicitudESI* solicitud2 = malloc(sizeof(tSolicitudESI));
-			solicitud2->mensaje = malloc(100);
-			strcpy(solicitud2->mensaje, "HOLA SOY ESI!!!");
-			tPaquete pkgHandshake2;
-			pkgHandshake2.type = E_HANDSHAKE;
-			int tamanioTotal = 0;
-
-			pkgHandshake2.length = serializar(pkgHandshake2.payload, "%c%s",
-					pkgHandshake2.type, solicitud2->mensaje);
-
-			puts("Se envia solicitud de ejecucion al Coordinador");
-			tamanioTotal = enviarPaquete(socketServidor2, &pkgHandshake2,
-					logger, "Se envia solicitud de ejecucion");
-			printf("Se envian %d bytes\n", tamanioTotal);
-
-			break;
-
-		}
-
-		finalizar(0);
 	}
+
+	finalizar(0);
+}
 
 
 

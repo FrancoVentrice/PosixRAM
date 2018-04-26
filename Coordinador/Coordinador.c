@@ -17,69 +17,106 @@ void finalizar(int codigo) {
 
 void escucharConexiones() {
 
-		int puertoEscucha = 8001;
+	int puertoEscucha = configuracion->puertoEscucha;
 
-		t_log *logPlanificador = log_create("coordinador.log", "COORDINADOR",
-		true, LOG_LEVEL_INFO);
-		int maxSock;
-		int iSocketEscucha;
-		int iSocketComunicacion;
+	t_log *logCoordinador = log_create("coordinador.log", "COORDINADOR",
+	true, LOG_LEVEL_INFO);
+	int maxSock;
+	int iSocketEscucha;
+	int iSocketComunicacion;
+	int tamanioTotal = 0;
 
-		fd_set setSocketsOrquestador;
-		FD_ZERO(&setSocketsOrquestador);
 
-		// Inicializacion de sockets y actualizacion del log
-		iSocketEscucha = crearSocketEscucha(puertoEscucha, logPlanificador);
+	fd_set setSocketsOrquestador;
+	FD_ZERO(&setSocketsOrquestador);
 
-		FD_SET(iSocketEscucha, &setSocketsOrquestador);
-		maxSock = iSocketEscucha;
+	// Inicializacion de sockets y actualizacion del log
+	iSocketEscucha = crearSocketEscucha(puertoEscucha, logCoordinador);
 
-		tPaquete pkgHandshake;
+	FD_SET(iSocketEscucha, &setSocketsOrquestador);
+	maxSock = iSocketEscucha;
 
-		tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
-		char * sPayloadRespuesta = malloc(100);
-		char * respuesta = malloc(100);
+	tPaquete pkgHandshake;
 
-		char encabezadoMensaje;
-		tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
-		solicitud->mensaje = malloc(100);
+	tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
+	char * sPayloadRespuesta = malloc(100);
+	char * respuesta = malloc(100);
 
-		tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
-		int recibidos;
+	char encabezadoMensaje;
+	tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
+	solicitud->mensaje = malloc(100);
 
-		while (1) {
-			puts("Escuchando");
-			iSocketComunicacion = getConnection(&setSocketsOrquestador,
-					&maxSock, iSocketEscucha, tipoMensaje, &sPayloadRespuesta,
-					logPlanificador);
+	tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
+	int recibidos;
+	puts("Escuchando");
 
-			printf("Socket comunicacion: %d \n", iSocketComunicacion);
+	while (1) {
+		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
+				iSocketEscucha, tipoMensaje, &sPayloadRespuesta,
+				logCoordinador);
 
-			if (iSocketComunicacion != -1) {
+		if (iSocketComunicacion != -1) {
 
-				switch (*tipoMensaje) {
+			switch (*tipoMensaje) {
 
-				case E_HANDSHAKE:
+			case E_HANDSHAKE:
+				printf("Socket comunicacion: %d \n", iSocketComunicacion);
 
-					puts("HANDSHAKE CON ESI");
-					tSolicitudESI *mensaje = malloc(100);
-					char* encabezado = malloc(10);
+				puts("HANDSHAKE CON ESI");
+				tSolicitudESI *mensaje = malloc(100);
+				char* encabezado = malloc(10);
 
-					deserializar(sPayloadRespuesta, "%c%s", encabezado,
-							mensaje);
-					strcpy(solicitud->mensaje, mensaje);
-					printf("MENSAJE DE ESI: %s\n", solicitud->mensaje);
-					break;
-				case P_HANDSHAKE:
-					puts("HANDSHAKE CON PLANIFICADOR");
-					break;
+				deserializar(sPayloadRespuesta, "%c%s", encabezado, solicitud->mensaje);
+				printf("MENSAJE DE ESI: %s\n", solicitud->mensaje);
 
-					//conexion con el Planificador
+				//RESPUESTA AL ESI
+				tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
+				solicitudESI->mensaje = malloc(100);
+				strcpy(solicitudESI->mensaje, "CONEXION OK");
+				tPaquete pkgHandshakeESI;
+				pkgHandshakeESI.type = C_HANDSHAKE;
 
-				}
+				pkgHandshakeESI.length = serializar(pkgHandshakeESI.payload, "%c%s",
+						pkgHandshakeESI.type, solicitudESI->mensaje);
+
+				puts("Se envia respuesta al ESI");
+				tamanioTotal = enviarPaquete(iSocketComunicacion,
+						&pkgHandshakeESI, logCoordinador,
+						"Se envia solicitud de ejecucion");
+				printf("Se envian %d bytes\n", tamanioTotal);
+
+				*tipoMensaje = DESCONEXION;
+				break;
+
+
+			case P_HANDSHAKE:
+				printf("Socket comunicacion: %d \n", iSocketComunicacion);
+
+				puts("HANDSHAKE CON PLANIFICADOR");
+				tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
+				solicitud->mensaje = malloc(100);
+				strcpy(solicitud->mensaje, "OK CONEXION");
+				tPaquete pkgHandshake2;
+				pkgHandshake2.type = C_HANDSHAKE;
+
+				pkgHandshake2.length = serializar(pkgHandshake2.payload, "%c%s",
+						pkgHandshake2.type, solicitud->mensaje);
+
+				puts("Se envia respuesta al Planificador");
+				tamanioTotal = enviarPaquete(iSocketComunicacion,
+						&pkgHandshake2, logCoordinador,
+						"Se envia solicitud de ejecucion");
+				printf("Se envian %d bytes\n", tamanioTotal);
+				*tipoMensaje = DESCONEXION;
+				break;
+
+			case DESCONEXION:
+				break;
+
+				//conexion con el Planificador
+
 			}
 		}
-		finalizar(0);
 	}
-
-
+	finalizar(0);
+}
