@@ -4,16 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../libgral.c \
 ../logExtra.c \
 ../serializar.c \
 ../sockets.c 
 
 OBJS += \
+./libgral.o \
 ./logExtra.o \
 ./serializar.o \
 ./sockets.o 
 
 C_DEPS += \
+./libgral.d \
 ./logExtra.d \
 ./serializar.d \
 ./sockets.d 
