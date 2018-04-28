@@ -1,6 +1,7 @@
 #ifndef PLANIFICADOR_H_
 #define PLANIFICADOR_H_
 
+#include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/string.h>
@@ -19,6 +20,7 @@ typedef struct {
 	int estimacionInicial;
 	char* ipCoordinador;
 	int puertoCoordinador;
+	int alfa;
 } t_configuracion;
 
 typedef struct{
@@ -38,10 +40,21 @@ typedef struct{
 
 }tRespuesta;
 
+typedef struct {
+	int id;
+	float estimacion; //se puede usar con los dos algoritmos
+	int rafagaAnterior; //necesario para SJF. Se suma uno cada vez que el ESI ejecuta correctamente una sentencia
+	float estimacionAnterior;//necesario para SJF
+	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
+} t_esi;
+
 t_configuracion* configuracion;
 t_config* fd_configuracion;
 t_log *logger;
 pthread_t hiloConsola;
+
+t_esi *esiEnEjecucion; //vendria a ser la "cola" de ejecucion
+t_list* colaDeListos;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
@@ -49,6 +62,10 @@ void finalizar(int codigo);
 void levantarConsola();
 void consola();
 void escucharESIs();
+
+//metodos de SJF
+void estimarSJF();
+void sentenciaEjecutadaCorrectamenteSJF();
 
 //metodos de la consola
 void pause();

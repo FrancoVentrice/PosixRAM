@@ -42,8 +42,6 @@ void escucharESIs() {
 	int puertoConexion = configuracion->puertoCoordinador;
 	char* ipCoordinador=configuracion->ipCoordinador;
 
-	t_log *logPlanificador = log_create("planificador.log", "PLANIFICADOR",
-	true, LOG_LEVEL_INFO);
 	fd_set setSocketsOrquestador;
 	FD_ZERO(&setSocketsOrquestador);
 
@@ -90,11 +88,9 @@ void escucharESIs() {
 
 	tPaquete pkgHandshake;
 	char * sPayloadRespuesta = malloc(100);
-	//char * respuesta = malloc(100);
 	char encabezadoMensaje;
 	tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
 	solicitud->mensaje = malloc(100);
-	tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
 	int recibidos;
 	puts("Escuchando");
 
@@ -130,7 +126,7 @@ void escucharESIs() {
 
 				puts("Se envia respuesta");
 				bytesEnviados = enviarPaquete(iSocketComunicacion,
-						&pkgHandshakeRespuesta, logPlanificador,
+						&pkgHandshakeRespuesta, logger,
 						"Se envia respuesta a ESI");
 				printf("Se envian %d bytes\n", bytesEnviados);
 				tipoMensaje=DESCONEXION;
@@ -142,4 +138,48 @@ void escucharESIs() {
 			}
 		}
 	}
+}
+
+//se corre cuando hay que elegir un nuevo ESI a ejecutar
+//si es con desalojo, tambien se corre cuando entra un nuevo proceso a la lista
+//setea la estimacion de todos los ESIs en la cola de listos
+//agrega el ESI en ejecucion a la cola de listos para hacer bien los calculos, asi que no hace falta agregarlo antes
+//setea el proximo ESI a ejecutar
+void estimarSJF() {
+	list_add(colaDeListos, esiEnEjecucion);
+	int i;
+	t_esi *ESIMasCorto = list_get(colaDeListos, 0);
+	int indexDelESIMasCorto;
+	float alfa = configuracion->alfa / 100;
+
+	//itera hasta "elements_count - 1" porque no quiero que reestime al ESI en
+	//ejecucion, el cual agregue al final de la lista
+	for (i = 0; i < colaDeListos->elements_count - 1; i++) {
+		t_esi *esi = list_get(colaDeListos, i);
+		//rafagaAnterior lo uso como flag para saber si la estimacion esta actualizada
+		if (esi->rafagaAnterior != 0) {
+		esi->estimacionAnterior = esi->estimacion;
+		esi->estimacion = alfa * esi->rafagaAnterior + (1 - alfa) * esi->estimacionAnterior;
+		//"actualizo" la estimacion seteando en 0 la rafaga anterior, total ya no la voy a usar mas
+		esi->rafagaAnterior = 0;
+		}
+		if (esi->estimacion < ESIMasCorto->estimacion) {
+			ESIMasCorto = esi;
+			indexDelESIMasCorto = i;
+		}
+	}
+
+	//finalmente, comparo al mas corto de la cola de listos con el que ya estaba ejecutando
+	//la prioridad en caso de igualdad la tiene el que ya estaba ejecutando
+	if (ESIMasCorto->estimacion < esiEnEjecucion->estimacion) {
+		esiEnEjecucion = ESIMasCorto;
+		list_remove(colaDeListos, indexDelESIMasCorto);
+	} else {
+		//remuevo de listos al que ya etaba ejecutando, vuelve a seguir ejecutando
+		list_remove(colaDeListos, colaDeListos->elements_count - 1);
+	}
+}
+
+void sentenciaEjecutadaCorrectamenteSJF() {
+	esiEnEjecucion->rafagaAnterior ++;
 }
