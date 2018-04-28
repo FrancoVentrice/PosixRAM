@@ -48,13 +48,19 @@ typedef struct {
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 } t_esi;
 
+typedef struct {
+	char *clave;
+	t_list *ESIs;
+} t_cola_bloqueados_por_clave;
+
 t_configuracion* configuracion;
 t_config* fd_configuracion;
 t_log *logger;
 pthread_t hiloConsola;
 
 t_esi *esiEnEjecucion; //vendria a ser la "cola" de ejecucion
-t_list* colaDeListos;
+t_list* colaDeListos; //lista de t_esi. es la cola de esis listos
+t_list* colasDeBloqueados; //lista de t_cola_bloqueados_por_clave. es una cola que tiene varias colas de esis bloqueados, separadas por clave
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
@@ -66,6 +72,8 @@ void escucharESIs();
 //metodos de SJF
 void estimarSJF();
 void sentenciaEjecutadaCorrectamenteSJF();
+void bloquearESIConClave(t_esi *esi, char *clave);
+t_cola_bloqueados_por_clave* crearNuevaColaDeBloqueados(char *clave);
 
 //metodos de la consola
 void pause();

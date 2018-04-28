@@ -183,3 +183,27 @@ void estimarSJF() {
 void sentenciaEjecutadaCorrectamenteSJF() {
 	esiEnEjecucion->rafagaAnterior ++;
 }
+
+void bloquearESIConClave(t_esi *esi, char *clave) {
+	int i;
+	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
+		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
+		if (strcmp(cola->clave, clave) == 0) {
+			list_add(cola->ESIs, esi);
+			return;
+		}
+	}
+
+	t_cola_bloqueados_por_clave *nuevaCola = crearNuevaColaDeBloqueados(clave);
+	list_add(nuevaCola->ESIs, esi);
+	list_add(colasDeBloqueados, nuevaCola);
+}
+
+t_cola_bloqueados_por_clave* crearNuevaColaDeBloqueados(char *clave) {
+	t_cola_bloqueados_por_clave *nuevaCola = malloc(sizeof(t_cola_bloqueados_por_clave));
+	nuevaCola->clave = malloc(sizeof(clave));
+	strcpy(nuevaCola->clave, clave);
+	nuevaCola->ESIs = list_create();
+	return nuevaCola;
+}
+
