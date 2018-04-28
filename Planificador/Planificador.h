@@ -46,6 +46,7 @@ typedef struct {
 	int rafagaAnterior; //necesario para SJF. Se suma uno cada vez que el ESI ejecuta correctamente una sentencia
 	float estimacionAnterior;//necesario para SJF
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
+	bool bloqueado;
 } t_esi;
 
 typedef struct {

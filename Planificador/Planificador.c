@@ -169,13 +169,20 @@ void estimarSJF() {
 		}
 	}
 
+	//si lo habia bloqueado, me voy olvidando de dejarlo en la lista de listos
+	if (esiEnEjecucion->bloqueado) {
+		list_remove(colaDeListos, esiEnEjecucion);
+	}
+
 	//finalmente, comparo al mas corto de la cola de listos con el que ya estaba ejecutando
 	//la prioridad en caso de igualdad la tiene el que ya estaba ejecutando
-	if (ESIMasCorto->estimacion < esiEnEjecucion->estimacion) {
+	//si estaba bloqueado, obviamente lo reemplazo directamente
+	if (esiEnEjecucion->bloqueado || ESIMasCorto->estimacion < esiEnEjecucion->estimacion) {
 		esiEnEjecucion = ESIMasCorto;
 		list_remove(colaDeListos, indexDelESIMasCorto);
 	} else {
-		//remuevo de listos al que ya etaba ejecutando, vuelve a seguir ejecutando
+		//remuevo de listos al que ya estaba ejecutando (que lo habia agregado al final de la lista), vuelve a seguir ejecutando
+		//si el esi ejecutando no se habia bloqueado, no pasa por el otro if que lo remueve, asi que no se genera inconsistencia
 		list_remove(colaDeListos, colaDeListos->elements_count - 1);
 	}
 }
@@ -186,6 +193,7 @@ void sentenciaEjecutadaCorrectamenteSJF() {
 
 void bloquearESIConClave(t_esi *esi, char *clave) {
 	int i;
+	esi->bloqueado = true;
 	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
 		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
 		if (strcmp(cola->clave, clave) == 0) {
