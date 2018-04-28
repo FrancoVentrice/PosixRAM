@@ -75,6 +75,9 @@ void estimarSJF();
 void sentenciaEjecutadaCorrectamenteSJF();
 void bloquearESIConClave(t_esi *esi, char *clave);
 t_cola_bloqueados_por_clave* crearNuevaColaDeBloqueados(char *clave);
+bool estaBloqueada(char *clave);
+void bloquearClaveSola(char *clave);
+void liberarClave(char *clave);
 
 //metodos de la consola
 void pause();

@@ -171,7 +171,7 @@ void estimarSJF() {
 
 	//si lo habia bloqueado, me voy olvidando de dejarlo en la lista de listos
 	if (esiEnEjecucion->bloqueado) {
-		list_remove(colaDeListos, esiEnEjecucion);
+		list_remove(colaDeListos, colaDeListos->elements_count - 1);
 	}
 
 	//finalmente, comparo al mas corto de la cola de listos con el que ya estaba ejecutando
@@ -215,3 +215,38 @@ t_cola_bloqueados_por_clave* crearNuevaColaDeBloqueados(char *clave) {
 	return nuevaCola;
 }
 
+bool estaBloqueada(char *clave) {
+	int i;
+	bool estaBloqueada = false;
+	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
+		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
+		if (strcmp(cola->clave, clave) == 0) {
+			estaBloqueada = true;
+		}
+	}
+	return estaBloqueada;
+}
+
+void bloquearClaveSola(char *clave) {
+	if (!estaBloqueada(clave)) {
+		crearNuevaColaDeBloqueados(clave);
+	}
+}
+
+void liberarClave(char *clave) {
+	int i;
+	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
+		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
+		if (strcmp(cola->clave, clave) == 0) {
+			int j;
+			for (j = 0; j < cola->ESIs->elements_count; j++) {
+				t_esi *esi = list_get(cola->ESIs, j);
+				esi->bloqueado = false;
+				list_add(colaDeListos, esi);
+				list_remove(cola->ESIs, j);
+			}
+			list_remove(colasDeBloqueados, i);
+			free(cola);
+		}
+	}
+}

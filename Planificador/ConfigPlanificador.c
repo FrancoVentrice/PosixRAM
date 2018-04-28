@@ -6,7 +6,8 @@ int configValida(t_config* fd_configuracion) {
 		&& config_has_property(fd_configuracion, "ESTIMACION_INICIAL")
 		&& config_has_property(fd_configuracion, "IP_COORDINADOR")
 		&& config_has_property(fd_configuracion, "PUERTO_COORDINADOR")
-		&& config_has_property(fd_configuracion, "CLAVES_INICIALMENTE_BLOQUEADAS"));
+		&& config_has_property(fd_configuracion, "CLAVES_INICIALMENTE_BLOQUEADAS")
+		&& config_has_property(fd_configuracion, "ALFA"));
 }
 
 int cargarConfiguracion() {
@@ -36,6 +37,13 @@ int cargarConfiguracion() {
 	configuracion->estimacionInicial = config_get_int_value(fd_configuracion, "ESTIMACION_INICIAL");
 	configuracion->ipCoordinador = config_get_string_value(fd_configuracion, "IP_COORDINADOR");
 	configuracion->puertoCoordinador = config_get_int_value(fd_configuracion, "PUERTO_COORDINADOR");
+	int alfa = config_get_int_value(fd_configuracion, "ALFA");
+	if (alfa < 0 || alfa > 100) {
+		log_error(logger,"Valor de alfa inválido, asignando valor por defecto (50)","ERROR");
+		configuracion->alfa = 50;
+	} else {
+		configuracion->alfa = alfa;
+	}
 	//ToDo: faltan las claves inicialmente bloqueadas
 
 	log_info(logger,
@@ -43,9 +51,10 @@ int cargarConfiguracion() {
 		"ALGORITMO_PLANIFICACION: %d\n"
 		"ESTIMACION_INICIAL: %d\n"
 		"IP_COORDINADOR: %s\n"
-		"PUERTO_COORDINADOR: %d\n" ,
+		"PUERTO_COORDINADOR: %d\n"
+		"ALFA: %d\n" ,
 		configuracion->puerto, configuracion->algoritmoPlanificacion , configuracion->estimacionInicial ,
-		configuracion->ipCoordinador, configuracion->puertoCoordinador);
+		configuracion->ipCoordinador, configuracion->puertoCoordinador, configuracion->alfa);
 	return 0;
 }
 
