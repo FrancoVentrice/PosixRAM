@@ -14,23 +14,20 @@ typedef struct {
 } t_configuracion;
 
 typedef struct{
-	char* mensaje;
-
-}tSolicitudESI;
+	char * mensaje;
+} tSolicitudESI;
 
 typedef struct{
 	char* mensaje;
+} tRespuestaPlanificador;
 
-}tRespuestaPlanificador;
-
-t_configuracion* configuracion;
-t_config* fd_configuracion;
-t_log *logger;
+t_configuracion * configuracion;
+t_config * fd_configuracion;
+t_log * logger;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
-void finalizar(int codigo);
-
-
+void finalizar(int);
+int configValida(t_config *);
 
 #endif /* ESI_H_ */
