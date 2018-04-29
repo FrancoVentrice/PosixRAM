@@ -21,6 +21,7 @@ typedef struct {
 	char* ipCoordinador;
 	int puertoCoordinador;
 	int alfa;
+	char* clavesInicialmenteBloqueadas;
 } t_configuracion;
 
 typedef struct{

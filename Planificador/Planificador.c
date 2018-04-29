@@ -229,7 +229,8 @@ bool estaBloqueada(char *clave) {
 
 void bloquearClaveSola(char *clave) {
 	if (!estaBloqueada(clave)) {
-		crearNuevaColaDeBloqueados(clave);
+		t_cola_bloqueados_por_clave *nuevaCola = crearNuevaColaDeBloqueados(clave);
+		list_add(colasDeBloqueados, nuevaCola);
 	}
 }
 

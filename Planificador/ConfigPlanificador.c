@@ -10,9 +10,25 @@ int configValida(t_config* fd_configuracion) {
 		&& config_has_property(fd_configuracion, "ALFA"));
 }
 
+void bloquearClavesIniciales() {
+	char** claves = string_split(configuracion->clavesInicialmenteBloqueadas, ", ");
+	int i = 0;
+	while (true) {
+		if (claves[i] != NULL) {
+			bloquearClaveSola(claves[i]);
+			i ++;
+		} else  {
+			break;
+		}
+	}
+	free(claves);
+}
+
 int cargarConfiguracion() {
 	logger = log_create("LogPlanificador", "Planificador", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
+	colaDeListos = list_create();
+	colasDeBloqueados = list_create();
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Planificador
 	fd_configuracion = config_create("../Planificador.conf");
@@ -44,7 +60,9 @@ int cargarConfiguracion() {
 	} else {
 		configuracion->alfa = alfa;
 	}
-	//ToDo: faltan las claves inicialmente bloqueadas
+	configuracion->clavesInicialmenteBloqueadas = config_get_string_value(fd_configuracion, "CLAVES_INICIALMENTE_BLOQUEADAS");
+
+	//bloquearClavesIniciales();
 
 	log_info(logger,
 		"\nPUERTO_ESCUCHA: %d\n"
@@ -52,9 +70,11 @@ int cargarConfiguracion() {
 		"ESTIMACION_INICIAL: %d\n"
 		"IP_COORDINADOR: %s\n"
 		"PUERTO_COORDINADOR: %d\n"
-		"ALFA: %d\n" ,
+		"ALFA: %d\n"
+		"CLAVES_INICIALMENTE_BLOQUEADAS: %s\n",
 		configuracion->puerto, configuracion->algoritmoPlanificacion , configuracion->estimacionInicial ,
-		configuracion->ipCoordinador, configuracion->puertoCoordinador, configuracion->alfa);
+		configuracion->ipCoordinador, configuracion->puertoCoordinador, configuracion->alfa,
+		configuracion->clavesInicialmenteBloqueadas);
 	return 0;
 }
 
