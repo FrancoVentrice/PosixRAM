@@ -192,62 +192,35 @@ void sentenciaEjecutadaCorrectamenteSJF() {
 }
 
 void bloquearESIConClave(t_esi *esi, char *clave) {
-	int i;
 	esi->bloqueado = true;
-	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
-		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
-		if (strcmp(cola->clave, clave) == 0) {
-			list_add(cola->ESIs, esi);
-			return;
-		}
+	if (dictionary_has_key(diccionarioBloqueados, clave)) {
+		t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
+		list_add(bloqueados, esi);
+	} else {
+		t_list *nuevaCola = list_create();
+		list_add(nuevaCola, esi);
+		dictionary_put(diccionarioBloqueados, clave, nuevaCola);
 	}
-
-	t_cola_bloqueados_por_clave *nuevaCola = crearNuevaColaDeBloqueados(clave);
-	list_add(nuevaCola->ESIs, esi);
-	list_add(colasDeBloqueados, nuevaCola);
-}
-
-t_cola_bloqueados_por_clave* crearNuevaColaDeBloqueados(char *clave) {
-	t_cola_bloqueados_por_clave *nuevaCola = malloc(sizeof(t_cola_bloqueados_por_clave));
-	nuevaCola->clave = malloc(sizeof(clave));
-	strcpy(nuevaCola->clave, clave);
-	nuevaCola->ESIs = list_create();
-	return nuevaCola;
-}
-
-bool estaBloqueada(char *clave) {
-	int i;
-	bool estaBloqueada = false;
-	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
-		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
-		if (strcmp(cola->clave, clave) == 0) {
-			estaBloqueada = true;
-		}
-	}
-	return estaBloqueada;
 }
 
 void bloquearClaveSola(char *clave) {
-	if (!estaBloqueada(clave)) {
-		t_cola_bloqueados_por_clave *nuevaCola = crearNuevaColaDeBloqueados(clave);
-		list_add(colasDeBloqueados, nuevaCola);
+	if (!dictionary_has_key(diccionarioBloqueados, clave)) {
+		t_list *nuevaCola = list_create();
+		dictionary_put(diccionarioBloqueados, clave, nuevaCola);
 	}
 }
 
 void liberarClave(char *clave) {
-	int i;
-	for (i = 0; i < colasDeBloqueados->elements_count; i++) {
-		t_cola_bloqueados_por_clave *cola = list_get(colasDeBloqueados, i);
-		if (strcmp(cola->clave, clave) == 0) {
-			int j;
-			for (j = 0; j < cola->ESIs->elements_count; j++) {
-				t_esi *esi = list_get(cola->ESIs, j);
-				esi->bloqueado = false;
-				list_add(colaDeListos, esi);
-				list_remove(cola->ESIs, j);
-			}
-			list_remove(colasDeBloqueados, i);
-			free(cola);
+	if (dictionary_has_key(diccionarioBloqueados, clave)) {
+		t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
+		int i;
+		for (i = 0; i < bloqueados->elements_count; i++) {
+			t_esi *esi = list_get(bloqueados, i);
+			esi->bloqueado = false;
+			list_add(colaDeListos, esi);
+			list_remove(bloqueados, i);
 		}
+		dictionary_remove(diccionarioBloqueados, clave);
+		free(bloqueados);
 	}
 }

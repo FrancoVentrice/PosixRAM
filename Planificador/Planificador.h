@@ -50,11 +50,6 @@ typedef struct {
 	bool bloqueado;
 } t_esi;
 
-typedef struct {
-	char *clave;
-	t_list *ESIs;
-} t_cola_bloqueados_por_clave;
-
 t_configuracion* configuracion;
 t_config* fd_configuracion;
 t_log *logger;
@@ -62,7 +57,7 @@ pthread_t hiloConsola;
 
 t_esi *esiEnEjecucion; //vendria a ser la "cola" de ejecucion
 t_list* colaDeListos; //lista de t_esi. es la cola de esis listos
-t_list* colasDeBloqueados; //lista de t_cola_bloqueados_por_clave. es una cola que tiene varias colas de esis bloqueados, separadas por clave
+t_dictionary* diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
@@ -75,8 +70,6 @@ void escucharESIs();
 void estimarSJF();
 void sentenciaEjecutadaCorrectamenteSJF();
 void bloquearESIConClave(t_esi *esi, char *clave);
-t_cola_bloqueados_por_clave* crearNuevaColaDeBloqueados(char *clave);
-bool estaBloqueada(char *clave);
 void bloquearClaveSola(char *clave);
 void liberarClave(char *clave);
 

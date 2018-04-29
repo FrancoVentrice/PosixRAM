@@ -28,7 +28,7 @@ int cargarConfiguracion() {
 	logger = log_create("LogPlanificador", "Planificador", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
 	colaDeListos = list_create();
-	colasDeBloqueados = list_create();
+	diccionarioBloqueados = dictionary_create();
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Planificador
 	fd_configuracion = config_create("../Planificador.conf");
@@ -62,7 +62,7 @@ int cargarConfiguracion() {
 	}
 	configuracion->clavesInicialmenteBloqueadas = config_get_string_value(fd_configuracion, "CLAVES_INICIALMENTE_BLOQUEADAS");
 
-	//bloquearClavesIniciales();
+	bloquearClavesIniciales();
 
 	log_info(logger,
 		"\nPUERTO_ESCUCHA: %d\n"
