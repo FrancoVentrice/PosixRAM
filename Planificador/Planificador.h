@@ -25,20 +25,15 @@ typedef struct {
 } t_configuracion;
 
 typedef struct{
-	char* mensaje;
-
-}tSolicitudESI;
-
-
+	char * mensaje;
+} tSolicitudESI;
 
 typedef struct{
-	char* mensaje;
-
-}tSolicitudPlanificador;
+	char * mensaje;
+} tSolicitudPlanificador;
 
 typedef struct{
-	char* mensaje;
-
+	char * mensaje;
 }tRespuesta;
 
 typedef struct {
@@ -50,18 +45,19 @@ typedef struct {
 	bool bloqueado;
 } t_esi;
 
-t_configuracion* configuracion;
-t_config* fd_configuracion;
-t_log *logger;
+t_configuracion * configuracion;
+t_config * fd_configuracion;
+t_log * logger;
 pthread_t hiloConsola;
 
-t_esi *esiEnEjecucion; //vendria a ser la "cola" de ejecucion
-t_list* colaDeListos; //lista de t_esi. es la cola de esis listos
-t_dictionary* diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
+t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion
+t_list * colaDeListos; //lista de t_esi. es la cola de esis listos
+t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
 
 int cargarConfiguracion();
+int configValida(t_config *);
 void limpiarConfiguracion();
-void finalizar(int codigo);
+void finalizar(int);
 void levantarConsola();
 void consola();
 void escucharESIs();
@@ -69,20 +65,18 @@ void escucharESIs();
 //metodos de SJF
 void estimarSJF();
 void sentenciaEjecutadaCorrectamenteSJF();
-void bloquearESIConClave(t_esi *esi, char *clave);
-void bloquearClaveSola(char *clave);
-void liberarClave(char *clave);
+void bloquearESIConClave(t_esi *, char *);
+void bloquearClaveSola(char *);
+void liberarClave(char *);
 
 //metodos de la consola
 void pause();
 void play();
-void lock(char *comando);
-void unlock(char *comando);
-void list(char *comando);
-void kill(char *comando);
-void status(char *comando);
+void lock(char *);
+void unlock(char *);
+void list(char *);
+void kill(char *);
+void status(char *);
 void deadlock();
-
-
 
 #endif /* PLANIFICADOR_H_ */
