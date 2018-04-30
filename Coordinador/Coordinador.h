@@ -35,5 +35,6 @@ int cargarConfiguracion();
 void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
+void escucharConexiones();
 
 #endif /* COORDINADOR_H_ */

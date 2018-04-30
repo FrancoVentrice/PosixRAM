@@ -4,6 +4,8 @@
  * (c) PosixRAM */
 
 #include "Coordinador.h"
+#include "..//shared/sockets.h"
+#include "..//shared/serializar.h"
 #include "..//shared/protocolo.h"
 
 int main(int argn, char *argv[]) {
@@ -88,7 +90,6 @@ void escucharConexiones() {
 				*tipoMensaje = DESCONEXION;
 				break;
 
-
 			case P_HANDSHAKE:
 				printf("Socket comunicacion: %d \n", iSocketComunicacion);
 
@@ -110,10 +111,17 @@ void escucharConexiones() {
 				*tipoMensaje = DESCONEXION;
 				break;
 
-			case DESCONEXION:
+			case C_HANDSHAKE:
+				/* se agrega para que no genere warning
+				 * el coordinador no se saluda a sí mismo
+				 */
 				break;
 
-				//conexion con el Planificador
+			case I_HANDSHAKE:
+				// TODO se conectó una instancia
+				break;
+			case DESCONEXION:
+				break;
 
 			}
 		}

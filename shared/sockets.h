@@ -15,25 +15,20 @@
 #include <commons/log.h>
 #include "protocolo.h"
 
+int crearSocketEscucha(int, t_log*);
 
-int crearSocketEscucha(int puerto, t_log* logger);
+int enviarPaquete(int , tPaquete* , t_log* , char* );
 
-int enviarPaquete(int socketServidor, tPaquete* buffer, t_log* logger, char* info);
+int recibirPaquete(int , tMensaje* , char** , t_log* , char* );
 
-int recibirPaquete(int socketReceptor, tMensaje* tipoMensaje, char** payload, t_log* pLogger, char* sMensajeLogger);
+signed int getConnection(fd_set *, int *, int , tMensaje *, char** , t_log* );
 
-signed int getConnection(fd_set *master, int *maxSock, int sockListener, tMensaje *tipoMensaje, char** payload, t_log* logger);
+signed int getConnectionTimeOut(fd_set *, int *, int , tMensaje *, char** , struct timeval *, t_log* );
 
-signed int getConnectionTimeOut(fd_set *setSockets, int *maxSock, int sockListener, tMensaje *tipoMensaje, char** payload, struct timeval *timeout, t_log* logger);
+signed int multiplexar(fd_set *, fd_set *, int *, tMensaje* , char** , t_log* );
 
-signed int multiplexar(fd_set *master, fd_set *temp, int *maxSock, tMensaje* tipoMensaje, char** buffer, t_log* logger);
+signed int connectToServer(char *, int , t_log *);
 
-signed int connectToServer(char *ip_server, int puerto, t_log *logger);
-
-int desconectarseDe(int iSocket);
-
-/*---------------------------------------------------------*/
-int enviarPaqueteGrande(int socketServidor, tPaqueteGrande * pPaqueteAEnviar, t_log* logger, char* info);
-int recibirPaqueteGrande(int socketReceptor, tMensaje* tipoMensaje, char** psPayload, t_log* pLogger, char* sMensajeLogger);
+int desconectarseDe(int);
 
 #endif /* LIBSOCKETS_H_ */

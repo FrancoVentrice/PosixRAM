@@ -12,7 +12,7 @@
 int main(int argn, char *argv[]) {
 	// preparando proceso
 	memset(czNomProc, 0, 20);
-	strcpy(czNomProc,"InstanciaPosixRAM\0");
+	strcpy(czNomProc,"InstanciaPosixRAM");
 
 	limpiarPantalla();
 	printf("\e[36m");
@@ -43,13 +43,15 @@ int main(int argn, char *argv[]) {
 
 	// TODO conectar con coordinador
 
-	// TODO handshake coordinador (enviar nombre para que valide unicidad)
-
-	// TODO pedir cantidad de entradas y tamaño al coordinador
+	/* TODO
+	 * handshake coordinador
+	 * enviar nombre para que valide unicidad
+	 * si está ok recibe cantidad de entradas y tamaño
+	 */
 
 	// TODO armar estructura de entradas
 
-	// TODO preparar proceso de Dump
+	// TODO preparar proceso de Dump (configuraion->intervaloDump)
 
 	// TODO while principal
 	int sigue=1;
@@ -95,6 +97,13 @@ void iniciarLogger(){
 	sprintf(nombreArchivoLog, "./logs/%s%d_%s.LOG", czNomProc, process_getpid(), czFecha);
 
 	logger = log_create(nombreArchivoLog, czNomProc, true, LOG_LEVEL_INFO);
+	/*
+	log_trace(logger,"Nivel trace %d",LOG_LEVEL_TRACE);
+	log_debug(logger,"Nivel debug %d",LOG_LEVEL_DEBUG);
+	log_info(logger,"Nivel info %d",LOG_LEVEL_INFO);
+	log_warning(logger,"Nivel waring %d",LOG_LEVEL_WARNING);
+	log_error(logger,"Nivel error %d",LOG_LEVEL_ERROR);
+	*/
 	free(nombreArchivoLog);
 }
 
@@ -112,7 +121,9 @@ int cargarConfiguracion(char *configFilePath) {
 
 	configuracion->ipCoordinador = config_get_string_value(fd_configuracion, "IP_COORDINADOR");
 	configuracion->puertoCoordinador = config_get_int_value(fd_configuracion, "PUERTO_COORDINADOR");
+
 	char *algoritmo = config_get_string_value(fd_configuracion, "ALGORITMO_REEMPLAZO");
+	// lo que sigue es necesario porque C no tiene un switch de strings ::facepalm::
 	if (strcmp(algoritmo, "CIRC") == 0) {
 		configuracion->algoritmoDeReemplazo = ALGORITMO_CIRC;
 	} else if (strcmp(algoritmo, "LRU") == 0) {
@@ -120,6 +131,7 @@ int cargarConfiguracion(char *configFilePath) {
 	} else if (strcmp(algoritmo, "BSU") == 0) {
 		configuracion->algoritmoDeReemplazo = ALGORITMO_BSU;
 	}
+
 	configuracion->puntoDeMontaje = config_get_string_value(fd_configuracion, "PUNTO_MONTAJE");
 	configuracion->nombreDeInstancia = config_get_string_value(fd_configuracion, "NOMBRE_INSTANCIA");
 	configuracion->intervaloDump = config_get_int_value(fd_configuracion, "INTERVALO_DUMP");
