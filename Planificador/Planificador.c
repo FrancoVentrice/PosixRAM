@@ -143,18 +143,23 @@ void escucharESIs() {
 //se corre cuando hay que elegir un nuevo ESI a ejecutar
 //si es con desalojo, tambien se corre cuando entra un nuevo proceso a la lista
 //setea la estimacion de todos los ESIs en la cola de listos
-//agrega el ESI en ejecucion a la cola de listos para hacer bien los calculos, asi que no hace falta agregarlo antes
 //setea el proximo ESI a ejecutar
 void estimarSJF() {
-	list_add(colaDeListos, esiEnEjecucion);
-	int i;
-	t_esi *ESIMasCorto = list_get(colaDeListos, 0);
-	int indexDelESIMasCorto;
-	float alfa = configuracion->alfa / 100;
+	//me hago una pasadita para volar los bloqueados
+	list_remove_by_condition(colaDeListos, evaluarBloqueoDeEsi);
+	if (esiEnEjecucion && esiEnEjecucion->bloqueado) {
+		esiEnEjecucion = NULL;
+	}
 
-	//itera hasta "elements_count - 1" porque no quiero que reestime al ESI en
-	//ejecucion, el cual agregue al final de la lista
-	for (i = 0; i < colaDeListos->elements_count - 1; i++) {
+	if (colaDeListos->elements_count == 0) {
+		return;
+	}
+
+	t_esi *ESIMasCorto = list_get(colaDeListos, 0);
+	int indexDelESIMasCorto = 0;
+	int i;
+	float alfa = configuracion->alfa / 100;
+	for (i = 0; i < colaDeListos->elements_count; i++) {
 		t_esi *esi = list_get(colaDeListos, i);
 		//rafagaAnterior lo uso como flag para saber si la estimacion esta actualizada
 		if (esi->rafagaAnterior != 0) {
@@ -169,26 +174,22 @@ void estimarSJF() {
 		}
 	}
 
-	//si lo habia bloqueado, me voy olvidando de dejarlo en la lista de listos
-	if (esiEnEjecucion->bloqueado) {
-		list_remove(colaDeListos, colaDeListos->elements_count - 1);
-	}
-
 	//finalmente, comparo al mas corto de la cola de listos con el que ya estaba ejecutando
 	//la prioridad en caso de igualdad la tiene el que ya estaba ejecutando
-	//si estaba bloqueado, obviamente lo reemplazo directamente
-	if (esiEnEjecucion->bloqueado || ESIMasCorto->estimacion < esiEnEjecucion->estimacion) {
+	//si habia uno en ejecucion, lo devuelvo a listos
+	if (!esiEnEjecucion) {
 		esiEnEjecucion = ESIMasCorto;
 		list_remove(colaDeListos, indexDelESIMasCorto);
-	} else {
-		//remuevo de listos al que ya estaba ejecutando (que lo habia agregado al final de la lista), vuelve a seguir ejecutando
-		//si el esi ejecutando no se habia bloqueado, no pasa por el otro if que lo remueve, asi que no se genera inconsistencia
-		list_remove(colaDeListos, colaDeListos->elements_count - 1);
+	} else if (ESIMasCorto->estimacion < esiEnEjecucion->estimacion) {
+		list_add(colaDeListos, esiEnEjecucion);
+		esiEnEjecucion = ESIMasCorto;
+		list_remove(colaDeListos, indexDelESIMasCorto);
 	}
 }
 
 void sentenciaEjecutadaCorrectamenteSJF() {
 	esiEnEjecucion->rafagaAnterior ++;
+	esiEnEjecucion->estimacion--;
 }
 
 void bloquearESIConClave(t_esi *esi, char *clave) {
@@ -223,4 +224,17 @@ void liberarClave(char *clave) {
 		dictionary_remove(diccionarioBloqueados, clave);
 		free(bloqueados);
 	}
+}
+
+void esiDestroyer(t_esi *esi) {
+	free(esi);
+}
+
+bool evaluarBloqueoDeEsi(t_esi *esi) {
+	return esi->bloqueado;
+}
+
+void finalizarEsiEnEjecucion() {
+	list_add(colaDeFinalizados, esiEnEjecucion);
+	esiEnEjecucion = NULL;
 }

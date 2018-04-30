@@ -52,6 +52,7 @@ pthread_t hiloConsola;
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion
 t_list * colaDeListos; //lista de t_esi. es la cola de esis listos
+t_list * colaDeFinalizados; //lista de t_esi. es la cola de esis finalizados
 t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
 
 int cargarConfiguracion();
@@ -61,6 +62,8 @@ void finalizar(int);
 void levantarConsola();
 void consola();
 void escucharESIs();
+void esiDestroyer(t_esi *);
+bool evaluarBloqueoDeEsi(t_esi *);
 
 //metodos de SJF
 void estimarSJF();
