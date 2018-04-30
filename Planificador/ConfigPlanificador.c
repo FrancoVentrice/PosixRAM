@@ -30,6 +30,7 @@ int cargarConfiguracion() {
 	colaDeListos = list_create();
 	colaDeFinalizados = list_create();
 	diccionarioBloqueados = dictionary_create();
+	diccionarioClavesTomadas = dictionary_create();
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Planificador
 	fd_configuracion = config_create("../Planificador.conf");
@@ -83,7 +84,8 @@ void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
-	dictionary_destroy_and_destroy_elements(diccionarioBloqueados, esiDestroyer);
+	dictionary_destroy_and_destroy_elements(diccionarioBloqueados, esiListDestroyer);
+	dictionary_destroy_and_destroy_elements(diccionarioClavesTomadas, esiDestroyer);
 	list_destroy_and_destroy_elements(colaDeListos, esiDestroyer);
 	list_destroy_and_destroy_elements(colaDeFinalizados, esiDestroyer);
 	free(esiEnEjecucion);

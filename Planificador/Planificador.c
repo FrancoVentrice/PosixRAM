@@ -192,22 +192,36 @@ void sentenciaEjecutadaCorrectamenteSJF() {
 	esiEnEjecucion->estimacion--;
 }
 
+//Cuando ESI hace un GET y la clave esta tomada
 void bloquearESIConClave(t_esi *esi, char *clave) {
 	esi->bloqueado = true;
-	if (dictionary_has_key(diccionarioBloqueados, clave)) {
-		t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
-		list_add(bloqueados, esi);
-	} else {
+	if (!dictionary_has_key(diccionarioBloqueados, clave) ||
+			!dictionary_has_key(diccionarioClavesTomadas, clave)) {
+		bloquearClaveSola(clave);
+	}
+	t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
+	list_add(bloqueados, esi);
+}
+
+//Cuando ESI hace un GET exitosamente
+void esiTomaClave(t_esi *esi, char *clave) {
+	if (!dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *nuevaCola = list_create();
-		list_add(nuevaCola, esi);
 		dictionary_put(diccionarioBloqueados, clave, nuevaCola);
 	}
+	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
+		dictionary_remove(diccionarioClavesTomadas, clave);
+	}
+	dictionary_put(diccionarioClavesTomadas, clave, esi);
 }
 
 void bloquearClaveSola(char *clave) {
 	if (!dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *nuevaCola = list_create();
 		dictionary_put(diccionarioBloqueados, clave, nuevaCola);
+	}
+	if (!dictionary_has_key(diccionarioClavesTomadas, clave)) {
+		dictionary_put(diccionarioClavesTomadas, clave, NULL);
 	}
 }
 
@@ -219,10 +233,12 @@ void liberarClave(char *clave) {
 			t_esi *esi = list_get(bloqueados, i);
 			esi->bloqueado = false;
 			list_add(colaDeListos, esi);
-			list_remove(bloqueados, i);
 		}
 		dictionary_remove(diccionarioBloqueados, clave);
-		free(bloqueados);
+		list_destroy(bloqueados);
+	}
+	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
+		dictionary_remove(diccionarioClavesTomadas, clave);
 	}
 }
 
@@ -230,8 +246,17 @@ void esiDestroyer(t_esi *esi) {
 	free(esi);
 }
 
+void esiListDestroyer(t_list *esis) {
+	list_destroy_and_destroy_elements(esis, esiDestroyer);
+	free(esis);
+}
+
 bool evaluarBloqueoDeEsi(t_esi *esi) {
 	return esi->bloqueado;
+}
+
+bool evaluarBloqueoDeClave(char *clave) {
+	return dictionary_has_key(diccionarioClavesTomadas, clave);
 }
 
 void finalizarEsiEnEjecucion() {

@@ -54,6 +54,7 @@ t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion
 t_list * colaDeListos; //lista de t_esi. es la cola de esis listos
 t_list * colaDeFinalizados; //lista de t_esi. es la cola de esis finalizados
 t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
+t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada. key: clave, value: esi que la tomo
 
 int cargarConfiguracion();
 int configValida(t_config *);
@@ -62,15 +63,19 @@ void finalizar(int);
 void levantarConsola();
 void consola();
 void escucharESIs();
+void bloquearESIConClave(t_esi *, char *);
+void esiTomaClave(t_esi *, char *);
+void bloquearClaveSola(char *);
+void liberarClave(char *);
 void esiDestroyer(t_esi *);
+void esiListDestroyer(t_list *);
 bool evaluarBloqueoDeEsi(t_esi *);
+bool evaluarBloqueoDeClave(char *);
+void finalizarEsiEnEjecucion();
 
 //metodos de SJF
 void estimarSJF();
 void sentenciaEjecutadaCorrectamenteSJF();
-void bloquearESIConClave(t_esi *, char *);
-void bloquearClaveSola(char *);
-void liberarClave(char *);
 
 //metodos de la consola
 void pause();
