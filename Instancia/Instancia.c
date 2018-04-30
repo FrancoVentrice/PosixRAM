@@ -3,44 +3,111 @@
  * TP-1C-2018-ReDistinto
  * (c) PosixRAM */
 
+#include <time.h>
+#include <sys/stat.h> // mkdir
 #include "Instancia.h"
+#include "..//shared/libgral.h"
+#include "..//shared/sockets.h"
 
 int main(int argn, char *argv[]) {
-	limpiarPantalla();
-	centrarTexto("Instancia PosixRAM");
-	centrarTexto("==================");
-	retardoSegundos(1);
-	logger = log_create("LogInstancia", "Instancia", true, LOG_LEVEL_INFO);
-	log_info(logger,"Iniciando Instancia PosixRAM");
+	// preparando proceso
+	memset(czNomProc, 0, 20);
+	strcpy(czNomProc,"InstanciaPosixRAM\0");
 
-	cargarConfiguracion();
-	retardoSegundos(5);
-	finalizar(0);
+	limpiarPantalla();
+	printf("\e[36m");
+	centrarTexto("Instancia PosixRAM para ReDistinto");
+	centrarTexto("==================================");
+	printf("\e[0m");
+
+	iniciarLogger();
+	log_info(logger,"Iniciando Instancia PosixRAM para ReDistinto");
+
+	// se chequean los argumentos para levantar la configuración
+	if(argn==2) {
+		// un argumento, debería ser el nombre del archivo de configuración
+		if(!cargarConfiguracion(argv[1]))
+			return -1;
+	}
+	else if(argn==7) {
+		/* 6 argumentos, se podría levantar una instancia sin archivo, con los datos por línea de comandos
+		 TODO completar esta forma de ejecutarse si se considera necesario */
+	} else {
+		/* argn==1 (sin parámetros)
+		   argn!=2 && argn!=7 (cualquier otra variante)
+		 se carga configuración desde archivo default */
+		//cargarConfiguracion(DEFAULT_CONFIG_FILE);
+		if(!cargarConfiguracion("Instancia.conf"))
+			return -1;
+	}
+
+	// TODO conectar con coordinador
+
+	// TODO handshake coordinador (enviar nombre para que valide unicidad)
+
+	// TODO pedir cantidad de entradas y tamaño al coordinador
+
+	// TODO armar estructura de entradas
+
+	// TODO preparar proceso de Dump
+
+	// TODO while principal
+	int sigue=1;
+	while(sigue) {
+		sigue = 0;
+		retardoSegundos(15);
+	}
+
+	finalizar(EXIT_SUCCESS);
 }
 
 /* termina el proceso correctamente liberando recursos */
 void finalizar(int codigo) {
+	desconectarseDe(configuracion->fdSocketCoordinador);
 	log_info(logger,"Instancia %s finalizada" , configuracion->nombreDeInstancia);
-	limpiarConfiguracion();
+	free(configuracion);
+	config_destroy(fd_configuracion);
 	log_destroy(logger);
+
+	// imprimo mensaje de salida
+	printf("\e[33m\n");
+	centrarTexto("Instancia finalizada");
+	centrarTexto("PosixRAM (c) 2018");
+	printf("\e[0m\n");
+
 	exit(codigo);
 }
 
+/* inicia el logger para este proceso */
+void iniciarLogger(){
+	time_t tiempoActual;
+	// Se obtiene el tiempo actual
+	tiempoActual = time(NULL);
+	char czFecha[10];
+	// transforma los datos de fecha y hora a un formato de cadena
+	strftime(czFecha, 10, "%Y%m%d", localtime(&tiempoActual));
+
+	mkdir("./logs",0755);
+
+	char *nombreArchivoLog;
+	nombreArchivoLog = (char *)malloc(50);
+	memset(nombreArchivoLog,0,50);
+	sprintf(nombreArchivoLog, "./logs/%s%d_%s.LOG", czNomProc, process_getpid(), czFecha);
+
+	logger = log_create(nombreArchivoLog, czNomProc, true, LOG_LEVEL_INFO);
+	free(nombreArchivoLog);
+}
+
 /* carga el archivo de configuracion default */
-int cargarConfiguracion() {
-	log_info(logger,"Cargando archivo de configuración");
+int cargarConfiguracion(char *configFilePath) {
+	log_info(logger,"Cargando archivo de configuración: %s", configFilePath);
 
-	configuracion = malloc(sizeof(t_configuracion));
+	configuracion = malloc(sizeof(t_confInstancia));
 
-	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Instancia
-	fd_configuracion = config_create("../Instancia.conf");
-	if (fd_configuracion == NULL) {
-		fd_configuracion = config_create("Instancia.conf");
-	}
-
+	fd_configuracion = config_create(configFilePath);
 	if (fd_configuracion == NULL || !configValida(fd_configuracion)) {
 		log_error(logger,"Archivo de configuración inválido.");
-		return -1;
+		return 0;
 	}
 
 	configuracion->ipCoordinador = config_get_string_value(fd_configuracion, "IP_COORDINADOR");
@@ -57,14 +124,16 @@ int cargarConfiguracion() {
 	configuracion->nombreDeInstancia = config_get_string_value(fd_configuracion, "NOMBRE_INSTANCIA");
 	configuracion->intervaloDump = config_get_int_value(fd_configuracion, "INTERVALO_DUMP");
 
-	log_info(logger,"Configuración cargada correctamente.");
-	return 0;
-}
+	configuracion->fdSocketCoordinador = -1;
+	configuracion->cantidadEntradas = 0;
+	configuracion->tamanioEntrada = 0;
 
-/* libera los recursos de la configuracion */
-void limpiarConfiguracion() {
-	free(configuracion);
-	config_destroy(fd_configuracion);
+	log_info(logger,"Configuración cargada correctamente.");
+	log_info(logger," - Instancia: %s", configuracion->nombreDeInstancia);
+	log_info(logger," - Algoritmo de reemplazo: %s", algoritmo);
+	log_info(logger," - Punto de montaje: %s", configuracion->puntoDeMontaje);
+	log_info(logger," - Intervalo para dump: %d segundos", configuracion->intervaloDump);
+	return 1;
 }
 
 /* valida que la configuracion este completa (no valida errores) */

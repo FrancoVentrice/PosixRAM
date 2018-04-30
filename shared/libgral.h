@@ -12,7 +12,8 @@
 
 void centrarTexto(char *);
 void limpiarPantalla();
-void retardoSegundos(int iSegundos);
-void capturaSenial(int iSignal);
+void retardoSegundos(int);
+void retardoMilisegundos(int);
+void capturaSenial(int);
 
 #endif
