@@ -213,6 +213,7 @@ void esiTomaClave(t_esi *esi, char *clave) {
 		dictionary_remove(diccionarioClavesTomadas, clave);
 	}
 	dictionary_put(diccionarioClavesTomadas, clave, esi);
+	list_add(esi->clavesTomadas, clave);
 }
 
 void bloquearClaveSola(char *clave) {
@@ -238,17 +239,24 @@ void liberarClave(char *clave) {
 		list_destroy(bloqueados);
 	}
 	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
-		dictionary_remove(diccionarioClavesTomadas, clave);
+		t_esi *esi = dictionary_remove(diccionarioClavesTomadas, clave);
+		esiRemoverClaveTomada(esi, clave);
 	}
 }
 
+t_esi *esiNew() {
+	t_esi *esi = malloc(sizeof(t_esi));
+	esi->clavesTomadas = list_create();
+	return esi;
+}
+
 void esiDestroyer(t_esi *esi) {
+	list_destroy_and_destroy_elements(esi->clavesTomadas, clavesTomadasDestroyer);
 	free(esi);
 }
 
 void esiListDestroyer(t_list *esis) {
 	list_destroy_and_destroy_elements(esis, esiDestroyer);
-	free(esis);
 }
 
 bool evaluarBloqueoDeEsi(t_esi *esi) {
@@ -257,6 +265,21 @@ bool evaluarBloqueoDeEsi(t_esi *esi) {
 
 bool evaluarBloqueoDeClave(char *clave) {
 	return dictionary_has_key(diccionarioClavesTomadas, clave);
+}
+
+void esiRemoverClaveTomada(t_esi *esi, char *clave) {
+	int i;
+	for (i = 0; i < esi->clavesTomadas->elements_count; i++) {
+		char *clavei = list_get(esi->clavesTomadas, i);
+		if (strcmp(clave, clavei) == 0) {
+			list_remove(esi->clavesTomadas, i);
+			return;
+		}
+	}
+}
+
+void clavesTomadasDestroyer(char *clave) {
+	free(clave);
 }
 
 void finalizarEsiEnEjecucion() {

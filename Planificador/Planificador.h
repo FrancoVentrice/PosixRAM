@@ -43,6 +43,7 @@ typedef struct {
 	float estimacionAnterior;//necesario para SJF
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
+	t_list *clavesTomadas;
 } t_esi;
 
 t_configuracion * configuracion;
@@ -67,10 +68,15 @@ void bloquearESIConClave(t_esi *, char *);
 void esiTomaClave(t_esi *, char *);
 void bloquearClaveSola(char *);
 void liberarClave(char *);
+
+//metodos de ESI
+t_esi *esiNew();
 void esiDestroyer(t_esi *);
 void esiListDestroyer(t_list *);
 bool evaluarBloqueoDeEsi(t_esi *);
 bool evaluarBloqueoDeClave(char *);
+void esiRemoverClaveTomada(t_esi *, char *);
+void clavesTomadasDestroyer(char *);
 void finalizarEsiEnEjecucion();
 
 //metodos de SJF
