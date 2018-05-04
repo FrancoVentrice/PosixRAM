@@ -10,9 +10,9 @@
 #include <string.h>
 #include "..//shared/protocolo.h"
 
-#define ALGORITMO_SJF_CD 1;
-#define ALGORITMO_SJF_SD 2;
-#define ALGORITMO_HRRN 3;
+#define ALGORITMO_SJF_CD 1
+#define ALGORITMO_SJF_SD 2
+#define ALGORITMO_HRRN 3
 
 typedef struct {
 	int puerto;

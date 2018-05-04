@@ -128,3 +128,65 @@ void escucharConexiones() {
 	}
 	finalizar(0);
 }
+
+//se usa para elegir la instancia con
+//la cual operar los comandos SET
+//elige la instancia a la cual le va a agregar o modificar la clave
+void elegirInstanciaSet() {
+	if (!dictionary_has_key(diccionarioClaves, clave)) {
+		switch (configuracion->algoritmoDistribucion) {
+		case ALGORITMO_LSU:
+			elegirInstanciaLSU();
+			break;
+		case ALGORITMO_EL:
+			elegirInstanciaEL();
+			break;
+		case ALGORITMO_KE:
+			elegirInstanciaKE();
+			break;
+		}
+	} else {
+		instanciaElegida = dictionary_get(diccionarioClaves, clave);
+	}
+}
+
+//metodo que se ejecuta cuando la instancia elegida
+//responde que guardo correctamente la clave.
+//no se debe llamar cuando la clave solamente es modificada
+void registrarClaveAgregadaAInstancia() {
+	dictionary_put(diccionarioClaves, clave, instanciaElegida);
+}
+
+//LEAST SPACE USED
+//usa la clave de operacion (variable global)
+//setea la instancia elegida (variable global)
+void elegirInstanciaLSU() {
+}
+
+//EQUITATIVE LOAD
+//usa la clave de operacion (variable global)
+//setea la instancia elegida (variable global)
+void elegirInstanciaEL() {
+	if (punteroEL >= instancias->elements_count) {
+		punteroEL = 0;
+	}
+	instanciaElegida = list_get(instancias, punteroEL);
+	punteroEL ++;
+}
+
+//KEY EXPLICIT
+//usa la clave de operacion (variable global)
+//setea la instancia elegida (variable global)
+void elegirInstanciaKE() {
+}
+
+void instanciaDestroyer(t_instancia * instancia) {
+	free(instancia->nombre);
+	free(instancia);
+}
+
+t_instancia * instanciaNew() {
+	t_instancia *instancia = malloc(sizeof(t_instancia));
+	instancia->nombre = string_new();
+	return instancia;
+}

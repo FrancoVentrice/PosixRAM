@@ -9,9 +9,9 @@
 
 char czNomProc[20]; // nombre para mostrar en el sistema
 
-#define ALGORITMO_CIRC 1;
-#define ALGORITMO_LRU 2;
-#define ALGORITMO_BSU 3;
+#define ALGORITMO_CIRC 1
+#define ALGORITMO_LRU 2
+#define ALGORITMO_BSU 3
 
 typedef struct {
 	char *nombreDeInstancia;
