@@ -160,7 +160,21 @@ void registrarClaveAgregadaAInstancia() {
 //LEAST SPACE USED
 //usa la clave de operacion (variable global)
 //setea la instancia elegida (variable global)
+//
+//
+//To Do: la respuesta de una instancia a un SET deberia devolver la cantidad
+//de entradas disponibles asi el valor se mantiene actualizado para este algoritmo
+//
+//
 void elegirInstanciaLSU() {
+	int i;
+	instanciaElegida = list_get(instancias, 0);
+	for (i = 1; i < instancias->elements_count; i++) {
+		t_instancia *iinstancia = list_get(instancias, i);
+		if (iinstancia->cantidadDeEntradasDisponibles > instanciaElegida->cantidadDeEntradasDisponibles) {
+			instanciaElegida = iinstancia;
+		}
+	}
 }
 
 //EQUITATIVE LOAD
@@ -177,7 +191,24 @@ void elegirInstanciaEL() {
 //KEY EXPLICIT
 //usa la clave de operacion (variable global)
 //setea la instancia elegida (variable global)
+//valor de 'a' es 97
+//valor de 'z' es 122
+//122 - 97 = 25 letras a ser distribuidas entre las instancias
 void elegirInstanciaKE() {
+	if (instancias->elements_count == 0) {
+		return;
+	}
+	int letrasPorInstancia = 25 / instancias->elements_count;
+	if (25 % instancias->elements_count > 0) {
+		letrasPorInstancia++;
+	}
+	//'a' tendria valor 1, 'b' 2, y asi
+	int valorPrimerCaracter = clave[0] - 96;
+	int indexInstancia = valorPrimerCaracter / letrasPorInstancia;
+	if (valorPrimerCaracter % letrasPorInstancia == 0) {
+		indexInstancia--;
+	}
+	instanciaElegida = list_get(instancias, indexInstancia);
 }
 
 void instanciaDestroyer(t_instancia * instancia) {
@@ -188,5 +219,6 @@ void instanciaDestroyer(t_instancia * instancia) {
 t_instancia * instanciaNew() {
 	t_instancia *instancia = malloc(sizeof(t_instancia));
 	instancia->nombre = string_new();
+	instancia->cantidadDeEntradasDisponibles = configuracion->cantidadDeEntradas;
 	return instancia;
 }

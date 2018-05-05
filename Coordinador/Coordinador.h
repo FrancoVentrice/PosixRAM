@@ -30,6 +30,7 @@ typedef struct{
 typedef struct {
 	char *nombre;
 	int socket;
+	int cantidadDeEntradasDisponibles;
 } t_instancia;
 
 
