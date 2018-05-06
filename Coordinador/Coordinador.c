@@ -20,9 +20,6 @@ void finalizar(int codigo) {
 void escucharConexiones() {
 
 	int puertoEscucha = configuracion->puertoEscucha;
-
-	t_log *logCoordinador = log_create("coordinador.log", "COORDINADOR",
-	true, LOG_LEVEL_INFO);
 	int maxSock;
 	int iSocketEscucha;
 	int iSocketComunicacion;
@@ -33,7 +30,7 @@ void escucharConexiones() {
 	FD_ZERO(&setSocketsOrquestador);
 
 	// Inicializacion de sockets y actualizacion del log
-	iSocketEscucha = crearSocketEscucha(puertoEscucha, logCoordinador);
+	iSocketEscucha = crearSocketEscucha(puertoEscucha, logger);
 
 	FD_SET(iSocketEscucha, &setSocketsOrquestador);
 	maxSock = iSocketEscucha;
@@ -55,7 +52,7 @@ void escucharConexiones() {
 	while (1) {
 		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
 				iSocketEscucha, tipoMensaje, &sPayloadRespuesta,
-				logCoordinador);
+				logger);
 
 		if (iSocketComunicacion != -1) {
 
@@ -83,7 +80,7 @@ void escucharConexiones() {
 
 				puts("Se envia respuesta al ESI");
 				tamanioTotal = enviarPaquete(iSocketComunicacion,
-						&pkgHandshakeESI, logCoordinador,
+						&pkgHandshakeESI, logger,
 						"Se envia solicitud de ejecucion");
 				printf("Se envian %d bytes\n", tamanioTotal);
 
@@ -105,7 +102,7 @@ void escucharConexiones() {
 
 				puts("Se envia respuesta al Planificador");
 				tamanioTotal = enviarPaquete(iSocketComunicacion,
-						&pkgHandshake2, logCoordinador,
+						&pkgHandshake2, logger,
 						"Se envia solicitud de ejecucion");
 				printf("Se envian %d bytes\n", tamanioTotal);
 				*tipoMensaje = DESCONEXION;
@@ -119,6 +116,7 @@ void escucharConexiones() {
 
 			case I_HANDSHAKE:
 				// TODO se conectó una instancia
+				//usar nuevaInstanciaConectada(id, socket);
 				break;
 			case DESCONEXION:
 				break;
@@ -221,4 +219,21 @@ t_instancia * instanciaNew() {
 	instancia->nombre = string_new();
 	instancia->cantidadDeEntradasDisponibles = configuracion->cantidadDeEntradas;
 	return instancia;
+}
+
+//cuando entra una nueva instancia, se fija si ya existe y la
+//tiene que actualizar, o si crea una nueva y la agrega a la lista
+void nuevaInstanciaConectada(int id, int socket) {
+	int i;
+	for (i = 0; i < instancias->elements_count; i++) {
+		t_instancia *instancia = list_get(instancias, i);
+		if (instancia->id == id) {
+			instancia->socket = socket;
+			return;
+		}
+	}
+	t_instancia *instancia = instanciaNew();
+	instancia->id = id;
+	instancia->socket = socket;
+	list_add(instancias, instancia);
 }

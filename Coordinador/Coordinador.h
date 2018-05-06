@@ -28,6 +28,7 @@ typedef struct{
 } tRespuesta;
 
 typedef struct {
+	int id;
 	char *nombre;
 	int socket;
 	int cantidadDeEntradasDisponibles;
@@ -57,5 +58,6 @@ void elegirInstanciaKE();
 //instancia
 void instanciaDestroyer(t_instancia *);
 t_instancia * instanciaNew();
+void nuevaInstanciaConectada(int id, int socket);
 
 #endif /* COORDINADOR_H_ */
