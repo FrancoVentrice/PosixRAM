@@ -43,6 +43,9 @@ typedef struct {
 	float estimacionAnterior;//necesario para SJF
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
+	int tEspera;
+	int responseRatio;
+	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
 } t_esi;
 
@@ -50,6 +53,9 @@ t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 pthread_t hiloConsola;
+tiempoTotalEjecucion;
+float alfa;
+
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion
 t_list * colaDeListos; //lista de t_esi. es la cola de esis listos

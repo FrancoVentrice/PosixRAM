@@ -5,6 +5,63 @@
 
 #include "Planificador.h"
 
+pthread_mutex_t mutexESI;
+void atenderESI(int* iSocketComunicacion) {
+
+	//tArgs* my_data=malloc(sizeof(tArgs));
+	int bytesEnviados;
+
+	//my_data = (tArgs*) argumentos;
+	puts("HANDSHAKE CON ESI");
+	t_esi* esiNuevo = malloc(sizeof(t_esi));
+
+	pthread_mutex_lock(&mutexESI);
+	list_add(colaDeListos, esiNuevo);
+	estimarHRRN();
+	pthread_mutex_unlock(&mutexESI);
+
+	if (esiEnEjecucion == NULL) { // SI NO HAY NINGUNO EJECUTANDO NOTIFICAR OK
+		tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
+		respuestaEjecucion->mensaje = malloc(100);
+		strcpy(respuestaEjecucion->mensaje, "OK");
+		tPaquete pkgHandshakeRespuesta;
+		pkgHandshakeRespuesta.type = P_HANDSHAKE;
+
+		pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
+				"%c%s", pkgHandshakeRespuesta.type,
+				respuestaEjecucion->mensaje);
+
+		printf("Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
+				pkgHandshakeRespuesta.length);
+
+		puts("Se envia respuesta");
+		bytesEnviados = enviarPaquete(*iSocketComunicacion,
+				&pkgHandshakeRespuesta, logger, "Se envia respuesta a ESI");
+
+		printf("Se envian %d bytes\n", bytesEnviados);
+
+	} else {
+		tRespuesta* respuestaRechazo = malloc(sizeof(tRespuesta));
+		respuestaRechazo->mensaje = malloc(100);
+		strcpy(respuestaRechazo->mensaje, "CPU OCUPADA");
+		tPaquete pkgHandshakeRespuesta;
+		pkgHandshakeRespuesta.type = P_HANDSHAKE;
+
+		pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
+				"%c%s", pkgHandshakeRespuesta.type, respuestaRechazo->mensaje);
+
+		printf("Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
+				pkgHandshakeRespuesta.length);
+
+		puts("Se envia respuesta");
+		bytesEnviados = enviarPaquete(*iSocketComunicacion,
+				&pkgHandshakeRespuesta, logger, "Se envia respuesta a ESI");
+
+		printf("Se envian %d bytes\n", bytesEnviados);
+	}
+
+}
+
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	escucharESIs();
@@ -27,7 +84,6 @@ void levantarConsola() {
 		finalizar(EXIT_FAILURE);
 	}
 }
-
 void escucharESIs() {
 	fd_set master;
 	fd_set read_fds;
@@ -37,10 +93,14 @@ void escucharESIs() {
 	int iSocketEscucha;
 	int iSocketComunicacion;
 	int tamanioMensaje = 0;
+	int idSiguienteEsi=0;
+	t_esi* esiNuevo=malloc(sizeof(t_esi));
+	pthread_t hiloESI;
+
 
 	int puertoEscucha = configuracion->puerto;
 	int puertoConexion = configuracion->puertoCoordinador;
-	char* ipCoordinador=configuracion->ipCoordinador;
+	char* ipCoordinador = configuracion->ipCoordinador;
 
 	fd_set setSocketsOrquestador;
 	FD_ZERO(&setSocketsOrquestador);
@@ -49,7 +109,7 @@ void escucharESIs() {
 	int socketCoordinador = connectToServer("127.0.0.1", puertoConexion,
 			logger);
 	tSolicitudPlanificador* solicitudPlanificador = malloc(
-			sizeof(tSolicitudESI));
+			sizeof(tSolicitudPlanificador));
 	solicitudPlanificador->mensaje = malloc(100);
 	strcpy(solicitudPlanificador->mensaje, "SOY PLANIFIFCADOR");
 	tPaquete pkgHandshakeCoordinador;
@@ -101,35 +161,18 @@ void escucharESIs() {
 		if (iSocketComunicacion != -1) {
 			switch (tipoMensaje) {
 			case E_HANDSHAKE:
-				printf("Socket comunicacion: %d \n", iSocketComunicacion);
+				//creo el hilo para el ESI que quiero atender
 
-				puts("HANDSHAKE CON ESI");
-				tSolicitudESI *mensaje = malloc(100);
-				char* encabezado = malloc(10);
-				deserializar(sPayloadRespuesta, "%c%s", encabezado, respuesta->mensaje);
-				printf("MENSAJE DE ESI: %s\n", respuesta->mensaje);
+				pthread_create(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
+				pthread_join(hiloESI,NULL);
+
 
 				//le envio el OK a ESI para ejecutar
 
-				tRespuesta* respuesta = malloc(sizeof(tRespuesta));
-				respuesta->mensaje = malloc(100);
-				strcpy(respuesta->mensaje, "OK");
-				tPaquete pkgHandshakeRespuesta;
-				pkgHandshakeRespuesta.type = P_HANDSHAKE;
 
-				pkgHandshakeRespuesta.length = serializar(
-						pkgHandshakeRespuesta.payload, "%c%s",
-						pkgHandshakeRespuesta.type, respuesta->mensaje);
 
-				printf("Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
-						pkgHandshakeRespuesta.length);
 
-				puts("Se envia respuesta");
-				bytesEnviados = enviarPaquete(iSocketComunicacion,
-						&pkgHandshakeRespuesta, logger,
-						"Se envia respuesta a ESI");
-				printf("Se envian %d bytes\n", bytesEnviados);
-				tipoMensaje=DESCONEXION;
+				tipoMensaje = DESCONEXION;
 
 				break;
 
@@ -139,6 +182,70 @@ void escucharESIs() {
 		}
 	}
 }
+
+void planificar(float alfa) {
+
+	switch (configuracion->algoritmoPlanificacion){
+
+	case 1:
+		estimarSJF();
+		break;
+
+	case 3:
+		estimarHRRN();
+		break;
+
+
+	}
+}
+
+
+
+void estimarHRRN() {
+	t_esi* EsiHRRNMayor = malloc(sizeof(t_esi));
+	alfa = (float) (configuracion->alfa) / (float) 100;
+
+	float RRMayor = 0;
+	int indexHRRNMayor = 0;
+	int tiempoRespuesta = 0;
+	float responseRatio = 0;
+
+	int i;
+	for (i = 0; i < colaDeListos->elements_count; i++) {
+		t_esi* esiActual = list_get(colaDeListos, i);
+		if (esiActual->rafagaAnterior != 0) {
+			esiActual->estimacionAnterior = esiActual->estimacion;
+			esiActual->estimacion = (float) alfa
+					* (float) esiActual->rafagaAnterior
+					+ (1 - alfa) * esiActual->estimacionAnterior;
+			tiempoRespuesta = calcularTiempoRespuesta(esiActual);
+			responseRatio = ((float) tiempoRespuesta
+					+ (float) esiActual->estimacion)
+					/ (float) esiActual->estimacion;
+
+			if (responseRatio > RRMayor) {
+				RRMayor = responseRatio;
+				indexHRRNMayor = i;
+			}
+
+		}
+	}
+	EsiHRRNMayor = list_get(colaDeListos, indexHRRNMayor);
+	if (!esiEnEjecucion) {
+		esiEnEjecucion = EsiHRRNMayor;
+		printf("EJECUTANDO:\n");
+		list_remove(colaDeListos, indexHRRNMayor);
+	} else
+		printf("La CPU se encuentra ocupada\n");
+
+} //Luego ponerlo en ejecucion y setearle de nuevo el tiempo de respuesta en 0
+
+int calcularTiempoRespuesta(t_esi* esi) {
+	return tiempoTotalEjecucion - esi->instanteLlegadaAListos;
+
+}
+
+
 
 //se corre cuando hay que elegir un nuevo ESI a ejecutar
 //si es con desalojo, tambien se corre cuando entra un nuevo proceso a la lista

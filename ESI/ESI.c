@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 int main(int argn, char *argv[]) {
+
 	cargarConfiguracion();
 	inicarConexiones();
 
@@ -28,12 +29,15 @@ void inicarConexiones() {
 			configuracion->puertoPlanificador, logESI);
 
 	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
+	tSolicitudESI* solicitud2 = malloc(sizeof(tSolicitudESI));
+
 	solicitud->mensaje = malloc(100);
 	strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
 	tPaquete pkgHandshake;
 	pkgHandshake.type = E_HANDSHAKE;
 	tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));
 	tRespuestaPlanificador *respuestaCoordinador = malloc(sizeof(tRespuestaPlanificador));
+
 
 
 	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
@@ -44,7 +48,7 @@ void inicarConexiones() {
 			"Se envia solicitud de ejecucion");
 	printf("Se envian %d bytes\n", bytesEnviados);
 
-	//Manejo los mensajes del Planificador o del Coordinador
+	//Recibo respuesta del Planificador
 	char * sPayloadRespuestaHand = malloc(100);
 
 	tMensaje tipoMensaje;
@@ -53,24 +57,24 @@ void inicarConexiones() {
 			&sPayloadRespuestaHand, logESI, "Hand Respuesta");
 	printf("RECIBIDOS:%d\n", bytesRecibidos);
 
-	switch (tipoMensaje) {
-
-	case P_HANDSHAKE:
-
-		respuesta->mensaje = malloc(10);
+		respuesta->mensaje = malloc(100);
 		char encabezado_mensaje;
 
 		deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
 				respuesta->mensaje);
 		printf("RESPUESTA: %s \n", respuesta->mensaje);
 
+		if(strcmp(respuesta->mensaje,"OK")==0){
+			//Abrir el script y comenzar a ejecutar sentencias
+			puts("EJECUTANDO...");
+			Delay(10);
+
+
+
 		//Conexion al Coordinador
 		int puertoConexion2 = configuracion->puertoCoordinador;
-		int bytesEnviados;
-		int socketServidor2 = connectToServer("127.0.0.1", puertoConexion2,
-				logESI);
+		int socketServidor2 = connectToServer("127.0.0.1", puertoConexion2,logESI);
 
-		tSolicitudESI* solicitud2 = malloc(sizeof(tSolicitudESI));
 		solicitud2->mensaje = malloc(100);
 		strcpy(solicitud2->mensaje, "HOLA SOY ESI!!!");
 		tPaquete pkgHandshake2;
@@ -80,18 +84,18 @@ void inicarConexiones() {
 				pkgHandshake2.type, solicitud2->mensaje);
 
 		puts("Se envia solicitud de ejecucion al Coordinador");
-		bytesEnviados = enviarPaquete(socketServidor2, &pkgHandshake2, logESI,
-				"Se envia solicitud de ejecucion");
+		bytesEnviados = enviarPaquete(socketServidor2, &pkgHandshake2, logESI,"Se envia solicitud de ejecucion");
 		printf("Se envian %d bytes\n", bytesEnviados);
+
 
 		//RECIBIR RESPUESTA DEL COORDINADOR
 		tMensaje tipoMensajeCoordinador;
 		char * sPayloadRespuestaHandC = malloc(100);
 
-		int bytesRecibidos = recibirPaquete(socketServidor2, &tipoMensajeCoordinador,
+		bytesRecibidos = recibirPaquete(socketServidor2, &tipoMensajeCoordinador,
 				&sPayloadRespuestaHandC, logESI, "Hand Respuesta Coordinador");
 		printf("RECIBIDOS:%d\n", bytesRecibidos);
-		respuestaCoordinador->mensaje = malloc(10);
+		respuestaCoordinador->mensaje = malloc(100);
 		char encabezadoMensaje;
 
 
@@ -100,11 +104,17 @@ void inicarConexiones() {
 
 		printf("RESPUESTA COORDINADOR: %s \n", respuestaCoordinador->mensaje);
 
-		break;
 
-	}
 
-	finalizar(0);
+		}
+	//finalizar(0);
+}
+
+void Delay(int iSegundos) {
+	struct timeval tv;
+	tv.tv_sec = iSegundos;
+	tv.tv_usec = 0;
+	select(1, NULL, NULL, NULL, &tv);
 }
 
 
