@@ -2,7 +2,7 @@
 
 int serializar(void* buffer, const char* format, ...){
 	va_list objs;
-	int i = 0, buffIndex = 0, sizeObj, aux;
+	int i = 0, buffIndex = 0, sizeObj;
 	va_start(objs, format);
 	void * pObj;
 
@@ -48,7 +48,7 @@ int serializar(void* buffer, const char* format, ...){
 
 int deserializar(void* buffer, const char* format, ...){
 	va_list objs;
-	int i = 0, buffIndex = 0, sizeObj, aux;
+	int i = 0, buffIndex = 0, sizeObj;
 	va_start(objs, format);
 	void * obj;
 

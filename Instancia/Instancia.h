@@ -33,5 +33,6 @@ void iniciarLogger();
 int cargarConfiguracion(char *);
 void finalizar(int);
 int configValida(t_config *);
+void capturaSenial(int);
 
 #endif /* INSTANCIA_H_ */

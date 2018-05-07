@@ -28,17 +28,3 @@ void retardoMilisegundos(int iMilisegundos) {
 	tv.tv_usec = iMilisegundos * 1000;
 	select(1,NULL,NULL,NULL,&tv);
 }
-
-void capturaSenial(int iSignal) {
-	switch(iSignal) {
-		case SIGINT:
-		break;
-		case SIGTERM:
-		break;
-		case SIGCHLD:
-			signal(SIGCHLD,SIG_IGN);
-			while(waitpid(0,NULL,WNOHANG)>0)
-			signal(SIGCHLD,capturaSenial);
-		break;
-	}
-}

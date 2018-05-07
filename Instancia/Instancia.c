@@ -157,3 +157,17 @@ int configValida(t_config* fd_configuracion) {
 		&& config_has_property(fd_configuracion, "NOMBRE_INSTANCIA")
 		&& config_has_property(fd_configuracion, "INTERVALO_DUMP"));
 }
+
+void capturaSenial(int iSignal) {
+	switch(iSignal) {
+		case SIGINT:
+		break;
+		case SIGTERM:
+		break;
+		case SIGCHLD:
+			signal(SIGCHLD,SIG_IGN);
+			while(waitpid(0,NULL,WNOHANG)>0)
+			signal(SIGCHLD,capturaSenial);
+		break;
+	}
+}
