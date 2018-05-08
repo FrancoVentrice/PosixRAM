@@ -43,7 +43,6 @@ typedef struct {
 	float estimacionAnterior;//necesario para SJF
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
-	int tEspera;
 	int responseRatio;
 	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
@@ -53,7 +52,7 @@ t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 pthread_t hiloConsola;
-tiempoTotalEjecucion;
+int tiempoTotalEjecucion;
 float alfa;
 
 
@@ -74,6 +73,7 @@ void bloquearESIConClave(t_esi *, char *);
 void esiTomaClave(t_esi *, char *);
 void bloquearClaveSola(char *);
 void liberarClave(char *);
+void planificar();
 
 //metodos de ESI
 t_esi *esiNew();
@@ -84,6 +84,10 @@ bool evaluarBloqueoDeClave(char *);
 void esiRemoverClaveTomada(t_esi *, char *);
 void clavesTomadasDestroyer(char *);
 void finalizarEsiEnEjecucion();
+
+//metodos de HRRN
+void estimarHRRN();
+int calcularTiempoRespuesta(t_esi *);
 
 //metodos de SJF
 void estimarSJF();

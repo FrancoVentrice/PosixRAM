@@ -183,26 +183,20 @@ void escucharESIs() {
 	}
 }
 
-void planificar(float alfa) {
-
-	switch (configuracion->algoritmoPlanificacion){
-
-	case 1:
+void planificar() {
+	switch (configuracion->algoritmoPlanificacion) {
+	case ALGORITMO_SJF_CD:
+	case ALGORITMO_SJF_SD:
 		estimarSJF();
 		break;
-
-	case 3:
+	case ALGORITMO_HRRN:
 		estimarHRRN();
 		break;
-
-
 	}
 }
 
-
-
 void estimarHRRN() {
-	t_esi* EsiHRRNMayor = malloc(sizeof(t_esi));
+	t_esi* EsiHRRNMayor;
 	alfa = (float) (configuracion->alfa) / (float) 100;
 
 	float RRMayor = 0;
@@ -235,14 +229,13 @@ void estimarHRRN() {
 		esiEnEjecucion = EsiHRRNMayor;
 		printf("EJECUTANDO:\n");
 		list_remove(colaDeListos, indexHRRNMayor);
-	} else
+	} else {
 		printf("La CPU se encuentra ocupada\n");
-
-} //Luego ponerlo en ejecucion y setearle de nuevo el tiempo de respuesta en 0
+	}
+}
 
 int calcularTiempoRespuesta(t_esi* esi) {
 	return tiempoTotalEjecucion - esi->instanteLlegadaAListos;
-
 }
 
 
@@ -270,10 +263,13 @@ void estimarSJF() {
 		t_esi *esi = list_get(colaDeListos, i);
 		//rafagaAnterior lo uso como flag para saber si la estimacion esta actualizada
 		if (esi->rafagaAnterior != 0) {
-		esi->estimacionAnterior = esi->estimacion;
 		esi->estimacion = alfa * esi->rafagaAnterior + (1 - alfa) * esi->estimacionAnterior;
 		//"actualizo" la estimacion seteando en 0 la rafaga anterior, total ya no la voy a usar mas
 		esi->rafagaAnterior = 0;
+		//seteo la nueva estimacion tambien a estimacionAnterior, ya que estimacion
+		//se va a ir decrementando con las ejecuciones, y estimacionAnterior queda estatica y
+		//me sirve para la proxima vez que tenga que estimar
+		esi->estimacionAnterior = esi->estimacion;
 		}
 		if (esi->estimacion < ESIMasCorto->estimacion) {
 			ESIMasCorto = esi;
@@ -349,6 +345,7 @@ void liberarClave(char *clave) {
 		t_esi *esi = dictionary_remove(diccionarioClavesTomadas, clave);
 		esiRemoverClaveTomada(esi, clave);
 	}
+	free(clave);
 }
 
 t_esi *esiNew() {
@@ -390,6 +387,10 @@ void clavesTomadasDestroyer(char *clave) {
 }
 
 void finalizarEsiEnEjecucion() {
+	while (esiEnEjecucion->clavesTomadas->elements_count > 0) {
+		char *clave = list_get(esiEnEjecucion->clavesTomadas, 0);
+		liberarClave(clave);
+	}
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
 }
