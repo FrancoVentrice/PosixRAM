@@ -3,8 +3,6 @@
  * TP-1C-2018-ReDistinto
  * (c) PosixRAM */
 
-#include <time.h>
-#include <sys/stat.h> // mkdir
 #include "Instancia.h"
 #include "..//shared/libgral.h"
 #include "..//shared/sockets.h"
@@ -41,7 +39,9 @@ int main(int argn, char *argv[]) {
 			return -1;
 	}
 
-	// TODO conectar con coordinador
+	// TODO conectar con coordinador. revisar errores y loguear.
+	configuracion->fdSocketCoordinador = connectToServer(configuracion->ipCoordinador,configuracion->puertoCoordinador, logger);
+
 
 	/* TODO
 	 * handshake coordinador
@@ -51,13 +51,20 @@ int main(int argn, char *argv[]) {
 
 	// TODO armar estructura de entradas
 
-	// TODO preparar proceso de Dump (configuraion->intervaloDump)
+	// iniciamos el timeout para el dump seteando una alarma
+	iniciarDumpTimeout(configuracion->intervaloDump);
 
 	// TODO while principal
-	int sigue=1;
-	while(sigue) {
-		sigue = 0;
-		retardoSegundos(15);
+	int sigue = 5;
+	while(sigue > 0) {
+		if (realizarDump) {
+			// TODO llamar a proceso dump
+			log_info(logger,"Ejecutando proceso de dump");
+			retardoSegundos(3);
+			log_info(logger,"Dump finalizado");
+			iniciarDumpTimeout(configuracion->intervaloDump);
+			sigue--;
+		}
 	}
 
 	finalizar(EXIT_SUCCESS);
@@ -70,6 +77,7 @@ void finalizar(int codigo) {
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
+	alarm(0);
 
 	// imprimo mensaje de salida
 	printf("\e[33m\n");
@@ -158,16 +166,30 @@ int configValida(t_config* fd_configuracion) {
 		&& config_has_property(fd_configuracion, "INTERVALO_DUMP"));
 }
 
+void iniciarDumpTimeout(unsigned int uiSegundos) {
+	realizarDump = 0;
+	signal(SIGALRM, capturaSenial);
+	alarm(uiSegundos);
+	log_info(logger,"Seteada alarma para Dump en %d segundos",uiSegundos);
+}
+
 void capturaSenial(int iSignal) {
 	switch(iSignal) {
 		case SIGINT:
+			// interrupción del teclado no se está tratando
 		break;
 		case SIGTERM:
+			// terminación del programa no se está tratando
 		break;
 		case SIGCHLD:
 			signal(SIGCHLD,SIG_IGN);
-			while(waitpid(0,NULL,WNOHANG)>0)
+			while(waitpid(WAIT_MYPGRP,NULL,WNOHANG)>0)
 			signal(SIGCHLD,capturaSenial);
+		break;
+		case SIGALRM:
+			signal(SIGALRM, SIG_IGN);
+			alarm(0);
+			realizarDump = 1;
 		break;
 	}
 }
