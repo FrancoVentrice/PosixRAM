@@ -66,7 +66,6 @@ int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	escucharESIs();
 	levantarConsola();
-
 	finalizar(0);
 }
 

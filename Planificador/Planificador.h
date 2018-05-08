@@ -13,6 +13,10 @@
 #define ALGORITMO_SJF_CD 1
 #define ALGORITMO_SJF_SD 2
 #define ALGORITMO_HRRN 3
+#define INSTRUCCION_BLOQUEAR 11
+#define INSTRUCCION_DESBLOQUEAR 12
+#define INSTRUCCION_TERMINAR 13
+#define INSTRUCCION_DEADLOCK 14
 
 typedef struct {
 	int puerto;
@@ -37,6 +41,12 @@ typedef struct{
 }tRespuesta;
 
 typedef struct {
+	int instruccion;
+	char * primerParametro;
+	char * segundoParametro;
+} t_instruccion_consola;
+
+typedef struct {
 	int id;
 	float estimacion; //se puede usar con los dos algoritmos
 	int rafagaAnterior; //necesario para SJF. Se suma uno cada vez que el ESI ejecuta correctamente una sentencia
@@ -52,8 +62,10 @@ t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 pthread_t hiloConsola;
+t_list * bufferConsola; //buffer de instrucciones a ejecutar cuando se complete una tarea atomica
 int tiempoTotalEjecucion;
 float alfa;
+bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
 
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion
@@ -102,5 +114,7 @@ void list(char *);
 void kill(char *);
 void status(char *);
 void deadlock();
+void instruccionDestroyer(t_instruccion_consola *);
+void newInstruccion(int , char *, char *);
 
 #endif /* PLANIFICADOR_H_ */

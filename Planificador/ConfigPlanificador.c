@@ -25,8 +25,10 @@ void bloquearClavesIniciales() {
 }
 
 int cargarConfiguracion() {
+	ejecutando = true;
 	logger = log_create("LogPlanificador", "Planificador", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
+	bufferConsola = list_create();
 	colaDeListos = list_create();
 	colaDeFinalizados = list_create();
 	diccionarioBloqueados = dictionary_create();
@@ -88,5 +90,6 @@ void limpiarConfiguracion() {
 	dictionary_destroy_and_destroy_elements(diccionarioClavesTomadas, esiDestroyer);
 	list_destroy_and_destroy_elements(colaDeListos, esiDestroyer);
 	list_destroy_and_destroy_elements(colaDeFinalizados, esiDestroyer);
+	list_destroy_and_destroy_elements(bufferConsola, instruccionDestroyer);
 	free(esiEnEjecucion);
 }

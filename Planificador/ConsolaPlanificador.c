@@ -39,22 +39,22 @@ char* obtenerSegundoParametro(char *comando) {
 }
 
 void pause() {
-	puts("\nlogica para pausar planificador\n");
+	ejecutando = false;
 }
 
 void play() {
-	puts("\nlogica para continuar planificacion\n");
+	ejecutando = true;
 }
 
 void lock(char *comando) {
 	char *clave = obtenerPrimerParametro(comando);
 	char *esi = obtenerSegundoParametro(comando);
-	printf("logica para bloquear esi %s en cola de clave %s", esi, clave);
+	newInstruccion(INSTRUCCION_BLOQUEAR, clave, esi);
 }
 
 void unlock(char *comando) {
 	char *esi = obtenerPrimerParametro(comando);
-	printf("\nlogica para desbloquear proceso ESI %s\n", esi);
+	newInstruccion(INSTRUCCION_DESBLOQUEAR, esi, NULL);
 }
 
 void list(char *comando) {
@@ -64,7 +64,7 @@ void list(char *comando) {
 
 void kill(char *comando) {
 	char *esi = obtenerPrimerParametro(comando);
-	printf("\nlogica para matar proceso %s\n", esi);
+	newInstruccion(INSTRUCCION_TERMINAR, esi, NULL);
 }
 
 void status(char *comando) {
@@ -73,5 +73,22 @@ void status(char *comando) {
 }
 
 void deadlock() {
-	puts("\nlogica para analizar deadlock\n");
+	newInstruccion(INSTRUCCION_DEADLOCK, NULL, NULL);
+}
+
+void instruccionDestroyer(t_instruccion_consola *instruccion) {
+	free(instruccion->primerParametro);
+	free(instruccion->segundoParametro);
+	free(instruccion);
+}
+
+void newInstruccion(int instruccion, char *primerParametro, char *segundoParametro) {
+	t_instruccion_consola *instruccionConsola = malloc(sizeof(t_instruccion_consola));
+	if (primerParametro) {
+		instruccionConsola->primerParametro = primerParametro;
+	}
+	if (segundoParametro) {
+		instruccionConsola->segundoParametro = segundoParametro;
+	}
+	list_add(bufferConsola, instruccion);
 }
