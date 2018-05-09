@@ -15,12 +15,16 @@ void atenderESI(int* iSocketComunicacion) {
 	puts("HANDSHAKE CON ESI");
 	t_esi* esiNuevo = malloc(sizeof(t_esi));
 
-	pthread_mutex_lock(&mutexESI);
-	list_add(colaDeListos, esiNuevo);
-	estimarHRRN();
-	pthread_mutex_unlock(&mutexESI);
+
 
 	if (esiEnEjecucion == NULL) { // SI NO HAY NINGUNO EJECUTANDO NOTIFICAR OK
+
+		//lo agrego a listos y planifico
+		pthread_mutex_lock(&mutexESI);
+		list_add(colaDeListos, esiNuevo);
+		planificar();
+		pthread_mutex_unlock(&mutexESI);
+
 		tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
 		respuestaEjecucion->mensaje = malloc(100);
 		strcpy(respuestaEjecucion->mensaje, "OK");
@@ -40,7 +44,10 @@ void atenderESI(int* iSocketComunicacion) {
 
 		printf("Se envian %d bytes\n", bytesEnviados);
 
-	} else {
+	} else {//Si no, lo agrego a listos solamente y espero a que se libere la CPU para replanificar
+		pthread_mutex_lock(&mutexESI);
+		list_add(colaDeListos, esiNuevo);
+		pthread_mutex_unlock(&mutexESI);
 		tRespuesta* respuestaRechazo = malloc(sizeof(tRespuesta));
 		respuestaRechazo->mensaje = malloc(100);
 		strcpy(respuestaRechazo->mensaje, "CPU OCUPADA");
@@ -105,7 +112,7 @@ void escucharESIs() {
 	FD_ZERO(&setSocketsOrquestador);
 
 	//Conexion al Coordinador
-	int socketCoordinador = connectToServer("127.0.0.1", puertoConexion,
+	int socketCoordinador = connectToServer(ipCoordinador, puertoConexion,
 			logger);
 	tSolicitudPlanificador* solicitudPlanificador = malloc(
 			sizeof(tSolicitudPlanificador));
