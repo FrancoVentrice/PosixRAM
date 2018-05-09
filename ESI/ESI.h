@@ -5,6 +5,8 @@
 #include <commons/log.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include "..//parsi/parser.h"
 
 typedef struct {
 	char *ipCoordinador;
@@ -43,5 +45,6 @@ void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
 void iniciarConexiones();
+int comenzarParseo (int argc, char **argv);
 
 #endif /* ESI_H_ */

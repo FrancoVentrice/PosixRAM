@@ -16,7 +16,7 @@ int main(int argn, char *argv[]) {
 
 	cargarConfiguracion();
 	iniciarConexiones();
-
+	comenzarParseo();
 }
 
 void finalizar(int codigo) {
@@ -102,4 +102,63 @@ void iniciarConexiones() {
 		// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir esto.
 	}
 	//finalizar(0);
+}
+
+int comenzarParseo (int argc, char **argv){
+
+	FILE * archivo;
+	char * linea = NULL;
+	size_t largo = 0;
+	ssize_t lineaLeida;
+
+	archivo = fopen(argv[1], "r");
+
+	if (archivo == NULL){
+
+		perror("Error al abrir el archivo: ");
+		exit(EXIT_FAILURE);
+	}
+
+	while ((lineaLeida = getline(&linea, &largo, archivo)) != -1) {
+	        t_esi_operacion lineaParseada = parse(linea);
+
+	        if(lineaParseada.valido){
+
+	            switch(lineaParseada.keyword){
+
+	                case GET:
+	                //Cada vez que haya un GET, no hay malloc, solo modifica el estado de bloqueo/desbloqueo
+	                //desbloqueo de la tabla que debe tener el planificador. No se accede a ninguna instancia
+	                //Cuando un ESI usa un GET sobre una clave, ningún ESI va a poder hacer GET de esa clave
+	                //sin que el anterior ESI haga un STORE.
+	                    printf("GET\tclave: <%s>\n", lineaParseada.argumentos.GET.clave);
+	                    break;
+	                case SET:
+	                //Unica operación que altera valor de una instancia, previamente
+	                //tiene que haber un GET que se apropie de una clave para ser alterada
+	                    printf("SET\tclave: <%s>\tvalor: <%s>\n", lineaParseada.argumentos.SET.clave, lineaParseada.argumentos.SET.valor);
+	                    break;
+	                case STORE:
+	                //Operación que libera una clave tomada. Trabaja con FIFO, libera de la
+	                //tabla que tiene el planificador LA PRIMER CLAVE TOMADA.
+	                    printf("STORE\tclave: <%s>\n", lineaParseada.argumentos.STORE.clave);
+	                    break;
+	                default:
+	                    fprintf(stderr, "No pude interpretar <%s>\n", linea);
+	                    exit(EXIT_FAILURE);
+	            }
+
+	            destruir_operacion(lineaParseada);
+	        } else {
+	            fprintf(stderr, "La linea <%s> no es valida\n", linea);
+	            exit(EXIT_FAILURE);
+	        }
+	    }
+
+	    fclose(archivo);
+	    if (linea)
+	        free(linea);
+
+	    return EXIT_SUCCESS;
+	}
 }

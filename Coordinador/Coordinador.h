@@ -5,6 +5,7 @@
 #include <commons/config.h>
 #include <commons/log.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define ALGORITMO_LSU 1
