@@ -47,12 +47,13 @@ typedef struct {
 } t_instruccion_consola;
 
 typedef struct {
-	int id;
+	char * id;
 	float estimacion; //se puede usar con los dos algoritmos
 	int rafagaAnterior; //necesario para SJF. Se suma uno cada vez que el ESI ejecuta correctamente una sentencia
 	float estimacionAnterior;//necesario para SJF
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
+	bool bloqueadoPorConsola; //solo sirve para saber si se puede desbloquear por consola
 	int responseRatio;
 	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
@@ -86,6 +87,8 @@ void esiTomaClave(t_esi *, char *);
 void bloquearClaveSola(char *);
 void liberarClave(char *);
 void planificar();
+void ejecutarComandosConsola();
+void bloquearEsiPorConsola(char *, char *);
 
 //metodos de ESI
 t_esi *esiNew();
@@ -94,6 +97,7 @@ void esiListDestroyer(t_list *);
 bool evaluarBloqueoDeEsi(t_esi *);
 bool evaluarBloqueoDeClave(char *);
 void esiRemoverClaveTomada(t_esi *, char *);
+t_esi *buscarEsiNoBloqueadoPorId(char *);
 void clavesTomadasDestroyer(char *);
 void finalizarEsiEnEjecucion();
 

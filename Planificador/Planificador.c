@@ -355,6 +355,7 @@ t_esi *esiNew() {
 
 void esiDestroyer(t_esi *esi) {
 	list_destroy_and_destroy_elements(esi->clavesTomadas, clavesTomadasDestroyer);
+	free(esi->id);
 	free(esi);
 }
 
@@ -381,6 +382,31 @@ void esiRemoverClaveTomada(t_esi *esi, char *clave) {
 	}
 }
 
+t_esi * buscarEsiNoBloqueadoPorId(char *id) {
+	int i;
+	for (i = 0; i < colaDeListos->elements_count; i++) {
+		t_esi * esi = list_get(colaDeListos, i);
+		if (strcmp(esi->id, id) == 0) {
+			if (esi->bloqueado) {
+				log_info(logger, "\nEl ESI buscado está bloqueado\n");
+				return NULL;
+			} else {
+				return esi;
+			}
+		}
+	}
+	if (strcmp(esiEnEjecucion->id, id) == 0) {
+		if (esiEnEjecucion->bloqueado) {
+			log_info(logger, "\nEl ESI buscado está bloqueado\n");
+			return NULL;
+		} else {
+			return esiEnEjecucion;
+		}
+	}
+	log_info(logger, "\nEl ESI buscado no existe o está bloqueado\n");
+	return NULL;
+}
+
 void clavesTomadasDestroyer(char *clave) {
 	free(clave);
 }
@@ -392,4 +418,32 @@ void finalizarEsiEnEjecucion() {
 	}
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
+}
+
+void ejecutarComandosConsola() {
+	int i;
+	while (bufferConsola->elements_count > 0) {
+		t_instruccion_consola *instruccion = list_get(bufferConsola, 0);
+		switch (instruccion->instruccion) {
+		case INSTRUCCION_BLOQUEAR:
+			bloquearEsiPorConsola(instruccion->primerParametro, instruccion->segundoParametro);
+			break;
+		case INSTRUCCION_DESBLOQUEAR:
+			break;
+		case INSTRUCCION_TERMINAR:
+			break;
+		case INSTRUCCION_DEADLOCK:
+			break;
+		}
+		list_remove_and_destroy_element(bufferConsola, 0, instruccionDestroyer);
+	}
+}
+
+void bloquearEsiPorConsola(char *clave, char *id) {
+	t_esi * esi = buscarEsiNoBloqueadoPorId(id);
+	if (esi) {
+		bloquearESIConClave(esi, clave);
+		//To Do: ver si cuando se libera la clave se libera al ESI
+		esi->bloqueadoPorConsola = true;
+	}
 }
