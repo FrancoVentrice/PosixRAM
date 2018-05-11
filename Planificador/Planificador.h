@@ -51,9 +51,8 @@ typedef struct {
 	float estimacion; //se puede usar con los dos algoritmos
 	int rafagaAnterior; //necesario para SJF. Se suma uno cada vez que el ESI ejecuta correctamente una sentencia
 	float estimacionAnterior;//necesario para SJF
-	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
+	int *socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
-	bool bloqueadoPorConsola; //solo sirve para saber si se puede desbloquear por consola
 	int responseRatio;
 	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
@@ -67,6 +66,8 @@ t_list * bufferConsola; //buffer de instrucciones a ejecutar cuando se complete 
 int tiempoTotalEjecucion;
 float alfa;
 bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
+bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
+pthread_mutex_t mutexColaDeListos;
 
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion

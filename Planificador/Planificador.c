@@ -5,7 +5,6 @@
 
 #include "Planificador.h"
 
-pthread_mutex_t mutexESI;
 void atenderESI(int* iSocketComunicacion) {
 
 	//tArgs* my_data=malloc(sizeof(tArgs));
@@ -13,17 +12,12 @@ void atenderESI(int* iSocketComunicacion) {
 
 	//my_data = (tArgs*) argumentos;
 	puts("HANDSHAKE CON ESI");
-	t_esi* esiNuevo = malloc(sizeof(t_esi));
-
-
+	t_esi* esiNuevo = esiNew(iSocketComunicacion);
 
 	if (esiEnEjecucion == NULL) { // SI NO HAY NINGUNO EJECUTANDO NOTIFICAR OK
 
 		//lo agrego a listos y planifico
-		pthread_mutex_lock(&mutexESI);
-		list_add(colaDeListos, esiNuevo);
-		planificar();
-		pthread_mutex_unlock(&mutexESI);
+		agregarEsiAColaDeListos(esiNuevo);
 
 		tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
 		respuestaEjecucion->mensaje = malloc(100);
@@ -45,9 +39,7 @@ void atenderESI(int* iSocketComunicacion) {
 		printf("Se envian %d bytes\n", bytesEnviados);
 
 	} else {//Si no, lo agrego a listos solamente y espero a que se libere la CPU para replanificar
-		pthread_mutex_lock(&mutexESI);
-		list_add(colaDeListos, esiNuevo);
-		pthread_mutex_unlock(&mutexESI);
+		agregarEsiAColaDeListos(esiNuevo);
 		tRespuesta* respuestaRechazo = malloc(sizeof(tRespuesta));
 		respuestaRechazo->mensaje = malloc(100);
 		strcpy(respuestaRechazo->mensaje, "CPU OCUPADA");
@@ -73,8 +65,23 @@ int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	escucharESIs();
 	levantarConsola();
-	finalizar(0);
 }
+
+//METODO PRINCIPAL
+//una vez que todas las conexiones estan hechas, y el planificador pueda empezar, se llama a este metodo
+//representa un ciclo en el cual atiende los comandos de consola, planifica (si es necesario) y avisa al ESI que ejecute
+//se llama cuando una sentencia del ESI fue ejecutada correctamente (mas alla del resultado)
+//se llama cuando la cola de listos vacia se popula
+void trabajar() {
+	if (ejecutando) {
+		ejecutarComandosConsola();
+		if (planificacionNecesaria) {
+			planificar();
+		}
+		//insertar metodo en el que se avisa al ESI que ejecute una linea
+	}
+}
+
 
 void finalizar(int codigo) {
 	pthread_join(hiloConsola, NULL);
@@ -90,6 +97,7 @@ void levantarConsola() {
 		finalizar(EXIT_FAILURE);
 	}
 }
+
 void escucharESIs() {
 	fd_set master;
 	fd_set read_fds;
@@ -168,18 +176,10 @@ void escucharESIs() {
 			switch (tipoMensaje) {
 			case E_HANDSHAKE:
 				//creo el hilo para el ESI que quiero atender
-
 				pthread_create(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
 				pthread_join(hiloESI,NULL);
-
-
 				//le envio el OK a ESI para ejecutar
-
-
-
-
 				tipoMensaje = DESCONEXION;
-
 				break;
 
 			case DESCONEXION:
@@ -189,12 +189,39 @@ void escucharESIs() {
 	}
 }
 
+void agregarEsiAColaDeListos(t_esi *esi) {
+	pthread_mutex_lock(&mutexColaDeListos);
+	bool previamenteVacia = colaDeListos->elements_count == 0;
+	list_add(colaDeListos, esi);
+	pthread_mutex_unlock(&mutexColaDeListos);
+	if (configuracion->algoritmoPlanificacion == ALGORITMO_SJF_CD) {
+		planificacionNecesaria = true;
+	}
+	//si no habia ESIs participando en el sistema, o los que habia estaban
+	//bloqueados, el planificador puede comenzar a trabajar de nuevo
+	if (previamenteVacia && !esiEnEjecucion) {
+		trabajar();
+	}
+}
+
 void planificar() {
+	//me hago una pasadita para volar los bloqueados
+	list_remove_by_condition(colaDeListos, evaluarBloqueoDeEsi);
+	if (esiEnEjecucion && esiEnEjecucion->bloqueado) {
+		esiEnEjecucion = NULL;
+	}
+
+	if (colaDeListos->elements_count == 0) {
+		return;
+	}
+
+	//estimo segun configuracion
 	switch (configuracion->algoritmoPlanificacion) {
 	case ALGORITMO_SJF_CD:
 	case ALGORITMO_SJF_SD:
 		estimarSJF();
 		break;
+
 	case ALGORITMO_HRRN:
 		estimarHRRN();
 		break;
@@ -244,23 +271,11 @@ int calcularTiempoRespuesta(t_esi* esi) {
 	return tiempoTotalEjecucion - esi->instanteLlegadaAListos;
 }
 
-
-
 //se corre cuando hay que elegir un nuevo ESI a ejecutar
 //si es con desalojo, tambien se corre cuando entra un nuevo proceso a la lista
 //setea la estimacion de todos los ESIs en la cola de listos
 //setea el proximo ESI a ejecutar
 void estimarSJF() {
-	//me hago una pasadita para volar los bloqueados
-	list_remove_by_condition(colaDeListos, evaluarBloqueoDeEsi);
-	if (esiEnEjecucion && esiEnEjecucion->bloqueado) {
-		esiEnEjecucion = NULL;
-	}
-
-	if (colaDeListos->elements_count == 0) {
-		return;
-	}
-
 	t_esi *ESIMasCorto = list_get(colaDeListos, 0);
 	int indexDelESIMasCorto = 0;
 	int i;
@@ -313,6 +328,9 @@ void bloquearESIConClave(t_esi *esi, char *clave) {
 }
 
 //Cuando ESI hace un GET exitosamente
+//Se valida que exista la cola de bloqueados correspondiente
+//Se agrega/modifica el ESI que la tomo
+//Se agrega la clave entre las tomadas del ESI
 void esiTomaClave(t_esi *esi, char *clave) {
 	if (!dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *nuevaCola = list_create();
@@ -338,14 +356,14 @@ void bloquearClaveSola(char *clave) {
 void liberarClave(char *clave) {
 	if (dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
-		int i;
-		for (i = 0; i < bloqueados->elements_count; i++) {
-			t_esi *esi = list_get(bloqueados, i);
+		if (bloqueados->elements_count > 0) {
+			t_esi *esi = list_remove(bloqueados, 0);
 			esi->bloqueado = false;
 			list_add(colaDeListos, esi);
 		}
-		dictionary_remove(diccionarioBloqueados, clave);
-		list_destroy(bloqueados);
+		if (bloqueados->elements_count == 0) {
+			dictionary_remove_and_destroy(diccionarioBloqueados, clave, list_destroy);
+		}
 	}
 	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
 		t_esi *esi = dictionary_remove(diccionarioClavesTomadas, clave);
@@ -354,9 +372,11 @@ void liberarClave(char *clave) {
 	free(clave);
 }
 
-t_esi *esiNew() {
+t_esi *esiNew(int* socket) {
 	t_esi *esi = malloc(sizeof(t_esi));
 	esi->clavesTomadas = list_create();
+	esi->estimacion = configuracion->estimacionInicial;
+	esi->socket = socket;
 	return esi;
 }
 
@@ -425,6 +445,7 @@ void finalizarEsiEnEjecucion() {
 	}
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
+	planificacionNecesaria = true;
 }
 
 void ejecutarComandosConsola() {
@@ -450,7 +471,5 @@ void bloquearEsiPorConsola(char *clave, char *id) {
 	t_esi * esi = buscarEsiNoBloqueadoPorId(id);
 	if (esi) {
 		bloquearESIConClave(esi, clave);
-		//To Do: ver si cuando se libera la clave se libera al ESI
-		esi->bloqueadoPorConsola = true;
 	}
 }
