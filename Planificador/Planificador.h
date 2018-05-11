@@ -76,6 +76,7 @@ t_list * colaDeFinalizados; //lista de t_esi. es la cola de esis finalizados
 t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
 t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada. key: clave, value: esi que la tomo
 
+void trabajar();
 int cargarConfiguracion();
 int configValida(t_config *);
 void limpiarConfiguracion();
@@ -83,11 +84,13 @@ void finalizar(int);
 void levantarConsola();
 void consola();
 void escucharESIs();
+void agregarEsiAColaDeListos(t_esi *);
+void planificar();
 void bloquearESIConClave(t_esi *, char *);
 void esiTomaClave(t_esi *, char *);
 void bloquearClaveSola(char *);
 void liberarClave(char *);
-void planificar();
+void liberarPrimerProcesoBloqueado(char *);
 void ejecutarComandosConsola();
 void bloquearEsiPorConsola(char *, char *);
 

@@ -98,6 +98,7 @@ void levantarConsola() {
 	}
 }
 
+
 void escucharESIs() {
 	fd_set master;
 	fd_set read_fds;
@@ -354,6 +355,15 @@ void bloquearClaveSola(char *clave) {
 }
 
 void liberarClave(char *clave) {
+	liberarPrimerProcesoBloqueado(clave);
+	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
+		t_esi *esi = dictionary_remove(diccionarioClavesTomadas, clave);
+		esiRemoverClaveTomada(esi, clave);
+	}
+	free(clave);
+}
+
+void liberarPrimerProcesoBloqueado(char *clave) {
 	if (dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
 		if (bloqueados->elements_count > 0) {
@@ -365,11 +375,6 @@ void liberarClave(char *clave) {
 			dictionary_remove_and_destroy(diccionarioBloqueados, clave, list_destroy);
 		}
 	}
-	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
-		t_esi *esi = dictionary_remove(diccionarioClavesTomadas, clave);
-		esiRemoverClaveTomada(esi, clave);
-	}
-	free(clave);
 }
 
 t_esi *esiNew(int* socket) {
@@ -449,7 +454,6 @@ void finalizarEsiEnEjecucion() {
 }
 
 void ejecutarComandosConsola() {
-	int i;
 	while (bufferConsola->elements_count > 0) {
 		t_instruccion_consola *instruccion = list_get(bufferConsola, 0);
 		switch (instruccion->instruccion) {
@@ -457,6 +461,7 @@ void ejecutarComandosConsola() {
 			bloquearEsiPorConsola(instruccion->primerParametro, instruccion->segundoParametro);
 			break;
 		case INSTRUCCION_DESBLOQUEAR:
+			liberarPrimerProcesoBloqueado(instruccion->primerParametro);
 			break;
 		case INSTRUCCION_TERMINAR:
 			break;

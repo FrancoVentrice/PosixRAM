@@ -53,8 +53,8 @@ void lock(char *comando) {
 }
 
 void unlock(char *comando) {
-	char *esi = obtenerPrimerParametro(comando);
-	newInstruccion(INSTRUCCION_DESBLOQUEAR, esi, NULL);
+	char *clave = obtenerPrimerParametro(comando);
+	newInstruccion(INSTRUCCION_DESBLOQUEAR, clave, NULL);
 }
 
 void list(char *comando) {
