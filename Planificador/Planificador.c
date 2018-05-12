@@ -471,6 +471,7 @@ void ejecutarComandosConsola() {
 			abortarEsiPorId(instruccion->primerParametro);
 			break;
 		case INSTRUCCION_DEADLOCK:
+			analizarDeadlock();
 			break;
 		}
 		list_remove_and_destroy_element(bufferConsola, 0, instruccionDestroyer);
@@ -524,4 +525,50 @@ int getIndexDeEsi(t_list *lista, t_esi *esi) {
 		}
 	}
 	return -1;
+}
+
+void analizarDeadlock() {
+	//esta funcion hace el analisis del deadlock por una entrada en el diccionario de bloqueados
+	//se usa con la funcion de iteracion de diccionario sobre el diccionario de bloqueados
+	void analizarDiccionarioBloqueados(char *clave, t_list *bloqueados) {
+		//esta lista se va guardando los implicados en el posible deadlock
+		t_list * empernados = list_create();
+		if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
+			t_esi *tomadorDeClave = dictionary_get(diccionarioClavesTomadas, clave);
+			//el deadlock va a ser posible si el tomador de la clave esta bloqueado (y la clave esta tomada por un esi)
+			if (tomadorDeClave && tomadorDeClave->bloqueado) {
+				//si no lo tengo en la lista de empernados, es porque no llegue a una dependencia circular
+				if (getIndexDeEsi(empernados, tomadorDeClave) < 0) {
+					list_add(empernados, tomadorDeClave);
+					char *claveQueLoTieneBloqueado;
+					//nombre feo si los hay, pero descriptivo
+					void buscarClaveQueLoTieneBloqueadoAlEsi(char *clave, t_list *bloqueados) {
+						if (getIndexDeEsi(bloqueados, tomadorDeClave) >= 0) {
+							claveQueLoTieneBloqueado = clave;
+						}
+					}
+					dictionary_iterator(diccionarioBloqueados, buscarClaveQueLoTieneBloqueadoAlEsi);
+					if (claveQueLoTieneBloqueado) {
+					analizarDiccionarioBloqueados(claveQueLoTieneBloqueado, dictionary_get(diccionarioBloqueados, claveQueLoTieneBloqueado));
+					}
+				} else  {
+					//llegue a una dependencia circular! todos los empernados son los participantes de esta barbarie
+					log_error(logger, "\nDEADLOCK ENCONTRADO\n");
+					log_info(logger, "\nLos ESIs implicados son los siguientes:");
+					int i;
+					for (i = 0; i < empernados->elements_count; i++) {
+						t_esi *empernado = list_get(empernados, i);
+						log_info(logger, "\n Id: %s con claves: ", empernado->id);
+						int j;
+						for (j = 0; j < empernado->clavesTomadas->elements_count; j++) {
+							log_info(logger, "\n%s ", list_get(empernado->clavesTomadas, j));
+						}
+					}
+				}
+			}
+		}
+		list_destroy(empernados);
+	}
+	//con esta iteracion analizo todas las claves del diccionario de bloqueados
+	dictionary_iterator(diccionarioBloqueados, analizarDiccionarioBloqueados);
 }

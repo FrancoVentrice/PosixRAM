@@ -96,6 +96,7 @@ void bloquearEsiPorConsola(char *, char *);
 void abortarEsiPorId(char *);
 t_esi * encontrarEsiPorId(t_list *, char *);
 int getIndexDeEsi(t_list *, t_esi *);
+void analizarDeadlock();
 
 //metodos de ESI
 void liberarClavesDeEsi(t_esi *);
