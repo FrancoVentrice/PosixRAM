@@ -93,8 +93,12 @@ void liberarClave(char *);
 void liberarPrimerProcesoBloqueado(char *);
 void ejecutarComandosConsola();
 void bloquearEsiPorConsola(char *, char *);
+void abortarEsiPorId(char *);
+t_esi * encontrarEsiPorId(t_list *, char *);
+int getIndexDeEsi(t_list *, t_esi *);
 
 //metodos de ESI
+void liberarClavesDeEsi(t_esi *);
 t_esi *esiNew();
 void esiDestroyer(t_esi *);
 void esiListDestroyer(t_list *);

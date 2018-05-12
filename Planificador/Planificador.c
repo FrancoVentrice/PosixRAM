@@ -363,6 +363,13 @@ void liberarClave(char *clave) {
 	free(clave);
 }
 
+void liberarClavesDeEsi(t_esi *esi) {
+	while (esi->clavesTomadas->elements_count > 0) {
+		char *clave = list_get(esi->clavesTomadas, 0);
+		liberarClave(clave);
+	}
+}
+
 void liberarPrimerProcesoBloqueado(char *clave) {
 	if (dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
@@ -444,10 +451,7 @@ void clavesTomadasDestroyer(char *clave) {
 }
 
 void finalizarEsiEnEjecucion() {
-	while (esiEnEjecucion->clavesTomadas->elements_count > 0) {
-		char *clave = list_get(esiEnEjecucion->clavesTomadas, 0);
-		liberarClave(clave);
-	}
+	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
 	planificacionNecesaria = true;
@@ -464,6 +468,7 @@ void ejecutarComandosConsola() {
 			liberarPrimerProcesoBloqueado(instruccion->primerParametro);
 			break;
 		case INSTRUCCION_TERMINAR:
+			abortarEsiPorId(instruccion->primerParametro);
 			break;
 		case INSTRUCCION_DEADLOCK:
 			break;
@@ -477,4 +482,46 @@ void bloquearEsiPorConsola(char *clave, char *id) {
 	if (esi) {
 		bloquearESIConClave(esi, clave);
 	}
+}
+
+void abortarEsiPorId(char *id) {
+	t_esi *esi;
+	if (esi->id == esiEnEjecucion->id) {
+		liberarClavesDeEsi(esi);
+		esiDestroyer(esiEnEjecucion);
+		planificacionNecesaria = true;
+		return;
+	}
+	if (esi = encontrarEsiPorId(colaDeListos, id)) {
+		liberarClavesDeEsi(esi);
+		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
+		return;
+	}
+
+	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
+		if (esi = encontrarEsiPorId(bloqueados, id)) {
+			liberarClavesDeEsi(esi);
+			list_remove_and_destroy_element(bloqueados, getIndexDeEsi(bloqueados, esi), esiDestroyer);
+		}
+	}
+
+	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
+}
+
+t_esi * encontrarEsiPorId(t_list *lista, char *id) {
+	bool matcheaId(t_esi *esi) {
+		return strcmp(esi->id, id) == 0;
+	}
+	return list_find(lista, matcheaId);
+}
+
+int getIndexDeEsi(t_list *lista, t_esi *esi) {
+	int i;
+	for (i = 0; i < lista->elements_count; i++) {
+		t_esi *iesi = list_get(lista, i);
+		if (esi->id == iesi->id) {
+			return i;
+		}
+	}
+	return -1;
 }
