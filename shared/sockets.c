@@ -325,14 +325,14 @@ signed int connectToServer(char *ip_server, int puerto, t_log *logger)
 
 	// Pido socket
 	if ((iSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		log_error(logger, "socket: %s", strerror(errno));
-		return EXIT_FAILURE;
+		log_error(logger, "[socket] %s", strerror(errno));
+		return -1;
 	}
 
 	// Intento conectar
 	if (connect(iSocket, (struct sockaddr *) &their_addr, sizeof their_addr) == -1) {
-		log_error(logger, "connect: %s", strerror(errno));
-		return EXIT_FAILURE;
+		log_error(logger, "[connect] %s", strerror(errno));
+		return -1;
 	}
 
 	//log_trace(logger, "Se realiza conexion con socket %d", iSocket); /* ROMPE ESTA INSTRUCCION */

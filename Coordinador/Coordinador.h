@@ -4,6 +4,7 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +30,6 @@ typedef struct{
 } tRespuesta;
 
 typedef struct {
-	int id;
 	char *nombre;
 	int socket;
 	int cantidadDeEntradasDisponibles;
@@ -58,7 +58,7 @@ void elegirInstanciaKE();
 
 //instancia
 void instanciaDestroyer(t_instancia *);
-t_instancia * instanciaNew();
-void nuevaInstanciaConectada(int id, int socket);
+int existeInstancia(char *);
+void nuevaInstanciaConectada(char *, int);
 
 #endif /* COORDINADOR_H_ */

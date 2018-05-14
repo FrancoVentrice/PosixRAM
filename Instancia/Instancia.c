@@ -4,10 +4,20 @@
  * (c) PosixRAM */
 
 #include "Instancia.h"
-#include "..//shared/libgral.h"
-#include "..//shared/sockets.h"
 
-int main(int argn, char *argv[]) {
+int main(int argc, char *argv[]) {
+	int iFdmax = 0;
+	int iBytesLeidos;
+	fd_set master;
+	fd_set read_fds;
+	char letra = 45;
+
+	// controlar argumentos de entrada
+	if (procesarLineaDeComandos(argc, argv) < 0) {
+		printf("\nParámetros incorrectos.\nEjecute \033[1m\033[37m %s --help \033[0m para obtener más información.\n\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+
 	// preparando proceso
 	memset(czNomProc, 0, 20);
 	strcpy(czNomProc,"InstanciaPosixRAM");
@@ -21,67 +31,137 @@ int main(int argn, char *argv[]) {
 	iniciarLogger();
 	log_info(logger,"Iniciando Instancia PosixRAM para ReDistinto");
 
-	// se chequean los argumentos para levantar la configuración
-	if(argn==2) {
-		// un argumento, debería ser el nombre del archivo de configuración
-		if(!cargarConfiguracion(argv[1]))
-			return -1;
-	}
-	else if(argn==7) {
-		/* 6 argumentos, se podría levantar una instancia sin archivo, con los datos por línea de comandos
-		 TODO completar esta forma de ejecutarse si se considera necesario */
-	} else {
-		/* argn==1 (sin parámetros)
-		   argn!=2 && argn!=7 (cualquier otra variante)
-		 se carga configuración desde archivo default */
-		//cargarConfiguracion(DEFAULT_CONFIG_FILE);
-		if(!cargarConfiguracion("Instancia.conf"))
-			return -1;
-	}
+	if(!cargarConfiguracion())
+		finalizar(EXIT_FAILURE);
 
-	// TODO conectar con coordinador. revisar errores y loguear.
-	configuracion->fdSocketCoordinador = connectToServer(configuracion->ipCoordinador,configuracion->puertoCoordinador, logger);
-
-
-	/* TODO
-	 * handshake coordinador
-	 * enviar nombre para que valide unicidad
-	 * si está ok recibe cantidad de entradas y tamaño
-	 */
+	if(!conectarACoordinador())
+		finalizar(EXIT_FAILURE);
 
 	// TODO armar estructura de entradas
 
-	// iniciamos el timeout para el dump seteando una alarma
-	iniciarDumpTimeout(configuracion->intervaloDump);
+	// TODO preparar punto de montaje
 
-	// TODO while principal
-	int sigue = 5;
-	while(sigue > 0) {
-		if (realizarDump) {
-			// TODO llamar a proceso dump
-			log_info(logger,"Ejecutando proceso de dump");
-			retardoSegundos(3);
-			log_info(logger,"Dump finalizado");
-			iniciarDumpTimeout(configuracion->intervaloDump);
-			sigue--;
+	// iniciamos el timeout para el vuelco seteando una alarma
+	iniciarDumpTimeout();
+
+	/* se limpian la estructuras */
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
+
+	/* se agrega el socket de teclado */
+	FD_SET(STDIN,&master);
+
+	/* se agrega el socket de escucha para habitacion*/
+	FD_SET(configuracion->fdSocketCoordinador,&master);
+	if(iFdmax < configuracion->fdSocketCoordinador)
+		iFdmax = configuracion->fdSocketCoordinador;
+
+	// while principal
+	int sigue = 1;
+	while(sigue) {
+		read_fds = master;
+
+		if(select(iFdmax+1,&read_fds,NULL,NULL,NULL)==-1)
+			log_error(logger,"Falló función select().");
+
+		if(FD_ISSET(configuracion->fdSocketCoordinador, &read_fds)) {
+			// TODO leer el socket
+			// iBytesLeidos = LeerSocket();
+			if (iBytesLeidos == 0) { // coordinador caído
+				FD_CLR(configuracion->fdSocketCoordinador, &master);
+				sigue = 0;
+				fflush(stdin);
+				fflush(stdout);
+				log_warning(logger,"El coordinador dejó de responder.");
+			}
 		}
+
+		/* si tengo algo en el teclado */
+		if (FD_ISSET(STDIN,&read_fds)) {
+			scanf("%c", &letra);
+			letra = toupper(letra);
+
+			switch (letra) {
+				case 'D':
+					// forzar dump
+				break;
+				case 'Q': // quit (salir)
+					sigue = 0;
+				break;
+				default:
+					letra = '-';
+				break;
+			}
+		}
+
+		if (realizarDump) {
+			volcarEntradas();
+		}
+		letra = '-';
 	}
 
 	finalizar(EXIT_SUCCESS);
 }
 
+/* procesa los parámetros de línea de comandos */
+int procesarLineaDeComandos (int argc, char *argv[]) {
+
+	parametrosEntrada = malloc(sizeof(t_commandLineParameters));
+	parametrosEntrada->debugMode = 0;
+	parametrosEntrada->logPantalla = 0;
+
+	parametrosEntrada->archivoConf = (char *)malloc(15);
+	memset(parametrosEntrada->archivoConf, 0, 15);
+	strcpy(parametrosEntrada->archivoConf,"Instancia.conf");
+
+	for( int i = 0; i < argc; ++i ) {
+		if (strcmp(argv[i], "--e") == 0) {
+			// easter egg (error forzado)
+			free(parametrosEntrada->archivoConf);
+			free(parametrosEntrada);
+			return -1;
+		}
+		if (strcmp(argv[i], "--help") == 0) {
+			printf("\nEjecución\n");
+			printf("    ./Instancia [OPTION]\n");
+			printf("Parámetros\n");
+			printf("\033[1m\033[37m --help \033[0m Muestra esta ayuda.\n");
+			printf("\033[1m\033[37m --d \033[0m Modo debug, setea el log con nivel LOG_LEVEL_TRACE.\n");
+			printf("\033[1m\033[37m --l \033[0m Indica que el log se debe mostrar en pantalla. Desactiva el modo gráfico.\n");
+			printf("\033[1m\033[37m --conf=FILE \033[0m Permite indicar un archivo de configuración. Ej.: ./Instancia --conf=InstUno.conf.\n\n");
+			free(parametrosEntrada->archivoConf);
+			free(parametrosEntrada);
+			exit(0);
+		}
+		if (strcmp(argv[i], "--d") == 0)
+			parametrosEntrada->debugMode = 1;
+		if (strcmp(argv[i], "--l") == 0) {
+			parametrosEntrada->logPantalla = 1;
+		}
+		if (string_starts_with(argv[i], "--conf=")) {
+			free(parametrosEntrada->archivoConf);
+			parametrosEntrada->archivoConf = (char *)malloc(string_length(argv[i]));
+			memset(parametrosEntrada->archivoConf, 0, string_length(argv[i]));
+			strcpy(parametrosEntrada->archivoConf,string_substring_from(argv[i],7));
+		}
+	}
+
+	return 1;
+}
+
 /* termina el proceso correctamente liberando recursos */
 void finalizar(int codigo) {
+	alarm(0);
 	desconectarseDe(configuracion->fdSocketCoordinador);
 	log_info(logger,"Instancia %s finalizada" , configuracion->nombreDeInstancia);
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
-	alarm(0);
+	free(parametrosEntrada->archivoConf);
+	free(parametrosEntrada);
 
 	// imprimo mensaje de salida
 	printf("\e[33m\n");
-	centrarTexto("Instancia finalizada");
 	centrarTexto("PosixRAM (c) 2018");
 	printf("\e[0m\n");
 
@@ -104,7 +184,13 @@ void iniciarLogger(){
 	memset(nombreArchivoLog,0,50);
 	sprintf(nombreArchivoLog, "./logs/%s%d_%s.LOG", czNomProc, process_getpid(), czFecha);
 
-	logger = log_create(nombreArchivoLog, czNomProc, true, LOG_LEVEL_INFO);
+	if (parametrosEntrada->debugMode) {
+		logger = log_create(nombreArchivoLog, czNomProc, parametrosEntrada->logPantalla, LOG_LEVEL_TRACE);
+		log_debug(logger,"Modo debug activado.");
+	}
+	else
+		logger = log_create(nombreArchivoLog, czNomProc, parametrosEntrada->logPantalla, LOG_LEVEL_INFO);
+
 	/*
 	log_trace(logger,"Nivel trace %d",LOG_LEVEL_TRACE);
 	log_debug(logger,"Nivel debug %d",LOG_LEVEL_DEBUG);
@@ -116,12 +202,12 @@ void iniciarLogger(){
 }
 
 /* carga el archivo de configuracion default */
-int cargarConfiguracion(char *configFilePath) {
-	log_info(logger,"Cargando archivo de configuración: %s", configFilePath);
+int cargarConfiguracion() {
+	log_info(logger,"Cargando archivo de configuración: %s", parametrosEntrada->archivoConf);
 
 	configuracion = malloc(sizeof(t_confInstancia));
 
-	fd_configuracion = config_create(configFilePath);
+	fd_configuracion = config_create(parametrosEntrada->archivoConf);
 	if (fd_configuracion == NULL || !configValida(fd_configuracion)) {
 		log_error(logger,"Archivo de configuración inválido.");
 		return 0;
@@ -166,13 +252,15 @@ int configValida(t_config* fd_configuracion) {
 		&& config_has_property(fd_configuracion, "INTERVALO_DUMP"));
 }
 
-void iniciarDumpTimeout(unsigned int uiSegundos) {
+/* timeout para disparar señal de dump */
+void iniciarDumpTimeout() {
 	realizarDump = 0;
 	signal(SIGALRM, capturaSenial);
-	alarm(uiSegundos);
-	log_info(logger,"Seteada alarma para Dump en %d segundos",uiSegundos);
+	alarm(configuracion->intervaloDump);
+	log_info(logger,"Seteada alarma para vuelco en %d segundos.",configuracion->intervaloDump);
 }
 
+/* handler de señales */
 void capturaSenial(int iSignal) {
 	switch(iSignal) {
 		case SIGINT:
@@ -192,4 +280,48 @@ void capturaSenial(int iSignal) {
 			realizarDump = 1;
 		break;
 	}
+}
+
+/* proceso de dump */
+void volcarEntradas() {
+	// TODO completar este proceso
+	log_info(logger,"Ejecutando proceso de vuelco...");
+	retardoSegundos(3);
+	log_info(logger,"Vuelco finalizado.");
+	iniciarDumpTimeout();
+}
+
+/* conecta con el coordinador y hace el handshake */
+int conectarACoordinador() {
+	log_info(logger,"Conectando con el Coordinador (IP: %s Puerto: %d)...", configuracion->ipCoordinador,configuracion->puertoCoordinador);
+	configuracion->fdSocketCoordinador = connectToServer(configuracion->ipCoordinador,configuracion->puertoCoordinador, logger);
+	if (configuracion->fdSocketCoordinador < 0) {
+		log_error(logger,"No se pudo conectar con el Coordinador.");
+		return 0;
+	}
+	log_info(logger,"Conexión exitosa con el Coordinador.");
+
+	// handshake con coordinador
+	log_info(logger,"Realizando handshake con el Coordinador.");
+	tPaquete pkgHandshake;
+	pkgHandshake.type = I_HANDSHAKE;
+	pkgHandshake.length = serializar(pkgHandshake.payload, "%s",configuracion->nombreDeInstancia);
+	enviarPaquete(configuracion->fdSocketCoordinador, &pkgHandshake, logger,"Enviando Handshake...");
+
+	char * sPayloadRespuesta = (char *)malloc(50);
+	char * mensajeRespuesta = (char *)malloc(50);
+	tMensaje tipoMensaje;
+	recibirPaquete(configuracion->fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo respuesta de coordinador...");
+	deserializar(sPayloadRespuesta, "%d;%d;%s", &(configuracion->cantidadEntradas), &(configuracion->tamanioEntrada), mensajeRespuesta);
+	free(sPayloadRespuesta);
+
+	if (!(configuracion->cantidadEntradas * configuracion->tamanioEntrada)) {
+		log_error(logger,"Handshake no completado con el Coordinador: %s", mensajeRespuesta);
+		free(mensajeRespuesta);
+		return 0;
+	}
+	log_info(logger,"Handshake exitoso con el Coordinador: %s", mensajeRespuesta);
+	free(mensajeRespuesta);
+
+	return 1;
 }

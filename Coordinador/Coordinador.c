@@ -35,18 +35,12 @@ void escucharConexiones() {
 	FD_SET(iSocketEscucha, &setSocketsOrquestador);
 	maxSock = iSocketEscucha;
 
-	tPaquete pkgHandshake;
-
 	tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
 	char * sPayloadRespuesta = malloc(100);
-	char * respuesta = malloc(100);
 
-	char encabezadoMensaje;
 	tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
 	solicitud->mensaje = malloc(100);
 
-	tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
-	int recibidos;
 	puts("Escuchando");
 
 	while (1) {
@@ -62,7 +56,6 @@ void escucharConexiones() {
 				printf("Socket comunicacion: %d \n", iSocketComunicacion);
 
 				puts("HANDSHAKE CON ESI");
-				tSolicitudESI *mensaje = malloc(100);
 				char* encabezado = malloc(10);
 
 				deserializar(sPayloadRespuesta, "%c%s", encabezado, solicitud->mensaje);
@@ -115,8 +108,27 @@ void escucharConexiones() {
 				break;
 
 			case I_HANDSHAKE:
-				// TODO se conectó una instancia
-				//usar nuevaInstanciaConectada(id, socket);
+				// TODO revisar lo que se imprime en pantalla y mandarlo al log
+				puts("Se conectó una Instancia. Recibiendo handshake.");
+				char * nombreInstancia = (char *)malloc(50);
+				deserializar(sPayloadRespuesta, "%s", nombreInstancia);
+				printf("Instancia: %s\n", nombreInstancia);
+
+				puts("Respondiendo handshake de Instancia");
+				tPaquete pkgHandshakeResponse;
+				pkgHandshakeResponse.type = C_HANDSHAKE;
+				if (existeInstancia(nombreInstancia))
+					pkgHandshakeResponse.length = serializar(pkgHandshakeResponse.payload, "%d;%d;%s",0,0,"Ya existe entrada conectada con el nombre indicado.");
+				else
+					pkgHandshakeResponse.length = serializar(pkgHandshakeResponse.payload, "%d;%d;%s",configuracion->cantidadDeEntradas,configuracion->tamanioDeEntrada,"Instancia aceptada");
+				tamanioTotal = enviarPaquete(iSocketComunicacion,&pkgHandshakeResponse, logger,"Respondiendo handshake de Instancia");
+				printf("Se envian %d bytes\n", tamanioTotal);
+
+				nuevaInstanciaConectada(nombreInstancia, iSocketComunicacion);
+
+				// TODO liberar nombreInstancia cuando se termina de crear la instancia
+
+				*tipoMensaje = DESCONEXION;
 				break;
 			case DESCONEXION:
 				break;
@@ -214,26 +226,26 @@ void instanciaDestroyer(t_instancia * instancia) {
 	free(instancia);
 }
 
-t_instancia * instanciaNew() {
+
+//cuando entra una nueva instancia la agrega a la lista
+void nuevaInstanciaConectada(char * nombreInstancia, int socketInst) {
+
 	t_instancia *instancia = malloc(sizeof(t_instancia));
-	instancia->nombre = string_new();
+
+	instancia->nombre = strdup(nombreInstancia);
 	instancia->cantidadDeEntradasDisponibles = configuracion->cantidadDeEntradas;
-	return instancia;
+	instancia->socket = socketInst;
+	list_add(instancias, instancia);
 }
 
-//cuando entra una nueva instancia, se fija si ya existe y la
-//tiene que actualizar, o si crea una nueva y la agrega a la lista
-void nuevaInstanciaConectada(int id, int socket) {
+int existeInstancia(char *nombreInstancia) {
+	/* revisar uso de list_any_satisfy() */
 	int i;
-	for (i = 0; i < instancias->elements_count; i++) {
+	for (i = 0; i < list_size(instancias); i++) {
 		t_instancia *instancia = list_get(instancias, i);
-		if (instancia->id == id) {
-			instancia->socket = socket;
-			return;
+		if (string_equals_ignore_case(instancia->nombre, nombreInstancia)) {
+			return 1;
 		}
 	}
-	t_instancia *instancia = instanciaNew();
-	instancia->id = id;
-	instancia->socket = socket;
-	list_add(instancias, instancia);
+	return 0;
 }

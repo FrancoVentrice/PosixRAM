@@ -33,8 +33,14 @@ Se puede ejecutar sin parámetros: `./Instancia`
 
 En este caso busca el archivo de configuración por defecto `Instancia.conf` para poder levantarse.
 
-También se puede ejecutar pasando el archivo de configuración como parámetro: `./Instancia InstUno.conf`
+#### Parámetros
 
-Esto permite ejecutar distintas instancias con distintos archivos de configuración.
+**--help** Muestra la ayuda.
+
+**--d** Modo _debug_ setea el log con nivel LOG_LEVEL_TRACE.
+
+**--l** Log por pantalla. Desactiva el modo gráfico.
+
+**--conf=archivo.conf** Permite indicar un archivo de configuración. Ej.: `./Instancia --conf=InstUno.conf`
 
 ## (C) PosixRAM 2018
