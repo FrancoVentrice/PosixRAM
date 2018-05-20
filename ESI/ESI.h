@@ -32,6 +32,11 @@ typedef struct{
 	char* mensaje;
 } tRespuestaPlanificador;
 
+typedef struct{
+	char* clave;
+	char* valor
+}tOperacionESI;
+
 /* ******************************************** */
 /* ******************************************** */
 
@@ -39,6 +44,7 @@ typedef struct{
 t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
+int cantLineasLeidas;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();

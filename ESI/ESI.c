@@ -15,8 +15,7 @@
 int main(int argn, char *argv[]) {
 
 	cargarConfiguracion();
-	iniciarConexiones();
-	comenzarParseo();
+	iniciarConexiones(argn,argv);
 }
 
 void finalizar(int codigo) {
@@ -24,13 +23,12 @@ void finalizar(int codigo) {
 	exit(codigo);
 }
 
-void iniciarConexiones() {
+void iniciarConexiones(int argn,char *argv[]) {
 	int bytesEnviados;
 	// TODO el log se está creando acá y en la carga de configuración. corregir esto.
-	t_log *logESI = log_create("esi.log", "ESI",true, LOG_LEVEL_INFO);
 
 	// TODO ¿por qué está hardcodeade la IP del servidor? corregir.
-	configuracion->socketPlanificador = connectToServer("127.0.0.1",configuracion->puertoPlanificador, logESI);
+	configuracion->socketPlanificador = connectToServer(configuracion->ipPlanificador,configuracion->puertoPlanificador, logger);
 
 	// TODO al pedo 2 variables iguales, se puede reusar la misma. corregir esto.
 	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
@@ -48,61 +46,69 @@ void iniciarConexiones() {
 
 	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",pkgHandshake.type, solicitud->mensaje);
 
-	puts("Se envia solicitud al Planificador");
-	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgHandshake, logESI,"Se envia solicitud de ejecucion");
-	printf("Se envian %d bytes\n", bytesEnviados);
+	log_info(logger,"Se envia solicitud al Planificador");
+	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgHandshake, logger,"Se envia solicitud de ejecucion");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
 	//Recibo respuesta del Planificador
 	char * sPayloadRespuestaHand = malloc(100);
 
 	tMensaje tipoMensaje;
 
-	int bytesRecibidos = recibirPaquete(configuracion->socketPlanificador, &tipoMensaje,&sPayloadRespuestaHand, logESI, "Hand Respuesta");
-	printf("RECIBIDOS:%d\n", bytesRecibidos);
+	int bytesRecibidos = recibirPaquete(configuracion->socketPlanificador, &tipoMensaje,&sPayloadRespuestaHand, logger, "Hand Respuesta");
+	log_info(logger,"RECIBIDOS:%d\n", bytesRecibidos);
 
 	respuesta->mensaje = malloc(100);
 	char encabezado_mensaje;
 
 	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,respuesta->mensaje);
-	printf("RESPUESTA: %s \n", respuesta->mensaje);
+	log_info(logger,"RESPUESTA: %s \n", respuesta->mensaje);
 
-	if(strcmp(respuesta->mensaje,"OK")==0){
-		//Abrir el script y comenzar a ejecutar sentencias
-		puts("EJECUTANDO...");
-		retardoSegundos(10);
+	//COnexion al Coordinador
+	configuracion->socketCoordinador = connectToServer(configuracion->ipCoordinador,
+			configuracion->puertoCoordinador, logger);
 
-		//Conexion al Coordinador
-		// TODO corregir esta IP hardcodeada
-		configuracion->socketCoordinador = connectToServer("127.0.0.1",configuracion->puertoCoordinador,logESI);
+	solicitud2->mensaje = malloc(100);
+	strcpy(solicitud2->mensaje, "HOLA SOY ESI!!!");
+	tPaquete pkgHandshake2;
+	pkgHandshake2.type = E_HANDSHAKE;
 
-		solicitud2->mensaje = malloc(100);
-		strcpy(solicitud2->mensaje, "HOLA SOY ESI!!!");
-		tPaquete pkgHandshake2;
-		pkgHandshake2.type = E_HANDSHAKE;
+	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%c%s",
+			pkgHandshake2.type, solicitud2->mensaje);
 
-		pkgHandshake2.length = serializar(pkgHandshake2.payload, "%c%s",pkgHandshake2.type, solicitud2->mensaje);
+	log_info(logger,"Se envia solicitud de ejecucion al Coordinador");
+	bytesEnviados = enviarPaquete(configuracion->socketCoordinador, &pkgHandshake2,
+			logger, "Se envia solicitud de ejecucion");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
-		puts("Se envia solicitud de ejecucion al Coordinador");
-		bytesEnviados = enviarPaquete(configuracion->socketCoordinador, &pkgHandshake2, logESI,"Se envia solicitud de ejecucion");
-		printf("Se envian %d bytes\n", bytesEnviados);
 
-		//RECIBIR RESPUESTA DEL COORDINADOR
-		tMensaje tipoMensajeCoordinador;
-		char * sPayloadRespuestaHandC = malloc(100);
 
-		bytesRecibidos = recibirPaquete(configuracion->socketCoordinador, &tipoMensajeCoordinador,&sPayloadRespuestaHandC, logESI, "Hand Respuesta Coordinador");
-		printf("RECIBIDOS:%d\n", bytesRecibidos);
-		respuestaCoordinador->mensaje = malloc(100);
-		char encabezadoMensaje;
+			//RECIBIR RESPUESTA DEL COORDINADOR
+	tMensaje tipoMensajeCoordinador;
+	char * sPayloadRespuestaHandC = malloc(100);
 
-		deserializar(sPayloadRespuestaHandC, "%c%s", &encabezadoMensaje,respuestaCoordinador->mensaje);
+	bytesRecibidos = recibirPaquete(configuracion->socketCoordinador,
+			&tipoMensajeCoordinador, &sPayloadRespuestaHandC, logger,
+			"Hand Respuesta Coordinador");
+	log_info(logger,"RECIBIDOS:%d\n", bytesRecibidos);
+	respuestaCoordinador->mensaje = malloc(100);
+	char encabezadoMensaje;
 
-		printf("RESPUESTA COORDINADOR: %s \n", respuestaCoordinador->mensaje);
+	deserializar(sPayloadRespuestaHandC, "%c%s", &encabezadoMensaje,
+			respuestaCoordinador->mensaje);
 
-		// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir esto.
-	}
+	log_info(logger,"RESPUESTA COORDINADOR: %s \n", respuestaCoordinador->mensaje);
+
+
+	//Recibir la linea a ejecutar por parte del Planificador
+
+	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir esto.
+
 	//finalizar(0);
 }
+
+void enviarOperacion(t_esi_operacion lineaParseada){
+		}
 
 int comenzarParseo (int argc, char **argv){
 
@@ -110,6 +116,7 @@ int comenzarParseo (int argc, char **argv){
 	char * linea = NULL;
 	size_t largo = 0;
 	ssize_t lineaLeida;
+	int cantLineasLeidas=0;
 
 	archivo = fopen(argv[1], "r");
 
@@ -132,6 +139,8 @@ int comenzarParseo (int argc, char **argv){
 	                //Cuando un ESI usa un GET sobre una clave, ningún ESI va a poder hacer GET de esa clave
 	                //sin que el anterior ESI haga un STORE.
 	                    printf("GET\tclave: <%s>\n", lineaParseada.argumentos.GET.clave);
+	                    cantLineasLeidas++;
+						enviarOperacion(lineaParseada);
 	                    break;
 	                case SET:
 	                //Unica operación que altera valor de una instancia, previamente
@@ -161,4 +170,4 @@ int comenzarParseo (int argc, char **argv){
 
 	    return EXIT_SUCCESS;
 	}
-}
+
