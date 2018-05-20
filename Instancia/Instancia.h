@@ -20,8 +20,6 @@
 #define ALGORITMO_LRU 2
 #define ALGORITMO_BSU 3
 
-#define STDIN 0
-
 typedef struct {
 	char *archivoConf;
 	int debugMode; // 1 = ON . 0 = OFF (default)
@@ -48,14 +46,25 @@ t_confInstancia * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 
+// inicio
+int procesarLineaDeComandos (int, char **);
 void iniciarLogger(void);
 int cargarConfiguracion(void);
-void finalizar(int);
 int configValida(t_config *);
+
+// procesamiento
+int conectarACoordinador(void);
 void iniciarDumpTimeout(void);
 void capturaSenial(int);
 void volcarEntradas(void);
-int procesarLineaDeComandos (int, char **);
-int conectarACoordinador(void);
+
+// pantalla
+void pantallaInicio(void);
+void mostrarConfiguracion(void);
+void pantallaFin(void);
+void mostrarTexto(char *);
+
+// fin
+void finalizar(int);
 
 #endif /* INSTANCIA_H_ */
