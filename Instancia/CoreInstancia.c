@@ -91,10 +91,12 @@ void iniciarLogger(){
 /* termina el proceso correctamente liberando recursos */
 void finalizar(int codigo) {
 	alarm(0);
-	desconectarseDe(configuracion->fdSocketCoordinador);
-	log_info(logger,"Instancia %s finalizada" , configuracion->nombreDeInstancia);
-	free(configuracion);
-	config_destroy(fd_configuracion);
+	if (fd_configuracion != NULL) {
+		desconectarseDe(configuracion->fdSocketCoordinador);
+		log_info(logger,"Instancia %s finalizada" , configuracion->nombreDeInstancia);
+		free(configuracion);
+		config_destroy(fd_configuracion);
+	}
 	log_destroy(logger);
 	free(parametrosEntrada.archivoConf);
 
