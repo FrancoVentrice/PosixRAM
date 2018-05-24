@@ -11,36 +11,33 @@ void atenderESI(int* iSocketComunicacion) {
 	int bytesEnviados;
 
 	//my_data = (tArgs*) argumentos;
-	log_info(logger,"HANDSHAKE CON ESI"));
+	log_info(logger, "HANDSHAKE CON ESI");
 	t_esi* esiNuevo = esiNew(iSocketComunicacion);
 
+	//lo agrego a listos y le aviso Ok de Handshake
 
-		//lo agrego a listos y le aviso Ok de Handshake
-		agregarEsiAColaDeListos(esiNuevo);
+	tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
+	respuestaEjecucion->mensaje = malloc(100);
+	strcpy(respuestaEjecucion->mensaje, "OK HANDSHAKE");
+	tPaquete pkgHandshakeRespuesta;
+	pkgHandshakeRespuesta.type = P_HANDSHAKE;
 
-		tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
-		respuestaEjecucion->mensaje = malloc(100);
-		strcpy(respuestaEjecucion->mensaje, "OK");
-		tPaquete pkgHandshakeRespuesta;
-		pkgHandshakeRespuesta.type = P_HANDSHAKE;
+	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
+			"%c%s", pkgHandshakeRespuesta.type, respuestaEjecucion->mensaje);
 
-		pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
-				"%c%s", pkgHandshakeRespuesta.type,
-				respuestaEjecucion->mensaje);
+	log_info(logger, "Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
+			pkgHandshakeRespuesta.length);
 
-		log_info(logger,"Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
-				pkgHandshakeRespuesta.length);
+	log_info(logger, "Se envia respuesta");
+	bytesEnviados = enviarPaquete(*(esiNuevo->socket), &pkgHandshakeRespuesta,
+			logger, "Se envia respuesta a ESI");
 
-		log_info(logger,"Se envia respuesta");
-		bytesEnviados = enviarPaquete(*iSocketComunicacion,
-				&pkgHandshakeRespuesta, logger, "Se envia respuesta a ESI");
+	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
-		log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	//llamo a 'trabajar' para ver si planifico o no
+	agregarEsiAColaDeListos(esiNuevo);
+	//trabajar(*(esiNuevo->socket));
 
-
-
-		//llamo a 'trabajar' para ver si planifico o no
-		trabajar(iSocketComunicacion);
 
 }
 
@@ -64,7 +61,7 @@ void trabajar(int socketESI) {
 		//insertar metodo en el que se avisa al ESI que ejecute una linea
 		tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
 		autorizarEjecucion->mensaje = malloc(100);
-		strcpy(autorizarEjecucion->mensaje, "OK");
+		strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
 		tPaquete pkgHandshakeRespuesta;
 		pkgHandshakeRespuesta.type = P_HANDSHAKE;
 
@@ -75,9 +72,9 @@ void trabajar(int socketESI) {
 		log_info(logger, "Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
 				pkgHandshakeRespuesta.length);
 
-		log_info(logger, "Se envia respuesta");
-		bytesEnviados = enviarPaquete(*socketESI,
-				&pkgHandshakeRespuesta, logger, "Se envia respuesta a ESI");
+		log_info(logger, "Se envia orden para ejecutar");
+		bytesEnviados = enviarPaquete(socketESI,
+				&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
 
 		log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
@@ -151,13 +148,13 @@ void escucharESIs() {
 
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
 			&sPayloadRespuestaHand, logger, "Hand Respuesta");
-	log_info(logger,"RECIBIDOS:%d\n", bytesRecibidos);
+	log_info(logger,"RECIBIDOS:%d", bytesRecibidos);
 	respuesta->mensaje = malloc(10);
 	char encabezado_mensaje;
 
 	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
 			respuesta->mensaje);
-	log_info(logger,"RESPUESTA: %s \n", respuesta->mensaje);
+	log_info(logger,"RESPUESTA: %s", respuesta->mensaje);
 
 	// Inicializacion de sockets y actualizacion del log
 	iSocketEscucha = crearSocketEscucha(puertoEscucha, logger);
@@ -180,9 +177,44 @@ void escucharESIs() {
 		if (iSocketComunicacion != -1) {
 			switch (tipoMensaje) {
 			case E_HANDSHAKE:
+/*
+				//my_data = (tArgs*) argumentos;
+				log_info(logger, "HANDSHAKE CON ESI");
+				t_esi* esiNuevo = esiNew(&iSocketComunicacion);
+
+				//lo agrego a listos y le aviso Ok de Handshake
+				//agregarEsiAColaDeListos(esiNuevo);
+
+				tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
+				respuestaEjecucion->mensaje = malloc(100);
+				strcpy(respuestaEjecucion->mensaje, "OK HANDSHAKE");
+				tPaquete pkgHandshakeRespuesta;
+				pkgHandshakeRespuesta.type = P_HANDSHAKE;
+
+				pkgHandshakeRespuesta.length = serializar(
+						pkgHandshakeRespuesta.payload, "%c%s",
+						pkgHandshakeRespuesta.type,
+						respuestaEjecucion->mensaje);
+
+				log_info(logger, "Tipo: %d, largo: %d ",
+						pkgHandshakeRespuesta.type,
+						pkgHandshakeRespuesta.length);
+
+				log_info(logger, "Se envia respuesta");
+				bytesEnviados = enviarPaquete(*(esiNuevo->socket),
+						&pkgHandshakeRespuesta, logger,
+						"Se envia respuesta a ESI");
+
+				log_info(logger, "Se envian %d bytes", bytesEnviados);
+
+*/
+
+						//llamo a 'trabajar' para ver si planifico o no
+					//	trabajar(esiNuevo->socket);
 				//creo el hilo para el ESI que quiero atender
 				pthread_create(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
 				pthread_join(hiloESI,NULL);
+				//atenderESI(&iSocketComunicacion);
 				//le envio el OK a ESI para ejecutar
 				tipoMensaje = DESCONEXION;
 				break;
@@ -205,8 +237,9 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	//si no habia ESIs participando en el sistema, o los que habia estaban
 	//bloqueados, el planificador puede comenzar a trabajar de nuevo
 	if (previamenteVacia && !esiEnEjecucion) {
-		trabajar();
+		trabajar(*(esi->socket));
 	}
+	//Si entra otro ESI entonces se queda bloqueado esperando el ok del planificador
 }
 
 void planificar() {
@@ -265,10 +298,10 @@ void estimarHRRN() {
 	EsiHRRNMayor = list_get(colaDeListos, indexHRRNMayor);
 	if (!esiEnEjecucion) {
 		esiEnEjecucion = EsiHRRNMayor;
-		log_info("EJECUTANDO:\n");
+		log_info(logger,"EJECUTANDO:\n");
 		list_remove(colaDeListos, indexHRRNMayor);
 	} else {
-		log_info("La CPU se encuentra ocupada\n");
+		log_info(logger,"La CPU se encuentra ocupada\n");
 	}
 }
 

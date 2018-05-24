@@ -24,6 +24,7 @@ void escucharConexiones() {
 	int iSocketEscucha;
 	int iSocketComunicacion;
 	int tamanioTotal = 0;
+	int socketPlanificador;
 
 
 	fd_set setSocketsOrquestador;
@@ -53,18 +54,22 @@ void escucharConexiones() {
 			switch (*tipoMensaje) {
 
 			case E_HANDSHAKE:
-				printf("Socket comunicacion: %d \n", iSocketComunicacion);
-
-				puts("HANDSHAKE CON ESI");
+				log_info(logger,"Socket comunicacion: %d \n", iSocketComunicacion);
+				log_info(logger,"HANDSHAKE CON ESI");
 				char* encabezado = malloc(10);
+				t_esi_operacion lineaParseada;
+				char encabezadoMensaje;
 
-				deserializar(sPayloadRespuesta, "%c%s", encabezado, solicitud->mensaje);
-				printf("MENSAJE DE ESI: %s\n", solicitud->mensaje);
 
-				//RESPUESTA AL ESI
+				deserializar(sPayloadRespuesta, "%c%s",&encabezadoMensaje, solicitud->mensaje);
+				log_info(logger,"MENSAJE DE ESI: %s\n", solicitud->mensaje);
+				//log_info(logger,lineaParseada.keyword);
+
+
+				//RESPUESTA HANDSHAKE
 				tSolicitudESI* solicitudESI = malloc(sizeof(tSolicitudESI));
 				solicitudESI->mensaje = malloc(100);
-				strcpy(solicitudESI->mensaje, "CONEXION OK");
+				strcpy(solicitudESI->mensaje, "HANDSHAKE OK");
 				tPaquete pkgHandshakeESI;
 				pkgHandshakeESI.type = C_HANDSHAKE;
 
@@ -80,13 +85,17 @@ void escucharConexiones() {
 				*tipoMensaje = DESCONEXION;
 				break;
 
+
+			//case E_SENTENCIA:   Agregar el case para la sentencia que recibe del ESI,
+									//y responder por el resultado de la operacion
+
 			case P_HANDSHAKE:
 				printf("Socket comunicacion: %d \n", iSocketComunicacion);
-
+				socketPlanificador=iSocketComunicacion;
 				puts("HANDSHAKE CON PLANIFICADOR");
 				tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
 				solicitud->mensaje = malloc(100);
-				strcpy(solicitud->mensaje, "OK CONEXION");
+				strcpy(solicitud->mensaje, "OK HANDSHAKE");
 				tPaquete pkgHandshake2;
 				pkgHandshake2.type = C_HANDSHAKE;
 
@@ -100,6 +109,8 @@ void escucharConexiones() {
 				printf("Se envian %d bytes\n", tamanioTotal);
 				*tipoMensaje = DESCONEXION;
 				break;
+
+
 
 			case C_HANDSHAKE:
 				/* se agrega para que no genere warning
