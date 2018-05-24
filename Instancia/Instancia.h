@@ -8,13 +8,14 @@
 #include <sys/stat.h> // mkdir
 #include <unistd.h>  // alarm
 #include <ctype.h> // toupper
+#include <sys/mman.h> // mmap
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/process.h>
 #include <commons/string.h>
-#include "..//shared/libgral.h"
-#include "..//shared/sockets.h"
-#include "..//shared/serializar.h"
+#include "../shared/libgral.h"
+#include "../shared/sockets.h"
+#include "../shared/serializar.h"
 
 #define ALGORITMO_CIRC 1
 #define ALGORITMO_LRU 2

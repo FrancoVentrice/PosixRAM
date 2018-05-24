@@ -34,8 +34,8 @@ typedef struct{
 
 typedef struct{
 	char* clave;
-	char* valor
-}tOperacionESI;
+	char* valor;
+} tOperacionESI;
 
 /* ******************************************** */
 /* ******************************************** */

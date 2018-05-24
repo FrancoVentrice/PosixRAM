@@ -3,6 +3,11 @@
 	<name>tp-2018-1c-PosixRAM</name>
 	<comment></comment>
 	<projects>
+		<project>Coordinador</project>
+		<project>ESI</project>
+		<project>Instancia</project>
+		<project>Planificador</project>
+		<project>shared</project>
 	</projects>
 	<buildSpec>
 	</buildSpec>

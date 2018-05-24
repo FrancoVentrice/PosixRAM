@@ -57,3 +57,4 @@ LogPlanificador
 LogInstancia
 LogESI
 *.log
+/logs/
