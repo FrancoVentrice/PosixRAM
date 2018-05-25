@@ -286,7 +286,6 @@ void estimarHRRN() {
 	EsiHRRNMayor = list_get(colaDeListos, indexHRRNMayor);
 	if (!esiEnEjecucion) {
 		esiEnEjecucion = EsiHRRNMayor;
-		log_info(logger,"EJECUTANDO:\n");
 		list_remove(colaDeListos, indexHRRNMayor);
 	} else {
 		log_info(logger,"La CPU se encuentra ocupada\n");
@@ -308,8 +307,7 @@ void estimarSJF() {
 	float alfa = configuracion->alfa / 100;
 	for (i = 0; i < colaDeListos->elements_count; i++) {
 		t_esi *esi = list_get(colaDeListos, i);
-		//rafagaAnterior lo uso como flag para saber si la estimacion esta actualizada
-		if (esi->rafagaAnterior != 0) {
+		if (!esi->estimado) {
 		esi->estimacion = alfa * esi->rafagaAnterior + (1 - alfa) * esi->estimacionAnterior;
 		//"actualizo" la estimacion seteando en 0 la rafaga anterior, total ya no la voy a usar mas
 		esi->rafagaAnterior = 0;
@@ -317,6 +315,7 @@ void estimarSJF() {
 		//se va a ir decrementando con las ejecuciones, y estimacionAnterior queda estatica y
 		//me sirve para la proxima vez que tenga que estimar
 		esi->estimacionAnterior = esi->estimacion;
+		esi->estimado = true;
 		}
 		if (esi->estimacion < ESIMasCorto->estimacion) {
 			ESIMasCorto = esi;
@@ -401,6 +400,7 @@ void liberarPrimerProcesoBloqueado(char *clave) {
 		if (bloqueados->elements_count > 0) {
 			t_esi *esi = list_remove(bloqueados, 0);
 			esi->bloqueado = false;
+			esi->estimado = false;
 			list_add(colaDeListos, esi);
 		}
 		if (bloqueados->elements_count == 0) {
@@ -413,6 +413,7 @@ t_esi *esiNew(int* socket) {
 	t_esi *esi = malloc(sizeof(t_esi));
 	esi->clavesTomadas = list_create();
 	esi->estimacion = configuracion->estimacionInicial;
+	esi->estimado = true;
 	esi->socket = socket;
 	return esi;
 }

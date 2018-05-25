@@ -56,6 +56,7 @@ typedef struct {
 	int responseRatio;
 	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
+	bool estimado; //me sirve para saber si tengo que estimar al ESI, o ya esta estimado
 } t_esi;
 
 t_configuracion * configuracion;
