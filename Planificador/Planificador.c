@@ -6,7 +6,6 @@
 #include "Planificador.h"
 
 void atenderESI(int* iSocketComunicacion) {
-
 	//tArgs* my_data=malloc(sizeof(tArgs));
 	int bytesEnviados;
 
@@ -34,11 +33,7 @@ void atenderESI(int* iSocketComunicacion) {
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
-	//llamo a 'trabajar' para ver si planifico o no
 	agregarEsiAColaDeListos(esiNuevo);
-	//trabajar(*(esiNuevo->socket));
-
-
 }
 
 int main(int argn, char *argv[]) {
@@ -52,37 +47,36 @@ int main(int argn, char *argv[]) {
 //representa un ciclo en el cual atiende los comandos de consola, planifica (si es necesario) y avisa al ESI que ejecute
 //se llama cuando una sentencia del ESI fue ejecutada correctamente (mas alla del resultado)
 //se llama cuando la cola de listos vacia se popula
-void trabajar(int socketESI) {
+void trabajar() {
 	if (ejecutando) {
 		ejecutarComandosConsola();
 		if (planificacionNecesaria) {
 			planificar();
 		}
-		//insertar metodo en el que se avisa al ESI que ejecute una linea
-		tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
-		autorizarEjecucion->mensaje = malloc(100);
-		strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
-		tPaquete pkgHandshakeRespuesta;
-		pkgHandshakeRespuesta.type = P_HANDSHAKE;
-
-		pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
-				"%c%s", pkgHandshakeRespuesta.type,
-				autorizarEjecucion->mensaje);
-
-		log_info(logger, "Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
-				pkgHandshakeRespuesta.length);
-
-		log_info(logger, "Se envia orden para ejecutar");
-		bytesEnviados = enviarPaquete(socketESI,
-				&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
-
-		log_info(logger, "Se envian %d bytes\n", bytesEnviados);
-
-
-
+		enviarOrdenDeEjecucion();
 	}
 }
 
+void enviarOrdenDeEjecucion() {
+	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
+	autorizarEjecucion->mensaje = malloc(100);
+	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
+	tPaquete pkgHandshakeRespuesta;
+	pkgHandshakeRespuesta.type = P_HANDSHAKE;
+
+	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
+			"%c%s", pkgHandshakeRespuesta.type,
+			autorizarEjecucion->mensaje);
+
+	log_info(logger, "Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
+			pkgHandshakeRespuesta.length);
+
+	log_info(logger, "Se envia orden para ejecutar");
+	int bytesEnviados = enviarPaquete(esiEnEjecucion->socket,
+			&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
+
+	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
+}
 
 void finalizar(int codigo) {
 	pthread_join(hiloConsola, NULL);
@@ -98,7 +92,6 @@ void levantarConsola() {
 		finalizar(EXIT_FAILURE);
 	}
 }
-
 
 void escucharESIs() {
 	fd_set master;
@@ -205,12 +198,7 @@ void escucharESIs() {
 						&pkgHandshakeRespuesta, logger,
 						"Se envia respuesta a ESI");
 
-				log_info(logger, "Se envian %d bytes", bytesEnviados);
-
-*/
-
-						//llamo a 'trabajar' para ver si planifico o no
-					//	trabajar(esiNuevo->socket);
+				log_info(logger, "Se envian %d bytes", bytesEnviados);*/
 				//creo el hilo para el ESI que quiero atender
 				pthread_create(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
 				pthread_join(hiloESI,NULL);
@@ -237,9 +225,9 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	//si no habia ESIs participando en el sistema, o los que habia estaban
 	//bloqueados, el planificador puede comenzar a trabajar de nuevo
 	if (previamenteVacia && !esiEnEjecucion) {
-		trabajar(*(esi->socket));
+		trabajar();
 	}
-	//Si entra otro ESI entonces se queda bloqueado esperando el ok del planificador
+	//Si entra otro ESI entonces se queda en cola de listos esperando el ok del planificador
 }
 
 void planificar() {

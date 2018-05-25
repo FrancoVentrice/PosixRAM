@@ -22,10 +22,15 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: Planificador
+all:
+	$(MAKE) --no-print-directory pre-build
+	$(MAKE) --no-print-directory main-build
+
+# Main-build Target
+main-build: Planificador
 
 dependents:
-	-cd /home/utnso/tp-2018-1c-PosixRAM/shared/Default && $(MAKE) clean all
+	-cd /home/utnso/tp-2018-1c-PosixRAM/shared/Default && $(MAKE) all
 
 # Tool invocations
 Planificador: $(OBJS) $(USER_OBJS) /home/utnso/tp-2018-1c-PosixRAM/shared/Default/libshared.so
@@ -40,7 +45,11 @@ clean:
 	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) Planificador
 	-@echo ' '
 
-.PHONY: all clean dependents
+pre-build:
+	-rm -rf logs
+	-@echo ' '
+
+.PHONY: all clean dependents main-build pre-build
 /home/utnso/tp-2018-1c-PosixRAM/shared/Default/libshared.so:
 
 -include ../makefile.targets
