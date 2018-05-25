@@ -4,9 +4,6 @@
  * (c) PosixRAM */
 
 #include "Coordinador.h"
-#include "..//shared/sockets.h"
-#include "..//shared/serializar.h"
-#include "..//shared/protocolo.h"
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();

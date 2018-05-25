@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "../shared/sockets.h"
+#include "../shared/serializar.h"
+#include "../shared/protocolo.h"
+#include "../parsi/parser.h"
 
 #define ALGORITMO_LSU 1
 #define ALGORITMO_EL 2
