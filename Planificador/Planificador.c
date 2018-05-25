@@ -221,6 +221,8 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	pthread_mutex_unlock(&mutexColaDeListos);
 	if (configuracion->algoritmoPlanificacion == ALGORITMO_SJF_CD) {
 		planificacionNecesaria = true;
+	} else if (configuracion->algoritmoPlanificacion == ALGORITMO_HRRN) {
+		esi->instanteLlegadaAListos = tiempoTotalEjecucion;
 	}
 	//si no habia ESIs participando en el sistema, o los que habia estaban
 	//bloqueados, el planificador puede comenzar a trabajar de nuevo
@@ -241,99 +243,89 @@ void planificar() {
 		return;
 	}
 
+	int indexProximoAEjecutar;
 	//estimo segun configuracion
 	switch (configuracion->algoritmoPlanificacion) {
 	case ALGORITMO_SJF_CD:
 	case ALGORITMO_SJF_SD:
-		estimarSJF();
+		indexProximoAEjecutar = planificarSJF();
 		break;
-
 	case ALGORITMO_HRRN:
-		estimarHRRN();
+		indexProximoAEjecutar = planificarHRRN();
 		break;
 	}
+
+	//si es < 0, corresponde que siga ejecutando el que estaba
+	if (indexProximoAEjecutar < 0) {
+		return;
+	}
+
+	//si ya habia uno en ejecucion, lo devuelvo a la cola de listos
+	if (esiEnEjecucion) {
+		list_add(colaDeListos, esiEnEjecucion);
+	}
+
+	esiEnEjecucion = list_get(colaDeListos, indexProximoAEjecutar);
+	list_remove(colaDeListos, indexProximoAEjecutar);
 }
 
-void estimarHRRN() {
-	t_esi* EsiHRRNMayor;
-	alfa = (float) (configuracion->alfa) / (float) 100;
-
+int planificarHRRN() {
+	t_esi* esiHRRNMayor;
 	float RRMayor = 0;
 	int indexHRRNMayor = 0;
-	int tiempoRespuesta = 0;
-	float responseRatio = 0;
 
 	int i;
 	for (i = 0; i < colaDeListos->elements_count; i++) {
 		t_esi* esiActual = list_get(colaDeListos, i);
-		if (esiActual->rafagaAnterior != 0) {
-			esiActual->estimacionAnterior = esiActual->estimacion;
-			esiActual->estimacion = (float) alfa
-					* (float) esiActual->rafagaAnterior
-					+ (1 - alfa) * esiActual->estimacionAnterior;
-			tiempoRespuesta = calcularTiempoRespuesta(esiActual);
-			responseRatio = ((float) tiempoRespuesta
-					+ (float) esiActual->estimacion)
-					/ (float) esiActual->estimacion;
+		int tiempoEspera = calcularTiempoEspera(esiActual);
+		float responseRatio = ((float) tiempoEspera
+				+ (float) esiActual->estimacion)
+							/ (float) esiActual->estimacion;
 
-			if (responseRatio > RRMayor) {
-				RRMayor = responseRatio;
-				indexHRRNMayor = i;
-			}
-
+		if (responseRatio > RRMayor) {
+			RRMayor = responseRatio;
+			indexHRRNMayor = i;
 		}
 	}
-	EsiHRRNMayor = list_get(colaDeListos, indexHRRNMayor);
-	if (!esiEnEjecucion) {
-		esiEnEjecucion = EsiHRRNMayor;
-		list_remove(colaDeListos, indexHRRNMayor);
-	} else {
-		log_info(logger,"La CPU se encuentra ocupada\n");
-	}
+	return indexHRRNMayor;
 }
 
-int calcularTiempoRespuesta(t_esi* esi) {
+int calcularTiempoEspera(t_esi* esi) {
 	return tiempoTotalEjecucion - esi->instanteLlegadaAListos;
 }
 
 //se corre cuando hay que elegir un nuevo ESI a ejecutar
-//si es con desalojo, tambien se corre cuando entra un nuevo proceso a la lista
-//setea la estimacion de todos los ESIs en la cola de listos
-//setea el proximo ESI a ejecutar
-void estimarSJF() {
-	t_esi *ESIMasCorto = list_get(colaDeListos, 0);
+//elige el proximo ESI a ejecutar
+int planificarSJF() {
+	t_esi *esiMasCorto = list_get(colaDeListos, 0);
 	int indexDelESIMasCorto = 0;
 	int i;
-	float alfa = configuracion->alfa / 100;
 	for (i = 0; i < colaDeListos->elements_count; i++) {
 		t_esi *esi = list_get(colaDeListos, i);
-		if (!esi->estimado) {
-		esi->estimacion = alfa * esi->rafagaAnterior + (1 - alfa) * esi->estimacionAnterior;
-		//"actualizo" la estimacion seteando en 0 la rafaga anterior, total ya no la voy a usar mas
-		esi->rafagaAnterior = 0;
-		//seteo la nueva estimacion tambien a estimacionAnterior, ya que estimacion
-		//se va a ir decrementando con las ejecuciones, y estimacionAnterior queda estatica y
-		//me sirve para la proxima vez que tenga que estimar
-		esi->estimacionAnterior = esi->estimacion;
-		esi->estimado = true;
-		}
-		if (esi->estimacion < ESIMasCorto->estimacion) {
-			ESIMasCorto = esi;
+		if (esi->estimacion < esiMasCorto->estimacion) {
+			esiMasCorto = esi;
 			indexDelESIMasCorto = i;
 		}
 	}
 
-	//finalmente, comparo al mas corto de la cola de listos con el que ya estaba ejecutando
-	//la prioridad en caso de igualdad la tiene el que ya estaba ejecutando
-	//si habia uno en ejecucion, lo devuelvo a listos
-	if (!esiEnEjecucion) {
-		esiEnEjecucion = ESIMasCorto;
-		list_remove(colaDeListos, indexDelESIMasCorto);
-	} else if (ESIMasCorto->estimacion < esiEnEjecucion->estimacion) {
-		list_add(colaDeListos, esiEnEjecucion);
-		esiEnEjecucion = ESIMasCorto;
-		list_remove(colaDeListos, indexDelESIMasCorto);
+	//si es con desalojo, tengo en cuenta al esi en ejecucion
+	//si no es con desalojo, entonces no hizo falta llamar a este metodo
+	if (configuracion->algoritmoPlanificacion == ALGORITMO_SJF_CD
+			&& esiMasCorto->estimacion >= esiEnEjecucion->estimacion) {
+		indexDelESIMasCorto = -1;
 	}
+
+	return indexDelESIMasCorto;
+}
+
+void estimar(t_esi *esi) {
+	esi->estimacion = configuracion->alfa * esi->rafagaAnterior + (1 - configuracion->alfa) * esi->estimacionAnterior;
+	//"actualizo" la estimacion seteando en 0 la rafaga anterior, total ya no la voy a usar mas
+	esi->rafagaAnterior = 0;
+	//seteo la nueva estimacion tambien a estimacionAnterior, ya que estimacion
+	//se va a ir decrementando con las ejecuciones, y estimacionAnterior queda estatica y
+	//me sirve para la proxima vez que tenga que estimar
+	esi->estimacionAnterior = esi->estimacion;
 }
 
 void sentenciaEjecutadaCorrectamenteSJF() {
@@ -400,7 +392,10 @@ void liberarPrimerProcesoBloqueado(char *clave) {
 		if (bloqueados->elements_count > 0) {
 			t_esi *esi = list_remove(bloqueados, 0);
 			esi->bloqueado = false;
-			esi->estimado = false;
+			estimar(esi);
+			if (configuracion->algoritmoPlanificacion == ALGORITMO_HRRN) {
+				esi->instanteLlegadaAListos = tiempoTotalEjecucion;
+			}
 			list_add(colaDeListos, esi);
 		}
 		if (bloqueados->elements_count == 0) {
@@ -413,7 +408,6 @@ t_esi *esiNew(int* socket) {
 	t_esi *esi = malloc(sizeof(t_esi));
 	esi->clavesTomadas = list_create();
 	esi->estimacion = configuracion->estimacionInicial;
-	esi->estimado = true;
 	esi->socket = socket;
 	return esi;
 }

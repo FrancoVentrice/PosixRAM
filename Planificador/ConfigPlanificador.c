@@ -61,9 +61,9 @@ int cargarConfiguracion() {
 	int alfa = config_get_int_value(fd_configuracion, "ALFA");
 	if (alfa < 0 || alfa > 100) {
 		log_error(logger,"Valor de alfa inválido, asignando valor por defecto (50)","ERROR");
-		configuracion->alfa = 50;
+		configuracion->alfa = 50 / 100;
 	} else {
-		configuracion->alfa = alfa;
+		configuracion->alfa = alfa / 100;
 	}
 	configuracion->clavesInicialmenteBloqueadas = config_get_string_value(fd_configuracion, "CLAVES_INICIALMENTE_BLOQUEADAS");
 

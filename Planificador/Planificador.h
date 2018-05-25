@@ -24,7 +24,7 @@ typedef struct {
 	int estimacionInicial;
 	char* ipCoordinador;
 	int puertoCoordinador;
-	int alfa;
+	float alfa;
 	char* clavesInicialmenteBloqueadas;
 } t_configuracion;
 
@@ -56,7 +56,6 @@ typedef struct {
 	int responseRatio;
 	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
-	bool estimado; //me sirve para saber si tengo que estimar al ESI, o ya esta estimado
 } t_esi;
 
 t_configuracion * configuracion;
@@ -65,7 +64,6 @@ t_log * logger;
 pthread_t hiloConsola;
 t_list * bufferConsola; //buffer de instrucciones a ejecutar cuando se complete una tarea atomica
 int tiempoTotalEjecucion;
-float alfa;
 bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
@@ -110,13 +108,14 @@ void esiRemoverClaveTomada(t_esi *, char *);
 t_esi *buscarEsiNoBloqueadoPorId(char *);
 void clavesTomadasDestroyer(char *);
 void finalizarEsiEnEjecucion();
+void estimar(t_esi *);
 
 //metodos de HRRN
-void estimarHRRN();
-int calcularTiempoRespuesta(t_esi *);
+int planificarHRRN();
+int calcularTiempoEspera(t_esi *);
 
 //metodos de SJF
-void estimarSJF();
+int planificarSJF();
 void sentenciaEjecutadaCorrectamenteSJF();
 
 //metodos de la consola
