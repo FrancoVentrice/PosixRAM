@@ -55,7 +55,7 @@ void iniciarConexiones(int argn,char *argv[]) {
 		tMensaje tipoMensajeCoordinador;
 		char * sPayloadRespuestaHandC = malloc(100);
 
-		bytesRecibidos = recibirPaquete(configuracion->socketCoordinador,
+		int bytesRecibidos = recibirPaquete(configuracion->socketCoordinador,
 				&tipoMensajeCoordinador, &sPayloadRespuestaHandC, logger,
 				"Hand Respuesta Coordinador");
 		log_info(logger,"RECIBIDOS:%d", bytesRecibidos);
