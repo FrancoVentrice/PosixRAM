@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "..//parsi/parser.h"
+#include <parsi/parser.h>
 
 typedef struct {
 	char *ipCoordinador;
