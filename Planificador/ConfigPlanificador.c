@@ -61,9 +61,9 @@ int cargarConfiguracion() {
 	int alfa = config_get_int_value(fd_configuracion, "ALFA");
 	if (alfa < 0 || alfa > 100) {
 		log_error(logger,"Valor de alfa inválido, asignando valor por defecto (50)","ERROR");
-		configuracion->alfa = 50 / 100;
+		configuracion->alfa = (float) 50 / (float) 100;
 	} else {
-		configuracion->alfa = alfa / 100;
+		configuracion->alfa = (float) alfa / (float) 100;
 	}
 	configuracion->clavesInicialmenteBloqueadas = config_get_string_value(fd_configuracion, "CLAVES_INICIALMENTE_BLOQUEADAS");
 
@@ -75,7 +75,7 @@ int cargarConfiguracion() {
 		"ESTIMACION_INICIAL: %d\n"
 		"IP_COORDINADOR: %s\n"
 		"PUERTO_COORDINADOR: %d\n"
-		"ALFA: %d\n"
+		"ALFA: %f\n"
 		"CLAVES_INICIALMENTE_BLOQUEADAS: %s\n",
 		configuracion->puerto, configuracion->algoritmoPlanificacion , configuracion->estimacionInicial ,
 		configuracion->ipCoordinador, configuracion->puertoCoordinador, configuracion->alfa,
