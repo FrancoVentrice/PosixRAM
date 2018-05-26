@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <parsi/parser.h>
 
+#define OPERACION_GET 1
+#define OPERACION_SET 2
+#define OPERACION_STORE 3
+
 typedef struct {
 	char *ipCoordinador;
 	int puertoCoordinador;
@@ -33,10 +37,10 @@ typedef struct{
 } tRespuestaPlanificador;
 
 typedef struct{
+	int operacion;
 	char* clave;
 	char* valor;
-} tOperacionESI;
-
+} t_operacionESI;
 /* ******************************************** */
 /* ******************************************** */
 
@@ -44,13 +48,22 @@ typedef struct{
 t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
-int cantLineasLeidas;
+FILE * archivo;
+
+size_t *n; //necesaria para ir leyendo el archivo
+char *lineptr; //necesaria para ir leyendo el archivo
+t_operacionESI *operacion;
+bool lecturaRechazada; //cuando una operacion es rechazada (ej: un get de un recurso tomado), sirve para volver a mandar la misma instruccion
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
 void iniciarConexiones();
-int comenzarParseo (int argc, char **argv);
+void cargarArchivo(char *);
+void ordenRecibida();
+int leerLinea();
+void enviarOperacion();
+void enviarEsiFinalizado();
 
 #endif /* ESI_H_ */

@@ -15,9 +15,10 @@
 #include <stdlib.h>
 
 int main(int argn, char *argv[]) {
-
 	cargarConfiguracion();
-	iniciarConexiones(argn,argv);
+	cargarArchivo(argv[1]);
+	iniciarConexiones();
+	leerLinea();
 }
 
 void finalizar(int codigo) {
@@ -25,7 +26,7 @@ void finalizar(int codigo) {
 	exit(codigo);
 }
 
-void iniciarConexiones(int argn,char *argv[]) {
+void iniciarConexiones() {
 	int bytesEnviados;
 	// TODO el log se está creando acá y en la carga de configuración. corregir esto.
 	// TODO ¿por qué está hardcodeade la IP del servidor? corregir.
@@ -147,67 +148,77 @@ void iniciarConexiones(int argn,char *argv[]) {
 	//finalizar(0);
 }
 
-void enviarOperacion(t_esi_operacion lineaParseada){
-		}
-
-int comenzarParseo (int argc, char **argv){
-
-	FILE * archivo;
-	char * linea = NULL;
-	size_t largo = 0;
-	ssize_t lineaLeida;
-	int cantLineasLeidas=0;
-
-	archivo = fopen(argv[1], "r");
-
-	if (archivo == NULL){
-
-		perror("Error al abrir el archivo: ");
-		exit(EXIT_FAILURE);
+void cargarArchivo(char *path) {
+	archivo = fopen(path, "r");
+	if (archivo == NULL) {
+		log_error(logger, "Error al abrir el archivo: %s", path);
+		finalizar(EXIT_FAILURE);
 	}
+}
 
-	while ((lineaLeida = getline(&linea, &largo, archivo)) != -1) {
-	        t_esi_operacion lineaParseada = parse(linea);
+//este metodo se ejecuta cuando se recibe la orden de lectura del planificador
+//evalua si hay que mandar la misma linea otra vez, o una nueva
+//tambien evalua si el programa finalizo
+void ordenRecibida() {
+	if (lecturaRechazada) {
+		enviarOperacion();
+	} else {
+		if (leerLinea() < 0) {
+			enviarEsiFinalizado();
+		} else {
+			enviarOperacion();
+		}
+	}
+}
+
+int leerLinea() {
+	ssize_t lectura;
+	if ((lectura = getline(&lineptr, &n, archivo)) != -1) {
+	        t_esi_operacion lineaParseada = parse(lineptr);
 
 	        if(lineaParseada.valido){
-
 	            switch(lineaParseada.keyword){
-
 	                case GET:
-	                //Cada vez que haya un GET, no hay malloc, solo modifica el estado de bloqueo/desbloqueo
-	                //desbloqueo de la tabla que debe tener el planificador. No se accede a ninguna instancia
-	                //Cuando un ESI usa un GET sobre una clave, ningún ESI va a poder hacer GET de esa clave
-	                //sin que el anterior ESI haga un STORE.
-	                    printf("GET\tclave: <%s>\n", lineaParseada.argumentos.GET.clave);
-	                    cantLineasLeidas++;
-						enviarOperacion(lineaParseada);
+	                	operacion->operacion = OPERACION_GET;
+	                	realloc(operacion->clave, sizeof(lineaParseada.argumentos.GET.clave));
+	                	memcpy(operacion->clave, lineaParseada.argumentos.GET.clave);
+	                	realloc(operacion->valor, 0);
 	                    break;
 	                case SET:
-	                //Unica operación que altera valor de una instancia, previamente
-	                //tiene que haber un GET que se apropie de una clave para ser alterada
-	                    printf("SET\tclave: <%s>\tvalor: <%s>\n", lineaParseada.argumentos.SET.clave, lineaParseada.argumentos.SET.valor);
+	                	operacion->operacion = OPERACION_SET;
+	                	realloc(operacion->clave, sizeof(lineaParseada.argumentos.SET.clave));
+	                	memcpy(operacion->clave, lineaParseada.argumentos.SET.clave);
+	                	realloc(operacion->valor, sizeof(lineaParseada.argumentos.SET.valor));
+	                	memcpy(operacion->valor, lineaParseada.argumentos.SET.valor);
 	                    break;
 	                case STORE:
-	                //Operación que libera una clave tomada. Trabaja con FIFO, libera de la
-	                //tabla que tiene el planificador LA PRIMER CLAVE TOMADA.
-	                    printf("STORE\tclave: <%s>\n", lineaParseada.argumentos.STORE.clave);
+	                	operacion->operacion = OPERACION_STORE;
+	                	realloc(operacion->clave, sizeof(lineaParseada.argumentos.STORE.clave));
+	                	memcpy(operacion->clave, lineaParseada.argumentos.STORE.clave);
+	                	realloc(operacion->valor, 0);
 	                    break;
 	                default:
-	                    fprintf(stderr, "No pude interpretar <%s>\n", linea);
-	                    exit(EXIT_FAILURE);
+	                	log_error(logger, "No pude interpretar <%s>\n", lineptr);
+	                	finalizar(EXIT_FAILURE);
 	            }
-
 	            destruir_operacion(lineaParseada);
 	        } else {
-	            fprintf(stderr, "La linea <%s> no es valida\n", linea);
-	            exit(EXIT_FAILURE);
+	            log_error(logger, "La linea <%s> no es valida\n", lineptr);
+	            finalizar(EXIT_FAILURE);
 	        }
+	    } else {
+	    	return -1;
 	    }
-
-	    fclose(archivo);
-	    if (linea)
-	        free(linea);
-
-	    return EXIT_SUCCESS;
+	    return 0;
 	}
 
+void enviarOperacion() {
+	lecturaRechazada = false;
+	//en este metodo se envia la operacion leida, la cual esta guardada en
+	//la variable global "operacion"
+}
+
+void enviarEsiFinalizado() {
+	//en este metodo se informa al planificador que ya no hay lineas para leer
+	//y el ESI finalizo su ejecucion
+}

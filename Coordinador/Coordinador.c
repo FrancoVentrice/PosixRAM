@@ -54,13 +54,11 @@ void escucharConexiones() {
 				log_info(logger,"Socket comunicacion: %d \n", iSocketComunicacion);
 				log_info(logger,"HANDSHAKE CON ESI");
 				char* encabezado = malloc(10);
-				t_esi_operacion lineaParseada;
 				char encabezadoMensaje;
 
 
 				deserializar(sPayloadRespuesta, "%c%s",&encabezadoMensaje, solicitud->mensaje);
 				log_info(logger,"MENSAJE DE ESI: %s\n", solicitud->mensaje);
-				//log_info(logger,lineaParseada.keyword);
 
 
 				//RESPUESTA HANDSHAKE

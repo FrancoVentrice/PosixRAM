@@ -10,6 +10,10 @@ int configValida(t_config* fd_configuracion) {
 int cargarConfiguracion() {
 	logger = log_create("LogESI", "ESI", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
+	operacion = malloc(sizeof(t_operacionESI));
+	lineptr = NULL;
+	n = 0;
+	lecturaRechazada = false;
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /ESI
 	fd_configuracion = config_create("../ESI.conf");
@@ -38,6 +42,10 @@ int cargarConfiguracion() {
 }
 
 void limpiarConfiguracion() {
+	fclose(archivo);
+	free(lineptr);
+	free(n);
+	free(operacion);
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
