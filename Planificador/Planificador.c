@@ -42,6 +42,19 @@ int main(int argn, char *argv[]) {
 	levantarConsola();
 }
 
+//metodo para ir testeando los algoritmos de forma aislada
+void test() {
+	log_info(logger, "agrego esi 1\n");
+	agregarEsiAColaDeListos(esiNew(1));
+	log_info(logger, "agrego esi 2\n");
+	agregarEsiAColaDeListos(esiNew(2));
+	log_info(logger, "agrego esi 3\n");
+	agregarEsiAColaDeListos(esiNew(3));
+	log_info(logger, "agrego esi 4\n");
+	agregarEsiAColaDeListos(esiNew(4));
+
+}
+
 //METODO PRINCIPAL
 //una vez que todas las conexiones estan hechas, y el planificador pueda empezar, se llama a este metodo
 //representa un ciclo en el cual atiende los comandos de consola, planifica (si es necesario) y avisa al ESI que ejecute
@@ -227,6 +240,7 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	//si no habia ESIs participando en el sistema, o los que habia estaban
 	//bloqueados, el planificador puede comenzar a trabajar de nuevo
 	if (previamenteVacia && !esiEnEjecucion) {
+		planificacionNecesaria = true;
 		trabajar();
 	}
 	//Si entra otro ESI entonces se queda en cola de listos esperando el ok del planificador
