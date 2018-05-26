@@ -30,7 +30,7 @@ all:
 main-build: Planificador
 
 dependents:
-	-cd /home/utnso/tp-2018-1c-PosixRAM/shared/Default && $(MAKE) all
+	-cd /home/utnso/tp-2018-1c-PosixRAM/shared/Default && $(MAKE) clean all
 
 # Tool invocations
 Planificador: $(OBJS) $(USER_OBJS) /home/utnso/tp-2018-1c-PosixRAM/shared/Default/libshared.so

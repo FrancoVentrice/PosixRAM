@@ -18,7 +18,6 @@ int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	cargarArchivo(argv[1]);
 	iniciarConexiones();
-	leerLinea();
 }
 
 void finalizar(int codigo) {
@@ -140,12 +139,7 @@ void iniciarConexiones() {
 				&pkgHandshake, logger, "Se envia solicitud de ejecucion");
 		log_info(logger, "Se envian %d bytes", bytesEnviados);
 
-
-
-
 	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir esto.
-
-	//finalizar(0);
 }
 
 void cargarArchivo(char *path) {
@@ -173,35 +167,39 @@ void ordenRecibida() {
 
 int leerLinea() {
 	ssize_t lectura;
+	free(operacion->clave);
+	free(operacion->valor);
+	operacion->clave = NULL;
+	operacion->valor = NULL;
 	if ((lectura = getline(&lineptr, &n, archivo)) != -1) {
+
 	        t_esi_operacion lineaParseada = parse(lineptr);
 
 	        if(lineaParseada.valido){
 	            switch(lineaParseada.keyword){
 	                case GET:
 	                	operacion->operacion = OPERACION_GET;
-	                	realloc(operacion->clave, sizeof(lineaParseada.argumentos.GET.clave));
-	                	memcpy(operacion->clave, lineaParseada.argumentos.GET.clave);
-	                	realloc(operacion->valor, 0);
+	                	operacion->clave = malloc(string_length(lineaParseada.argumentos.GET.clave));
+	                	strcpy(operacion->clave, lineaParseada.argumentos.GET.clave);
 	                    break;
 	                case SET:
 	                	operacion->operacion = OPERACION_SET;
-	                	realloc(operacion->clave, sizeof(lineaParseada.argumentos.SET.clave));
-	                	memcpy(operacion->clave, lineaParseada.argumentos.SET.clave);
-	                	realloc(operacion->valor, sizeof(lineaParseada.argumentos.SET.valor));
-	                	memcpy(operacion->valor, lineaParseada.argumentos.SET.valor);
+	                	operacion->clave = malloc(string_length(lineaParseada.argumentos.SET.clave));
+	                	strcpy(operacion->clave, lineaParseada.argumentos.SET.clave);
+	                	operacion->valor = malloc(string_length(lineaParseada.argumentos.SET.valor));
+	                	strcpy(operacion->valor, lineaParseada.argumentos.SET.valor);
 	                    break;
 	                case STORE:
 	                	operacion->operacion = OPERACION_STORE;
-	                	realloc(operacion->clave, sizeof(lineaParseada.argumentos.STORE.clave));
-	                	memcpy(operacion->clave, lineaParseada.argumentos.STORE.clave);
-	                	realloc(operacion->valor, 0);
+	                	operacion->clave = malloc(string_length(lineaParseada.argumentos.STORE.clave));
+	                	strcpy(operacion->clave, lineaParseada.argumentos.STORE.clave);
 	                    break;
 	                default:
 	                	log_error(logger, "No pude interpretar <%s>\n", lineptr);
 	                	finalizar(EXIT_FAILURE);
 	            }
 	            destruir_operacion(lineaParseada);
+	            log_info(logger, "\noperacion: %d \n clave: %s \n valor: %s\n", operacion->operacion, operacion->clave, operacion->valor);
 	        } else {
 	            log_error(logger, "La linea <%s> no es valida\n", lineptr);
 	            finalizar(EXIT_FAILURE);
