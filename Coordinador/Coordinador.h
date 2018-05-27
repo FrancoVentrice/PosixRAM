@@ -53,7 +53,6 @@ t_instancia * instanciaElegida;//es la instancia que elige el algoritmo de distr
 t_dictionary * diccionarioClaves;//diccionario de claves e instancias que las poseen. key: clave, value: instancia que la tiene guardada
 t_list * instancias;//lista de instancias disponibles
 int punteroEL;//puntero usado en la distribucion Equitative Load
-char * clave;//es la clave correspondiente a la operacion que se quiere ejecutar
 t_operacionESI* operacion;
 
 int cargarConfiguracion();

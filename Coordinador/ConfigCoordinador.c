@@ -11,10 +11,10 @@ int configValida(t_config* fd_configuracion) {
 int cargarConfiguracion() {
 	logger = log_create("LogCoordinador", "Coordinador", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
-	clave = string_new();
 	diccionarioClaves = dictionary_create();
 	instancias = list_create();
 	punteroEL = 0;
+	operacion = malloc(sizeof(t_operacionESI));
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Coordinador
 	fd_configuracion = config_create("../Coordinador.conf");
@@ -55,7 +55,6 @@ void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
-	free(clave);
 	dictionary_destroy_and_destroy_elements(diccionarioClaves, instanciaDestroyer);
 	list_destroy_and_destroy_elements(instancias, instanciaDestroyer);
 }
