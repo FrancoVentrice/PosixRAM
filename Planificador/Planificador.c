@@ -85,7 +85,7 @@ void enviarOrdenDeEjecucion() {
 			pkgHandshakeRespuesta.length);
 
 	log_info(logger, "Se envia orden para ejecutar");
-	int bytesEnviados = enviarPaquete(esiEnEjecucion->socket,
+	int bytesEnviados = enviarPaquete(*(esiEnEjecucion->socket),
 			&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
@@ -240,6 +240,7 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	//si no habia ESIs participando en el sistema, o los que habia estaban
 	//bloqueados, el planificador puede comenzar a trabajar de nuevo
 	if (previamenteVacia && !esiEnEjecucion) {
+		esiEnEjecucion=esi;
 		planificacionNecesaria = true;
 		trabajar();
 	}

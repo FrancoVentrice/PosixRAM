@@ -27,8 +27,9 @@ void finalizar(int codigo) {
 
 void iniciarConexiones() {
 	int bytesEnviados;
-	// TODO el log se está creando acá y en la carga de configuración. corregir esto.
-	// TODO ¿por qué está hardcodeade la IP del servidor? corregir.
+/*
+ *
+ */
 		tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
 		tRespuestaPlanificador *respuestaCoordinador = malloc(sizeof(tRespuestaPlanificador));
 
@@ -49,7 +50,7 @@ void iniciarConexiones() {
 				logger, "Se envia solicitud de ejecucion");
 		log_info(logger,"Se envian %d bytes", bytesEnviados);
 
-
+//
 
 				//RECIBIR RESPUESTA DEL COORDINADOR
 		tMensaje tipoMensajeCoordinador;
@@ -71,8 +72,6 @@ void iniciarConexiones() {
 		//CONEXION AL PLANIFICADOR
 	configuracion->socketPlanificador = connectToServer(configuracion->ipPlanificador,configuracion->puertoPlanificador, logger);
 
-	// TODO al pedo 2 variables iguales, se puede reusar la misma. corregir esto.
-
 
 	solicitud->mensaje = malloc(100);
 	strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
@@ -80,15 +79,13 @@ void iniciarConexiones() {
 	pkgHandshake.type = E_HANDSHAKE;
 
 	tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));
-	// TODO ¿por qué se llama "respuestaCoordinador" pero es de tipo tRespuestaPlanificador?
-	// corregir el nombre para que sea consistente
+
 
 	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",pkgHandshake.type, solicitud->mensaje);
 
 	log_info(logger,"Se envia solicitud al Planificador");
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgHandshake, logger,"Se envia solicitud de ejecucion");
 	log_info(logger,"Se envian %d bytes", bytesEnviados);
-
 	//Recibo respuesta del Planificador
 	char * sPayloadRespuestaHand = malloc(100);
 
@@ -104,7 +101,6 @@ void iniciarConexiones() {
 	log_info(logger,"RESPUESTA: %s", respuesta->mensaje);
 
 	//Recibir respuesta por parte del Planificador para ejecutar el script
-
 		tMensaje tipoMensajePlanificador;
 		char * sPayloadRespuestaPlanificador = malloc(100);
 
@@ -125,21 +121,16 @@ void iniciarConexiones() {
 
 		//ENVIO AL COORDINADOR LA INSTRUCCION A EJECUTAR
 
-		strcpy(solicitud->mensaje, "GET");
-		//tPaquete pkgSentencia;			USAR OTRO PAQUETE DE MENSAJE PARA LAS SENTENCIAS
-		//pkgSentencia.type = E_SENTENCIA;
+		leerLinea();
+	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir estosolicitud
+		/*free(solicitud);
+		free(respuestaCoordinador);
+		free(sPayloadRespuestaHandC);//
+		free(sPayloadRespuestaPlanificador);
+		free(respuestaCoordinador);
+		free(sPayloadRespuestaHand);
+		free(sPayloadRespuestaHandC);*/
 
-
-
-		pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
-				pkgHandshake.type, solicitud->mensaje);
-
-		log_info(logger, "Se envia la instruccion al coordinador");
-		bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
-				&pkgHandshake, logger, "Se envia solicitud de ejecucion");
-		log_info(logger, "Se envian %d bytes", bytesEnviados);
-
-	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir esto.
 }
 
 void cargarArchivo(char *path) {
@@ -188,17 +179,23 @@ int leerLinea() {
 	                	strcpy(operacion->clave, lineaParseada.argumentos.SET.clave);
 	                	operacion->valor = malloc(string_length(lineaParseada.argumentos.SET.valor));
 	                	strcpy(operacion->valor, lineaParseada.argumentos.SET.valor);
+
 	                    break;
 	                case STORE:
 	                	operacion->operacion = OPERACION_STORE;
 	                	operacion->clave = malloc(string_length(lineaParseada.argumentos.STORE.clave));
 	                	strcpy(operacion->clave, lineaParseada.argumentos.STORE.clave);
+
 	                    break;
 	                default:
 	                	log_error(logger, "No pude interpretar <%s>\n", lineptr);
 	                	finalizar(EXIT_FAILURE);
+
 	            }
+            	enviarOperacion();
+
 	            destruir_operacion(lineaParseada);
+
 	            log_info(logger, "\noperacion: %d \n clave: %s \n valor: %s\n", operacion->operacion, operacion->clave, operacion->valor);
 	        } else {
 	            log_error(logger, "La linea <%s> no es valida\n", lineptr);
@@ -214,6 +211,32 @@ void enviarOperacion() {
 	lecturaRechazada = false;
 	//en este metodo se envia la operacion leida, la cual esta guardada en
 	//la variable global "operacion"
+	tPaquete pkgSentencia;
+	int bytesEnviados;
+
+	if(operacion->operacion==OPERACION_GET){
+	pkgSentencia.type = E_SENTENCIA_GET;  //
+
+	pkgSentencia.length = serializar(pkgSentencia.payload, "%s",operacion->clave);
+
+	log_info(logger, "Se envia la instruccion al coordinador");
+	bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
+			&pkgSentencia, logger, "Se envia la instruccion al coordinador");
+	log_info(logger, "Se envian %d bytes", bytesEnviados);
+
+	}else if (operacion->operacion==OPERACION_SET){
+		pkgSentencia.type = E_SENTENCIA_SET;  //
+
+		pkgSentencia.length = serializar(pkgSentencia.payload, "%s%s",
+				operacion->clave,operacion->valor);
+
+		log_info(logger, "Se envia la instruccion al coordinador");
+		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
+				&pkgSentencia, logger, "Se envia la instruccion al coordinador");
+		log_info(logger, "Se envian %d bytes", bytesEnviados);
+	}
+
+
 }
 
 void enviarEsiFinalizado() {

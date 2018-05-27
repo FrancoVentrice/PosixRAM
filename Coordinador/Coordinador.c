@@ -81,9 +81,31 @@ void escucharConexiones() {
 				break;
 
 
-			//case E_SENTENCIA:   Agregar el case para la sentencia que recibe del ESI,
-									//y responder por el resultado de la operacion
+			case E_SENTENCIA_GET:
 
+				operacion->clave = NULL;
+				operacion->valor = NULL;
+				log_info(logger, "Se recibe sentencia GET a ser ejecutada");
+
+				log_info(logger, "Socket comunicacion: %d \n",
+						iSocketComunicacion);
+
+				deserializar(sPayloadRespuesta, "%s",
+						operacion->clave);
+
+				*tipoMensaje = DESCONEXION;
+				break;
+
+			case E_SENTENCIA_SET:
+
+				log_info(logger, "Se recibe sentencia SET a ser ejecutada");
+
+				log_info(logger, "Socket comunicacion: %d \n",
+						iSocketComunicacion);
+
+				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,operacion->valor);
+
+				*tipoMensaje = DESCONEXION;
 			case P_HANDSHAKE:
 				printf("Socket comunicacion: %d \n", iSocketComunicacion);
 				socketPlanificador=iSocketComunicacion;

@@ -40,6 +40,12 @@ typedef struct {
 } t_instancia;
 
 
+typedef struct{
+	int operacion;
+	char* clave;
+	char* valor;
+} t_operacionESI;
+
 t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
@@ -48,6 +54,7 @@ t_dictionary * diccionarioClaves;//diccionario de claves e instancias que las po
 t_list * instancias;//lista de instancias disponibles
 int punteroEL;//puntero usado en la distribucion Equitative Load
 char * clave;//es la clave correspondiente a la operacion que se quiere ejecutar
+t_operacionESI* operacion;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
