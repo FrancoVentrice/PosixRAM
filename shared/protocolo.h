@@ -21,6 +21,8 @@ typedef struct {
 typedef enum {
 	/* Mensajes del ESI */
 	E_HANDSHAKE,
+	E_SENTENCIA_GET,
+	E_SENTENCIA_SET,
 
 	/* Mensajes de Planificador */
 	P_HANDSHAKE,
