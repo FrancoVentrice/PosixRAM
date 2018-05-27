@@ -22,6 +22,7 @@ void escucharConexiones() {
 	int iSocketComunicacion;
 	int tamanioTotal = 0;
 	int socketPlanificador;
+	operacion=malloc(sizeof(t_operacionESI));
 
 
 	fd_set setSocketsOrquestador;
@@ -83,15 +84,16 @@ void escucharConexiones() {
 
 			case E_SENTENCIA_GET:
 
-				operacion->clave = NULL;
-				operacion->valor = NULL;
+
 				log_info(logger, "Se recibe sentencia GET a ser ejecutada");
 
 				log_info(logger, "Socket comunicacion: %d \n",
 						iSocketComunicacion);
 
-				deserializar(sPayloadRespuesta, "%s",
-						operacion->clave);
+				deserializar(sPayloadRespuesta, "%s",operacion->clave);
+
+
+
 
 				*tipoMensaje = DESCONEXION;
 				break;
