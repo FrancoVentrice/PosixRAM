@@ -114,6 +114,8 @@ t_esi *buscarEsiNoBloqueadoPorId(char *);
 void clavesTomadasDestroyer(char *);
 void finalizarEsiEnEjecucion();
 void estimar(t_esi *);
+void sentenciaEjecutadaCorrectamente();
+void esiFinalizado();
 
 //metodos de HRRN
 int planificarHRRN();
@@ -121,7 +123,6 @@ int calcularTiempoEspera(t_esi *);
 
 //metodos de SJF
 int planificarSJF();
-void sentenciaEjecutadaCorrectamenteSJF();
 
 //metodos de la consola
 void pause();

@@ -71,7 +71,6 @@ void trabajar() {
 }
 
 void enviarOrdenDeEjecucion() {
-	tRespuestaCoordinador* respuestaCoordinador=malloc(sizeof(tRespuestaCoordinador));
 	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
 
 	autorizarEjecucion->mensaje = malloc(100);
@@ -92,7 +91,22 @@ void enviarOrdenDeEjecucion() {
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
-	recibirResultadoOperacion(respuestaCoordinador);
+	//recibir respuesta de esi:
+	//
+	//if (OK) {
+	// -OK (el esi va a mandar una linea al coordinador)
+	//  Planificador no hace nada y queda a la espera de la respuesta del coordinador
+	// 	ejecuta un metodo que espere la consulta del coordinador sobre la clave a usar:
+	//
+	// recibirConsultaOperacion();
+	evaluarConsultaDeOperacion(); //este metodo envia un par de mensajes al coordinador
+	//
+	//} else if (esi finalizado) {
+	// -Esi finalizado (trató de leer linea y se encontro con final de archivo)
+	//    replanifica y asigna a otro esi
+	esiFinalizado();
+	//}
+
 }
 
 void finalizar(int codigo) {
@@ -231,7 +245,8 @@ void escucharESIs() {
 	}
 }
 
-void recibirResultadoOperacion(tRespuestaCoordinador* respuestaCoordinador) {
+void recibirResultadoOperacion() {
+	tRespuestaCoordinador* respuestaCoordinador = malloc(sizeof(tRespuestaCoordinador));
 	tMensaje tipoMensajeCoordinador;
 	int recibidos;
 	char * sPayloadRespuestaCoordinador = malloc(100);
@@ -249,6 +264,75 @@ void recibirResultadoOperacion(tRespuestaCoordinador* respuestaCoordinador) {
 	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
 			respuestaCoordinador->mensaje);
 
+	//if (OK) {
+	trabajar();
+	//}
+}
+
+void enviarOperacionValida() {
+	//aca se envia al coordinador que la operacion sobre la clave es valida
+	//
+	//
+	//
+	//para finalmente esperar el resultado de la operacion
+	recibirResultadoOperacion();
+}
+
+void evaluarConsultaDeOperacion() {
+	char *clave;
+	int operacion;
+	switch (operacion) {
+	case 1: //GET: numeros puestos a modo de prueba
+		if (evaluarBloqueoDeClave(clave)) {
+			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
+			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
+				enviarOperacionValida();
+				esiTomaClave(esiEnEjecucion, clave);
+			} else {
+				//informar al coordinador que la clave ya esta tomada
+				bloquearESIConClave(esiEnEjecucion, clave);
+				planificacionNecesaria = true;
+				trabajar();
+			}
+		} else {
+			enviarOperacionValida();
+			esiTomaClave(esiEnEjecucion, clave);
+		}
+		break;
+	case 2: //SET: numeros puestos a modo de prueba
+		if (evaluarBloqueoDeClave(clave)) {
+			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
+			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
+				enviarOperacionValida();
+			} else {
+				//informar al coordinador que la clave ya esta tomada
+				bloquearESIConClave(esiEnEjecucion, clave);
+				planificacionNecesaria = true;
+				trabajar();
+			}
+		} else {
+			//informar al coordinador que la clave esta libre pero el esi no la tiene asignada
+			//creo que es un error
+		}
+		break;
+	case 3: //STORE: numeros puestos a modo de prueba
+		if (evaluarBloqueoDeClave(clave)) {
+			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
+			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
+				enviarOperacionValida();
+				liberarClave(clave);
+			} else {
+				//informar al coordinador que la clave ya esta tomada
+				bloquearESIConClave(esiEnEjecucion, clave);
+				planificacionNecesaria = true;
+				trabajar();
+			}
+		} else {
+			//informar al coordinador que la clave esta libre pero el esi no la tiene asignada
+			//creo que es un error
+		}
+		break;
+	}
 }
 
 void agregarEsiAColaDeListos(t_esi *esi) {
@@ -308,6 +392,18 @@ void planificar() {
 	list_remove(colaDeListos, indexProximoAEjecutar);
 }
 
+void sentenciaEjecutadaCorrectamente() {
+	esiEnEjecucion->rafagaAnterior ++;
+	esiEnEjecucion->estimacion--;
+	tiempoTotalEjecucion ++;
+}
+
+void esiFinalizado() {
+	finalizarEsiEnEjecucion();
+	planificacionNecesaria = true;
+	trabajar();
+}
+
 int planificarHRRN() {
 	t_esi* esiHRRNMayor;
 	float RRMayor = 0;
@@ -365,11 +461,6 @@ void estimar(t_esi *esi) {
 	//se va a ir decrementando con las ejecuciones, y estimacionAnterior queda estatica y
 	//me sirve para la proxima vez que tenga que estimar
 	esi->estimacionAnterior = esi->estimacion;
-}
-
-void sentenciaEjecutadaCorrectamenteSJF() {
-	esiEnEjecucion->rafagaAnterior ++;
-	esiEnEjecucion->estimacion--;
 }
 
 //Cuando ESI hace un GET y la clave esta tomada
@@ -513,7 +604,6 @@ void finalizarEsiEnEjecucion() {
 	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
-	planificacionNecesaria = true;
 }
 
 void ejecutarComandosConsola() {
@@ -579,7 +669,7 @@ int getIndexDeEsi(t_list *lista, t_esi *esi) {
 	int i;
 	for (i = 0; i < lista->elements_count; i++) {
 		t_esi *iesi = list_get(lista, i);
-		if (esi->id == iesi->id) {
+		if (strcmp(esi->id, iesi->id) == 0) {
 			return i;
 		}
 	}
