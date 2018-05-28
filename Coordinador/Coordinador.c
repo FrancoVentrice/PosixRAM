@@ -7,6 +7,7 @@
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
+	archivoLog=abrirArchivoLog();
 	escucharConexiones();
 }
 void finalizar(int codigo) {
@@ -90,12 +91,19 @@ void escucharConexiones() {
 
 				log_info(logger, "Socket comunicacion: %d \n",
 						iSocketComunicacion);
+				char* lineaLogOperacion=malloc(100);
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 
 				log_info(logger, "Se ejecuta instruccion GET...");
 				informarResultadoOperacionOk(iSocketComunicacion,
 						socketPlanificador);
+
+				strcat(lineaLogOperacion,"GET");
+				strcat(lineaLogOperacion,operacion->clave);
+
+				printf("Linea: %s\n",lineaLogOperacion);
+				escribirArchivo(archivoLog,lineaLogOperacion);
 
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -109,6 +117,12 @@ void escucharConexiones() {
 
 				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,
 						operacion->valor);
+				strcat(lineaLogOperacion, "GET");
+				strcat(lineaLogOperacion, operacion->clave);
+				strcat(lineaLogOperacion, operacion->valor);
+
+
+				escribirArchivo(archivoLog, lineaLogOperacion);
 
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -121,6 +135,9 @@ void escucharConexiones() {
 						iSocketComunicacion);
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
+				strcat(lineaLogOperacion, operacion->clave);
+				printf("Linea: %s\n", lineaLogOperacion);
+				escribirArchivo(archivoLog, lineaLogOperacion);
 				*tipoMensaje = DESCONEXION;
 
 				break;
@@ -182,7 +199,19 @@ void escucharConexiones() {
 			}
 		}
 	}
+	fclose(archivoLog);
 	finalizar(0);
+}
+
+FILE* abrirArchivoLog(){
+
+return fopen(PATH_LOG,"rb+");
+
+}
+
+void escribirArchivo(FILE* archivo,char* operacion){
+	fwrite(operacion,strlen(operacion),1,archivo);
+
 }
 
 void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){

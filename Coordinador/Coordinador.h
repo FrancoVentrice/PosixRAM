@@ -16,6 +16,7 @@
 #define ALGORITMO_LSU 1
 #define ALGORITMO_EL 2
 #define ALGORITMO_KE 3
+#define PATH_LOG "..//Coordinador/log/logOperaciones.txt"
 
 typedef struct {
 	int puertoEscucha;
@@ -54,6 +55,7 @@ t_dictionary * diccionarioClaves;//diccionario de claves e instancias que las po
 t_list * instancias;//lista de instancias disponibles
 int punteroEL;//puntero usado en la distribucion Equitative Load
 t_operacionESI* operacion;
+FILE* archivoLog;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
@@ -65,6 +67,7 @@ void registrarClaveAgregadaAInstancia();
 void elegirInstanciaLSU();
 void elegirInstanciaEL();
 void elegirInstanciaKE();
+FILE* abrirArchivoLog();
 
 //instancia
 void instanciaDestroyer(t_instancia *);
