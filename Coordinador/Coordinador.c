@@ -22,7 +22,6 @@ void escucharConexiones() {
 	int iSocketComunicacion;
 	int tamanioTotal = 0;
 	int socketPlanificador;
-	operacion=malloc(sizeof(t_operacionESI));
 
 
 	fd_set setSocketsOrquestador;
@@ -173,7 +172,7 @@ void escucharConexiones() {
 //la cual operar los comandos SET
 //elige la instancia a la cual le va a agregar o modificar la clave
 void elegirInstanciaSet() {
-	if (!dictionary_has_key(diccionarioClaves, clave)) {
+	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
 		switch (configuracion->algoritmoDistribucion) {
 		case ALGORITMO_LSU:
 			elegirInstanciaLSU();
@@ -186,7 +185,7 @@ void elegirInstanciaSet() {
 			break;
 		}
 	} else {
-		instanciaElegida = dictionary_get(diccionarioClaves, clave);
+		instanciaElegida = dictionary_get(diccionarioClaves, operacion->clave);
 	}
 }
 
@@ -194,7 +193,7 @@ void elegirInstanciaSet() {
 //responde que guardo correctamente la clave.
 //no se debe llamar cuando la clave solamente es modificada
 void registrarClaveAgregadaAInstancia() {
-	dictionary_put(diccionarioClaves, clave, instanciaElegida);
+	dictionary_put(diccionarioClaves, operacion->clave, instanciaElegida);
 }
 
 //LEAST SPACE USED
@@ -243,7 +242,7 @@ void elegirInstanciaKE() {
 		letrasPorInstancia++;
 	}
 	//'a' tendria valor 1, 'b' 2, y asi
-	int valorPrimerCaracter = clave[0] - 96;
+	int valorPrimerCaracter = operacion->clave[0] - 96;
 	int indexInstancia = valorPrimerCaracter / letrasPorInstancia;
 	if (valorPrimerCaracter % letrasPorInstancia == 0) {
 		indexInstancia--;

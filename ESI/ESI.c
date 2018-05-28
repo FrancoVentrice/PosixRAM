@@ -121,7 +121,7 @@ void iniciarConexiones() {
 
 		//ENVIO AL COORDINADOR LA INSTRUCCION A EJECUTAR
 
-		leerLinea();
+		ordenRecibida();
 	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir estosolicitud
 		/*free(solicitud);
 		free(respuestaCoordinador);
@@ -192,7 +192,6 @@ int leerLinea() {
 	                	finalizar(EXIT_FAILURE);
 
 	            }
-            	enviarOperacion();
 
 	            destruir_operacion(lineaParseada);
 
