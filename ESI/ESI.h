@@ -37,6 +37,10 @@ typedef struct{
 } tRespuestaPlanificador;
 
 typedef struct{
+	char* mensaje;
+} tRespuestaCoordinador;
+
+typedef struct{
 	int operacion;
 	char* clave;
 	char* valor;

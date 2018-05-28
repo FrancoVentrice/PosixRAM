@@ -22,6 +22,9 @@ void escucharConexiones() {
 	int iSocketComunicacion;
 	int tamanioTotal = 0;
 	int socketPlanificador;
+	operacion->clave=malloc(100);
+	operacion->valor=malloc(100);
+
 
 
 	fd_set setSocketsOrquestador;
@@ -83,30 +86,44 @@ void escucharConexiones() {
 
 			case E_SENTENCIA_GET:
 
-
 				log_info(logger, "Se recibe sentencia GET a ser ejecutada");
 
 				log_info(logger, "Socket comunicacion: %d \n",
 						iSocketComunicacion);
 
-				deserializar(sPayloadRespuesta, "%s",operacion->clave);
+				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 
-
-
+				log_info(logger, "Se ejecuta instruccion GET...");
+				informarResultadoOperacionOk(iSocketComunicacion,
+						socketPlanificador);
 
 				*tipoMensaje = DESCONEXION;
 				break;
 
 			case E_SENTENCIA_SET:
 
+				//log_info(logger, "Se recibe sentencia SET a ser ejecutada");
+
+				//	log_info(logger, "Socket comunicacion: %d \n",
+				//		iSocketComunicacion);
+
+				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,
+						operacion->valor);
+
+				*tipoMensaje = DESCONEXION;
+				break;
+
+			case E_SENTENCIA_STORE:
+
 				log_info(logger, "Se recibe sentencia SET a ser ejecutada");
 
 				log_info(logger, "Socket comunicacion: %d \n",
 						iSocketComunicacion);
 
-				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,operacion->valor);
-
+				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 				*tipoMensaje = DESCONEXION;
+
+				break;
 			case P_HANDSHAKE:
 				printf("Socket comunicacion: %d \n", iSocketComunicacion);
 				socketPlanificador=iSocketComunicacion;
@@ -166,6 +183,58 @@ void escucharConexiones() {
 		}
 	}
 	finalizar(0);
+}
+
+void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){
+	//ENVIO RESPUESTA AL ESI
+	int bytesEnviados;
+	log_info(logger, "Se recibe sentencia SET a ser ejecutada");
+	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
+	resultadoOperacion->mensaje = malloc(100);
+	strcpy(resultadoOperacion->mensaje, "OK");
+	tPaquete pkgHandshake2;
+	pkgHandshake2.type = C_RESULTADO_OPERACION;
+
+	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
+
+	log_info(logger,"Se envia respuesta al ESI");
+	bytesEnviados = enviarPaquete(socketEsi, &pkgHandshake2, logger,
+			"Se envia respuesta al ESI");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
+	//ENVIO RESPUESTA AL PLANIFICADOR
+
+	log_info(logger,"Se envia respuesta al Planificador");
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger,
+			"Se envia respuesta al Planificador");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
+}
+
+void informarResultadoOperacionError(int socketEsi, int socketPlanificador){
+	//ENVIO RESPUESTA AL ESI
+	int bytesEnviados;
+	log_info(logger, "Se recibe sentencia SET a ser ejecutada");
+	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
+	resultadoOperacion->mensaje = malloc(100);
+	strcpy(resultadoOperacion->mensaje, "ERROR");
+	tPaquete pkgHandshake2;
+	pkgHandshake2.type = C_RESULTADO_OPERACION;
+
+	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
+
+	log_info(logger,"Se envia respuesta al ESI");
+	bytesEnviados = enviarPaquete(socketEsi, &pkgHandshake2, logger,
+			"Se envia respuesta al ESI");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
+	//ENVIO RESPUESTA AL PLANIFICADOR
+
+	log_info(logger,"Se envia respuesta al Planificador");
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger,
+			"Se envia respuesta al Planificador");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
 }
 
 //se usa para elegir la instancia con

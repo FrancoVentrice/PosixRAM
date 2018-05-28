@@ -23,12 +23,14 @@ typedef enum {
 	E_HANDSHAKE,
 	E_SENTENCIA_GET,
 	E_SENTENCIA_SET,
+	E_SENTENCIA_STORE,
 
 	/* Mensajes de Planificador */
 	P_HANDSHAKE,
 
 	/* Mensajes de Coordindor */
 	C_HANDSHAKE,
+	C_RESULTADO_OPERACION,
 
 	/* Mensajes de Instancia */
 	I_HANDSHAKE,

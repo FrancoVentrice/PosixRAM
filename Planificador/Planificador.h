@@ -38,6 +38,10 @@ typedef struct{
 
 typedef struct{
 	char * mensaje;
+}tRespuestaCoordinador;
+
+typedef struct{
+	char * mensaje;
 }tRespuesta;
 
 typedef struct {
@@ -67,6 +71,7 @@ int tiempoTotalEjecucion;
 bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
+int socketCoordinador;
 
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion

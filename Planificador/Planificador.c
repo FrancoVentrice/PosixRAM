@@ -71,7 +71,9 @@ void trabajar() {
 }
 
 void enviarOrdenDeEjecucion() {
+	tRespuestaCoordinador* respuestaCoordinador=malloc(sizeof(tRespuestaCoordinador));
 	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
+
 	autorizarEjecucion->mensaje = malloc(100);
 	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
 	tPaquete pkgHandshakeRespuesta;
@@ -89,6 +91,8 @@ void enviarOrdenDeEjecucion() {
 			&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
+
+	recibirResultadoOperacion(respuestaCoordinador);
 }
 
 void finalizar(int codigo) {
@@ -128,7 +132,7 @@ void escucharESIs() {
 	FD_ZERO(&setSocketsOrquestador);
 
 	//Conexion al Coordinador
-	int socketCoordinador = connectToServer(ipCoordinador, puertoConexion,
+	socketCoordinador = connectToServer(ipCoordinador, puertoConexion,
 			logger);
 	tSolicitudPlanificador* solicitudPlanificador = malloc(
 			sizeof(tSolicitudPlanificador));
@@ -225,6 +229,26 @@ void escucharESIs() {
 			}
 		}
 	}
+}
+
+void recibirResultadoOperacion(tRespuestaCoordinador* respuestaCoordinador) {
+	tMensaje tipoMensajeCoordinador;
+	int recibidos;
+	char * sPayloadRespuestaCoordinador = malloc(100);
+
+	log_info(logger, "Esperando respuesta de la operacion...");
+	recibidos = recibirPaquete(socketCoordinador,
+			&tipoMensajeCoordinador, &sPayloadRespuestaCoordinador, logger,
+			"Respuesta a la ejecucion");
+	log_info(logger, "RECIBIDOS:%d", recibidos);
+	respuestaCoordinador->mensaje = malloc(100);
+
+	deserializar(sPayloadRespuestaCoordinador, "%s",
+			respuestaCoordinador->mensaje);
+
+	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
+			respuestaCoordinador->mensaje);
+
 }
 
 void agregarEsiAColaDeListos(t_esi *esi) {
