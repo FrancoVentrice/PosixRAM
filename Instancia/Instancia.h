@@ -14,12 +14,15 @@
 #include <commons/process.h>
 #include <commons/string.h>
 #include "../shared/libgral.h"
+#include "../shared/pantalla.h"
 #include "../shared/sockets.h"
 #include "../shared/serializar.h"
 
 #define ALGORITMO_CIRC 1
 #define ALGORITMO_LRU 2
 #define ALGORITMO_BSU 3
+
+#define MAX_LONG_CLAVE 40+1
 
 /* estructura para los valores de la línea de comandos */
 typedef struct {
@@ -47,23 +50,26 @@ typedef struct {
 	int realizarDump; // 1 = realizar dump . 0 = no realizar dump
 	time_t ultimoDump;
 	unsigned int instruccionesProcesadas;
-	unsigned int cantidadEntradasOcupadas;
-	unsigned int espacioOcupado; // bytes
+	//unsigned int cantidadEntradasOcupadas;
+	//unsigned int espacioOcupado; // bytes
 } t_instanceStatus;
 
-/* estructura que representa una entrada */
+/* estructura que representa una entrada en la tabla */
 typedef struct {
-	char clave[40];
-	char * valor;
+	char clave[MAX_LONG_CLAVE];
 	unsigned int tamanio;
 	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas al momento de crearse
 } t_entrada;
 
+// TODO revisar si es necesario que todas estas sean globales (mala práctica, muy mala)
 t_commandLineParameters parametrosEntrada;
 t_confInstancia * configuracion;
 t_instanceStatus estadoInstancia;
 t_config * fd_configuracion;
 t_log * logger;
+
+t_entrada * tablaDeEntradas;
+char * almacenamientoEntradas;
 
 // inicio [CoreInstancia.c]
 int procesarLineaDeComandos (int, char **);
@@ -74,17 +80,26 @@ void finalizar(int);
 // configuracion [ConfigInstancia.c]
 int cargarConfiguracion(void);
 int configValida(t_config *);
+void limpiarConfiguraion(void);
 
 // procesamiento
 int conectarACoordinador(void);
-void iniciarDumpTimeout(void);
 void capturaSenial(int);
+
+// manejo de entrads [EntradasInstancia.c]
+void prepararTablaDeEntradas(void);
+void iniciarDumpTimeout(void);
 void volcarEntradas(void);
+unsigned int espacioDisponible(void);
+void limpiarTablaDeEntradas(void);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
 void mostrarConfiguracion(void);
+void mostrarConexionCoordinador(void);
+void mostrarTablaDeEntradas(void);
 void pantallaFin(void);
 void mostrarTexto(char *);
+void mostrarMenu(void);
 
 #endif /* INSTANCIA_H_ */

@@ -59,3 +59,4 @@ LogESI
 *.log
 /logs/
 /Instancia/logs/
+/Instancia/Default/logs/

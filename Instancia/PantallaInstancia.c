@@ -4,30 +4,68 @@
  * (c) PosixRAM */
 
 #include "Instancia.h"
+#include "../shared/pantalla.h"
 
 void pantallaInicio() {
 	limpiarPantalla();
-	printf("\e[36m");
+	printf(CYAN_T);
 	centrarTexto("Instancia PosixRAM para ReDistinto");
 	centrarTexto("==================================");
-	printf("\e[0m");
+	printf(RESET);
+	fflush(stdout);
 }
 
 void mostrarConfiguracion() {
 	if(parametrosEntrada.logPantalla)
 		return;
 
-	printf("\nArchivo de configuración cargado:\033[1m\033[37m %s\033[0m", parametrosEntrada.archivoConf);
-	printf("\n - Instancia:\033[1m\033[37m %s\033[0m", configuracion->nombreDeInstancia);
-	printf("\n - Algoritmo de reemplazo:\033[1m\033[37m %s\033[0m", config_get_string_value(fd_configuracion, "ALGORITMO_REEMPLAZO"));
-	printf("\n - Punto de montaje:\033[1m\033[37m %s\033[0m", configuracion->puntoDeMontaje);
-	printf("\n - Intervalo para dump:\033[1m\033[37m %d segundos\033[0m\n", configuracion->intervaloDump);
+	printf("\nArchivo de configuración cargado: " BOLD "%s\n" RESET, parametrosEntrada.archivoConf);
+	printf(" - Instancia: " BOLD "%s\n" RESET, configuracion->nombreDeInstancia);
+	printf(" - Algoritmo de reemplazo: " BOLD "%s\n" RESET, config_get_string_value(fd_configuracion, "ALGORITMO_REEMPLAZO"));
+	printf(" - Punto de montaje: " BOLD "%s\n" RESET, configuracion->puntoDeMontaje);
+	printf(" - Intervalo para dump: " BOLD "%d segundos\n" RESET, configuracion->intervaloDump);
+	fflush(stdout);
+}
+
+void mostrarConexionCoordinador(void) {
+	if(parametrosEntrada.logPantalla)
+		return;
+
+	printf("Conectado con Coordinador - IP: " BOLD "%s" RESET " - Puerto: " BOLD "%d\n" RESET ,
+				configuracion->ipCoordinador,
+				configuracion->puertoCoordinador);
+	fflush(stdout);
+}
+
+void mostrarTablaDeEntradas(void) {
+	if(parametrosEntrada.logPantalla)
+		return;
+
+	printf("Preparado espacio de almacenamiento para " BOLD "%d" RESET " entradas de " BOLD "%d bytes" RESET ". Espacio total disponible: " BOLD "%d bytes" RESET ".\n"
+				,configuracion->cantidadEntradas
+				,configuracion->tamanioEntrada
+				,espacioDisponible());
+	fflush(stdout);
 }
 
 void pantallaFin() {
-	printf("\e[33m\n");
+	printf(AMARILLO_T);
 	centrarTexto("PosixRAM (c) 2018");
-	printf("\e[0m\n");
+	printf(RESET);
+	fflush(stdout);
+}
+
+void mostrarMenu() {
+	if(parametrosEntrada.logPantalla)
+		return;
+
+	printf("\n" BOLD "(C) " RESET "Forzar " UNDERLINE "C" RESET "ompactación - "
+			BOLD "(D) " RESET "Forzar " UNDERLINE "D" RESET "ump - "
+			BOLD "(E) " RESET "Listar " UNDERLINE "E" RESET "ntradas\n"
+			BOLD "(L) " RESET "Últimas 10 líneas del " UNDERLINE "L" RESET "og - "
+			BOLD "(R) " RESET UNDERLINE "R" RESET "efresh Status - "
+			BOLD "(Q) " RESET UNDERLINE "Q" RESET "uit (salir)\n");
+	fflush(stdout);
 }
 
 void mostrarTexto(char *cadena) {
@@ -35,4 +73,5 @@ void mostrarTexto(char *cadena) {
 		return;
 
 	puts(cadena);
+	fflush(stdout);
 }

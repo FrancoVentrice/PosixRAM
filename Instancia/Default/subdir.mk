@@ -6,18 +6,21 @@
 C_SRCS += \
 ../ConfigInstancia.c \
 ../CoreInstancia.c \
+../EntradasInstancia.c \
 ../Instancia.c \
 ../PantallaInstancia.c 
 
 OBJS += \
 ./ConfigInstancia.o \
 ./CoreInstancia.o \
+./EntradasInstancia.o \
 ./Instancia.o \
 ./PantallaInstancia.o 
 
 C_DEPS += \
 ./ConfigInstancia.d \
 ./CoreInstancia.d \
+./EntradasInstancia.d \
 ./Instancia.d \
 ./PantallaInstancia.d 
 

@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
 
 	// controlar argumentos de entrada
 	if (procesarLineaDeComandos(argc, argv) < 0) {
-		printf("\nParámetros incorrectos.\nEjecute \033[1m\033[37m %s --help \033[0m para obtener más información.\n\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -31,13 +30,17 @@ int main(int argc, char *argv[]) {
 
 	if(!conectarACoordinador())
 		finalizar(EXIT_FAILURE);
+	mostrarConexionCoordinador();
 
-	// TODO preparar punto de montaje
+	prepararTablaDeEntradas();
+	mostrarTablaDeEntradas();
 
-	// TODO armar estructura de entradas
+	// TODO preparar punto de montaje y levantar entradas existentes
 
-	// iniciamos el timeout para el vuelco seteando una alarma
+	/* iniciamos el timeout para el vuelco seteando una alarma */
 	iniciarDumpTimeout();
+
+	mostrarMenu();
 
 	/* se limpian la estructuras */
 	FD_ZERO(&master);
@@ -110,16 +113,9 @@ int main(int argc, char *argv[]) {
 	finalizar(EXIT_SUCCESS);
 }
 
-/* timeout para disparar señal de dump */
-void iniciarDumpTimeout() {
-	estadoInstancia.realizarDump = 0;
-	signal(SIGALRM, capturaSenial);
-	alarm(configuracion->intervaloDump);
-	log_info(logger,"Seteada alarma para vuelco en %d segundos.",configuracion->intervaloDump);
-}
-
-/* handler de señales */
 void capturaSenial(int iSignal) {
+	/* handler de señales */
+
 	switch(iSignal) {
 		case SIGINT:
 			// interrupción del teclado no se está tratando
@@ -140,18 +136,9 @@ void capturaSenial(int iSignal) {
 	}
 }
 
-/* proceso de dump */
-void volcarEntradas() {
-	// TODO completar este proceso
-	log_info(logger,"Ejecutando proceso de vuelco...");
-	retardoSegundos(3);
-	estadoInstancia.ultimoDump = time(NULL);
-	log_info(logger,"Vuelco finalizado.");
-	iniciarDumpTimeout();
-}
-
-/* conecta con el coordinador y hace el handshake */
 int conectarACoordinador() {
+	/* conecta con el coordinador y hace el handshake */
+
 	log_info(logger,"Conectando con el Coordinador (IP: %s Puerto: %d)...", configuracion->ipCoordinador,configuracion->puertoCoordinador);
 	configuracion->fdSocketCoordinador = connectToServer(configuracion->ipCoordinador,configuracion->puertoCoordinador, logger);
 	if (configuracion->fdSocketCoordinador < 0) {

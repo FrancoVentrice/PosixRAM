@@ -10,8 +10,6 @@
 
 #define STDIN 0
 
-void centrarTexto(char *);
-void limpiarPantalla();
 void retardoSegundos(int);
 void retardoMilisegundos(int);
 

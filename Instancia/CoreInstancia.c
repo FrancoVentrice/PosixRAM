@@ -19,16 +19,17 @@ int procesarLineaDeComandos (int argc, char *argv[]) {
 		if (strcmp(argv[i], "--e") == 0) {
 			// easter egg (error forzado)
 			free(parametrosEntrada.archivoConf);
+			printf("\nParámetros incorrectos.\nEjecute " AZUL_T "%s --help" RESET " para obtener más información.\n\n", argv[0]);
 			return -1;
 		}
 		if (strcmp(argv[i], "--help") == 0) {
 			printf("\nEjecución\n");
 			printf("    ./Instancia [OPTION]\n");
 			printf("Parámetros\n");
-			printf("\033[1m\033[37m --help \033[0m Muestra esta ayuda.\n");
-			printf("\033[1m\033[37m --d \033[0m Modo debug, setea el log con nivel LOG_LEVEL_TRACE.\n");
-			printf("\033[1m\033[37m --l \033[0m Indica que el log se debe mostrar en pantalla. Desactiva el modo gráfico.\n");
-			printf("\033[1m\033[37m --conf=FILE \033[0m Permite indicar un archivo de configuración. Ej.: ./Instancia --conf=InstUno.conf.\n\n");
+			printf(" " AZUL_T "--help" RESET "\t Muestra esta ayuda.\n");
+			printf(" " AZUL_T "--d" RESET "\t Modo debug, setea el log con nivel LOG_LEVEL_TRACE.\n");
+			printf(" " AZUL_T "--l" RESET "\t Indica que el log se debe mostrar en pantalla. Desactiva el modo gráfico.\n");
+			printf(" " AZUL_T "--conf=FILE" RESET "\t Permite indicar un archivo de configuración. Ej.: ./Instancia --conf=InstUno.conf.\n\n");
 			free(parametrosEntrada.archivoConf);
 			exit(0);
 		}
@@ -94,11 +95,12 @@ void finalizar(int codigo) {
 	if (fd_configuracion != NULL) {
 		desconectarseDe(configuracion->fdSocketCoordinador);
 		log_info(logger,"Instancia %s finalizada" , configuracion->nombreDeInstancia);
-		free(configuracion);
-		config_destroy(fd_configuracion);
+		limpiarConfiguraion();
 	}
 	log_destroy(logger);
 	free(parametrosEntrada.archivoConf);
+
+	void limpiarTablaDeEntradas();
 
 	pantallaFin();
 

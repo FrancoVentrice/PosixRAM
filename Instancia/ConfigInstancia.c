@@ -5,8 +5,9 @@
 
 #include "Instancia.h"
 
-/* carga el archivo de configuracion default */
 int cargarConfiguracion() {
+	/* carga el archivo de configuracion default */
+
 	log_info(logger,"Cargando archivo de configuración: %s", parametrosEntrada.archivoConf);
 
 	configuracion = malloc(sizeof(t_confInstancia));
@@ -47,12 +48,21 @@ int cargarConfiguracion() {
 	return 1;
 }
 
-/* valida que la configuracion este completa (no valida errores) */
 int configValida(t_config* fd_configuracion) {
+	/* valida que la configuracion este completa (no valida errores) */
+
 	return (config_has_property(fd_configuracion, "IP_COORDINADOR")
 		&& config_has_property(fd_configuracion, "PUERTO_COORDINADOR")
 		&& config_has_property(fd_configuracion, "ALGORITMO_REEMPLAZO")
 		&& config_has_property(fd_configuracion, "PUNTO_MONTAJE")
 		&& config_has_property(fd_configuracion, "NOMBRE_INSTANCIA")
 		&& config_has_property(fd_configuracion, "INTERVALO_DUMP"));
+}
+
+void limpiarConfiguraion() {
+	/* libera los recursos asignados para la configuración */
+	if (fd_configuracion != NULL) {
+		free(configuracion);
+		config_destroy(fd_configuracion);
+	}
 }

@@ -6,18 +6,21 @@
 C_SRCS += \
 ../libgral.c \
 ../logExtra.c \
+../pantalla.c \
 ../serializar.c \
 ../sockets.c 
 
 OBJS += \
 ./libgral.o \
 ./logExtra.o \
+./pantalla.o \
 ./serializar.o \
 ./sockets.o 
 
 C_DEPS += \
 ./libgral.d \
 ./logExtra.d \
+./pantalla.d \
 ./serializar.d \
 ./sockets.d 
 
