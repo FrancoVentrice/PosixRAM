@@ -24,18 +24,18 @@ int main(int argc, char *argv[]) {
 	iniciarLogger();
 	log_info(logger,"Iniciando Instancia PosixRAM para ReDistinto");
 
-	if(!cargarConfiguracion())
+	if (!cargarConfiguracion())
 		finalizar(EXIT_FAILURE);
 	mostrarConfiguracion();
 
-	if(!conectarACoordinador())
+	if (!conectarACoordinador())
 		finalizar(EXIT_FAILURE);
 	mostrarConexionCoordinador();
 
 	prepararTablaDeEntradas();
 	mostrarTablaDeEntradas();
-
-	// TODO preparar punto de montaje y levantar entradas existentes
+	if (!inicializarPuntoDeMontaje())
+		finalizar(EXIT_FAILURE);
 
 	/* iniciamos el timeout para el vuelco seteando una alarma */
 	iniciarDumpTimeout();

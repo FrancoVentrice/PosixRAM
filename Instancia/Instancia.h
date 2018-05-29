@@ -4,11 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <errno.h> // strerror
 #include <time.h> // time
-#include <sys/stat.h> // mkdir
 #include <unistd.h>  // alarm
 #include <ctype.h> // toupper
+#include <dirent.h>
 #include <sys/mman.h> // mmap
+#include <sys/types.h>
+#include <sys/stat.h> // mkdir - stat
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/process.h>
@@ -90,8 +93,10 @@ void capturaSenial(int);
 void prepararTablaDeEntradas(void);
 void iniciarDumpTimeout(void);
 void volcarEntradas(void);
-unsigned int espacioDisponible(void);
+unsigned int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
+int inicializarPuntoDeMontaje(void);
+void cargarEntradasDesdeArchivos(void);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

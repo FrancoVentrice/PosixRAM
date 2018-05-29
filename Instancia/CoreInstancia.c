@@ -65,7 +65,7 @@ void iniciarLogger(){
 	// transforma los datos de fecha y hora a un formato de cadena
 	strftime(czFecha, 10, "%Y%m%d", localtime(&tiempoActual));
 
-	mkdir("./logs",0755);
+	mkdir("./logs", ACCESSPERMS | S_IRWXU);
 
 	char *nombreArchivoLog;
 	nombreArchivoLog = (char *)malloc(50);

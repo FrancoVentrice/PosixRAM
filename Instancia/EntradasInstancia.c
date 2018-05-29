@@ -27,19 +27,21 @@ void prepararTablaDeEntradas() {
 	}
 }
 
-unsigned int espacioDisponible() {
-	/* calcula el espacio disponible según las entradas ocupadas */
+unsigned int entradasDisponibles() {
+	/* determina cuántas entradas quedan por ocupar */
 
-	unsigned int espacioTotal;
+	unsigned int entradasDisponibles;
 	int i;
 
-	log_debug(logger,"Calculando espacio disponible");
-	espacioTotal = (configuracion->cantidadEntradas) * (configuracion->tamanioEntrada);
+	log_debug(logger,"Calculando entradas disponibles");
+	entradasDisponibles = 0;
 
-	for (i=0 ; i < configuracion->cantidadEntradas ; i++)
-		espacioTotal = espacioTotal - tablaDeEntradas[i].tamanio;
+	for (i=0 ; i < configuracion->cantidadEntradas ; i++) {
+		if (string_is_empty(tablaDeEntradas[i].clave))
+				entradasDisponibles++;
+	}
 
-	return espacioTotal;
+	return entradasDisponibles;
 }
 
 void iniciarDumpTimeout() {
@@ -62,7 +64,6 @@ void volcarEntradas() {
 	iniciarDumpTimeout();
 }
 
-
 void limpiarTablaDeEntradas() {
 	/* libera la entrada de entradas y el espacio de almacenamiento reservado */
 
@@ -70,4 +71,71 @@ void limpiarTablaDeEntradas() {
 		free(almacenamientoEntradas);
 		free(tablaDeEntradas);
 	}
+}
+
+int inicializarPuntoDeMontaje() {
+	/* prepara el directorio del punto de montaje. si existen archivos los levanta
+	 * y registra las entradas correspondientes */
+
+	/* Unstable Code: no funciona la creación de la carpeta si faltan crear más carpetas del path */
+
+	int e;
+	struct stat info;
+
+	log_info(logger,"Preparando punto de montaje.");
+	e = stat(configuracion->puntoDeMontaje, &info);
+
+	if (e == 0) {
+		if (info.st_mode & S_IFREG) {
+			log_error(logger,"El punto de montaje es un archivo.");
+			mostrarTexto("ERROR: El punto de montaje es un archivo.");
+			return 0;
+		}
+		if (info.st_mode & S_IFDIR) {
+			log_info(logger,"Punto de montaje encontrado. Se procesarán las entradas existentes.");
+			cargarEntradasDesdeArchivos();
+		}
+	}
+	else {
+		if (errno == ENOENT) {
+			log_warning(logger,"El punto de montaje no existe. Se creará el directorio.");
+			e = mkdir(configuracion->puntoDeMontaje, ACCESSPERMS | S_IRWXU);
+			if (e != 0) {
+				log_error(logger,"Se produjo un error al crear el directorio. [%d - %s]", errno, strerror(errno));
+				mostrarTexto("ERROR: Se produjo un error al crear el directorio.");
+				return 0;
+			}
+			else {
+				log_info(logger,"El directorio se creó satisfactoriamente.");
+			}
+		}
+		else {
+			log_error(logger,"Se produjo un error accediendo al punto de montaje. [%d - %s]", errno, strerror(errno));
+			mostrarTexto("ERROR: Se produjo un error accediendo al punto de montaje.");
+			return 0;
+		}
+	}
+	return 1;
+}
+
+void cargarEntradasDesdeArchivos() {
+	/* lee los archivos del punto de montaje y carga las entradas con sus valores */
+
+    struct dirent *entrada;
+    DIR *dir = opendir(configuracion->puntoDeMontaje);
+
+    if (dir == NULL) {
+        return;
+    }
+
+    // TODO corregir esta parte
+    while ((entrada = readdir(dir)) != NULL) {
+    	if (!strcmp (entrada->d_name, "."))
+    		continue;
+    	if (!strcmp (entrada->d_name, ".."))
+    		continue;
+        printf("%s\n",entrada->d_name);
+    }
+
+    closedir(dir);
 }
