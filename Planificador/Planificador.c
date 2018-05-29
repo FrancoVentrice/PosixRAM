@@ -72,7 +72,8 @@ void trabajar() {
 
 void enviarOrdenDeEjecucion() {
 	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
-
+	consultaCoordinador=malloc(sizeof(tConsultaCoordinador));
+	consultaCoordinador->clave=malloc(100);
 	autorizarEjecucion->mensaje = malloc(100);
 	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
 	tPaquete pkgHandshakeRespuesta;
@@ -91,33 +92,32 @@ void enviarOrdenDeEjecucion() {
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
-	//recibir respuesta de esi:
+	//recibir respuesta de esi si la linea es correcta:
 	//
 	tRespuesta *respuestaESI = malloc(sizeof(tRespuesta));
 
 	tMensaje tipoMensajeEsi;
 	char * sPayloadRespuestaHand = malloc(100);
 
-	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensajeEsi,
+	int bytesRecibidos = recibirPaquete(*(esiEnEjecucion->socket), &tipoMensajeEsi,
 			&sPayloadRespuestaHand, logger, "Hand Respuesta");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 	respuestaESI->mensaje = malloc(10);
-	char encabezado_mensaje;
 
-	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
-			respuestaESI->mensaje);
-	log_info(logger, "RESPUESTA: %s", respuestaESI->mensaje);
+	deserializar(sPayloadRespuestaHand, "%s",respuestaESI->mensaje);
+	log_info(logger, "Respuesta Linea: %s", respuestaESI->mensaje);
 
 
-	if (strcmp(respuestaESI,"OK")==0) {
+	if (strcmp(respuestaESI->mensaje,"OK")==0) {
 
 		//ESPERO MENSAJE DEL COORDINADOR
+	recibirConsultaOperacion(consultaCoordinador);
 
-	}else if{
-		recibirConsultaOperacion();
+	evaluarConsultaDeOperacion();
 
-		evaluarConsultaDeOperacion()
-	}
+	}else esiFinalizado();
+
+
 	// -OK (el esi va a mandar una linea al coordinador)
 	//  Planificador no hace nada y queda a la espera de la respuesta del coordinador
 	// 	ejecuta un metodo que espere la consulta del coordinador sobre la clave a usar:
@@ -128,7 +128,7 @@ void enviarOrdenDeEjecucion() {
 	// -Esi finalizado (trató de leer linea y se encontro con final de archivo)
 	//    replanifica y asigna a otro esi
 
-	esiFinalizado(); // OJO ACA QUE VUELVE A QUERER ENVIAR UN ESI QUE ESTA EN NULL
+	// OJO ACA QUE VUELVE A QUERER ENVIAR UN ESI QUE ESTA EN NULL
 	//}					//LLAMA A 'TRABAJAR' Y VUELVE A ESTE METODO CON
 						// UN ESI EN NULL
 
@@ -137,31 +137,39 @@ void recibirConsultaOperacion(){
 	tMensaje tipoMensaje;
 	char * sPayloadConsulta = malloc(100);
 
+
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
 			&sPayloadConsulta, logger, "Consulta coordinador");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 
-	switch(*tipoMensaje){
-
-	case C_CONSULTA_OPERACION_SET:
-
-		/*deserializar(sPayloadConsulta, "%s",operacion.);
-		log_info(logger, "RESPUESTA: %s",);*/
-
-		break;
+	switch(tipoMensaje){
 
 	case C_CONSULTA_OPERACION_GET:
+		deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
+		log_info(logger,"Operacion GET para clave %s: ",consultaCoordinador->clave);
+		consultaCoordinador->operacion=1;
+		break;
+
+
+	case C_CONSULTA_OPERACION_SET:
+		deserializar(sPayloadConsulta, "%s%s", consultaCoordinador->clave,
+				consultaCoordinador->valor);
+		log_info(logger,"Operacion GET para clave %s y valor %s: ",consultaCoordinador->clave,
+				consultaCoordinador->valor);
+
+		consultaCoordinador->operacion=2;
 
 		break;
 
 	case C_CONSULTA_OPERACION_STORE:
+		deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
+		consultaCoordinador->operacion=3;
+		log_info(logger,"Operacion STORE para clave %s: ",consultaCoordinador->clave);
 
 		break;
 
-
-
-
 	}
+
 }
 
 void finalizar(int codigo) {
@@ -288,7 +296,6 @@ void escucharESIs() {
 				//creo el hilo para el ESI que quiero atender
 				pthread_create(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
 				pthread_join(hiloESI,NULL);
-				//atenderESI(&iSocketComunicacion);
 				//le envio el OK a ESI para ejecutar
 				tipoMensaje = DESCONEXION;
 				break;
@@ -326,7 +333,19 @@ void recibirResultadoOperacion() {
 
 void enviarOperacionValida() {
 	//aca se envia al coordinador que la operacion sobre la clave es valida
-	//
+	tPaquete pkgOperacionValida;
+	int enviados;
+	char* respuesta=malloc(10);
+	strcpy(respuesta,"OK");
+	pkgOperacionValida.type=P_RESPUESTA_CONSULTA;
+
+	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
+			"%s",respuesta);
+
+		log_info(logger,"Se envia respuesta consulta");
+		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
+				logger, "Se envia respuesta consulta");
+		log_info("Se envian %d bytes\n", enviados);
 	//
 	//
 	//para finalmente esperar el resultado de la operacion
@@ -334,8 +353,8 @@ void enviarOperacionValida() {
 }
 
 void evaluarConsultaDeOperacion() {
-	char *clave;
-	int operacion;
+	char *clave=consultaCoordinador->clave;
+	int operacion=consultaCoordinador->operacion;
 	switch (operacion) {
 	case 1: //GET: numeros puestos a modo de prueba
 		if (evaluarBloqueoDeClave(clave)) {

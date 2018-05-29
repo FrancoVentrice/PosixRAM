@@ -25,6 +25,7 @@ void escucharConexiones() {
 	int socketPlanificador;
 	operacion->clave=malloc(100);
 	operacion->valor=malloc(100);
+	char*respuestaConsulta=malloc(10);
 
 
 
@@ -102,10 +103,12 @@ void escucharConexiones() {
 				strcat(lineaLogOperacion,"GET");
 				strcat(lineaLogOperacion,operacion->clave);
 
-				printf("Linea: %s\n",lineaLogOperacion);
-				escribirArchivo(archivoLog,lineaLogOperacion);
+				//printf("Linea: %s\n",lineaLogOperacion);
+				//escribirArchivo(archivoLog,lineaLogOperacion);
 
-				consultarPlanificador(operacion,iSocketComunicacion);
+				consultarPlanificador(operacion,socketPlanificador);
+				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
+
 				*tipoMensaje = DESCONEXION;
 				break;
 
@@ -123,8 +126,9 @@ void escucharConexiones() {
 				strcat(lineaLogOperacion, operacion->valor);
 
 
-				escribirArchivo(archivoLog, lineaLogOperacion);
-				consultarPlanificador(operacion,iSocketComunicacion);
+				//escribirArchivo(archivoLog, lineaLogOperacion);
+				consultarPlanificador(operacion,socketPlanificador);
+				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
 
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -140,9 +144,11 @@ void escucharConexiones() {
 				strcat(lineaLogOperacion, "STORE");
 				strcat(lineaLogOperacion, operacion->clave);
 				printf("Linea: %s\n", lineaLogOperacion);
-				escribirArchivo(archivoLog, lineaLogOperacion);
+				//escribirArchivo(archivoLog, lineaLogOperacion);
 
-				consultarPlanificador(operacion,iSocketComunicacion);
+				consultarPlanificador(operacion,socketPlanificador);
+
+				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
 
 				*tipoMensaje = DESCONEXION;
 
@@ -165,9 +171,13 @@ void escucharConexiones() {
 						&pkgHandshake2, logger,
 						"Se envia solicitud de ejecucion");
 				printf("Se envian %d bytes\n", tamanioTotal);
+
+				//Recibo respuesta sobre la consulta
+
+
+
 				*tipoMensaje = DESCONEXION;
 				break;
-
 
 
 			case C_HANDSHAKE:
@@ -254,6 +264,19 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 
 	}
 
+
+}
+
+void recibirRespuestaConsulta(char* respuesta,int socket){
+	tMensaje tipoMensajeEsi;
+	char * respuestaConsulta = malloc(100);
+
+	int bytesRecibidos = recibirPaquete(socket,
+			&tipoMensajeEsi, &respuestaConsulta, logger, "Respuesta Consulta");
+	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
+
+	deserializar(respuestaConsulta, "%s", respuesta);
+	log_info(logger, "Respuesta Consulta Planificador: %s", respuesta);
 
 }
 

@@ -29,6 +29,7 @@ typedef enum {
 
 	/* Mensajes de Planificador */
 	P_HANDSHAKE,
+	P_RESPUESTA_CONSULTA,
 
 	/* Mensajes de Coordindor */
 	C_HANDSHAKE,

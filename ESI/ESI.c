@@ -133,13 +133,13 @@ void iniciarConexiones() {
 
 	ordenRecibida();
 
-	recibirResultadoOperacion(bytesRecibidos, respuestaCoordinador);
+	/*recibirResultadoOperacion(bytesRecibidos, respuestaCoordinador);
 
 	if (strcmp(respuestaCoordinador, "OK")) { // ACA DEBERIA RECIBIR EL OK DEL PLANIFIFCADOR
 											  //PARA SEGUIR EJECUTANDO LA SIGUIENTE LINEA.
 											  //ESTO ES SOLO UNA PRUEBA
 		ordenRecibida();
-	}
+	}*/
 
 	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir estosolicitud
 	/*free(solicitud);
@@ -258,10 +258,10 @@ void enviarLineaOK(){
 	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s",
 			lineaOk);
 
-	log_info(logger, "Se envia la instruccion GET al coordinador");
+	log_info(logger, "Se envia OK al Planificador");
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
 			&pkgLineaOk, logger,
-			"Se envia la instruccion GET al coordinador");
+			"Se envia OK al Planificador");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
 
 

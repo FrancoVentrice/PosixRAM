@@ -50,6 +50,12 @@ typedef struct {
 	char * segundoParametro;
 } t_instruccion_consola;
 
+typedef struct{
+	int operacion;
+	char* clave;
+	char* valor;
+} tConsultaCoordinador;
+
 typedef struct {
 	char * id;
 	float estimacion; //se puede usar con los dos algoritmos
@@ -72,6 +78,7 @@ bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifi
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
 int socketCoordinador;
+tConsultaCoordinador* consultaCoordinador;
 
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion

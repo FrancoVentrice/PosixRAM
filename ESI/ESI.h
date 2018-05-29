@@ -58,6 +58,7 @@ size_t *n; //necesaria para ir leyendo el archivo
 char *lineptr; //necesaria para ir leyendo el archivo
 t_operacionESI *operacion;
 bool lecturaRechazada; //cuando una operacion es rechazada (ej: un get de un recurso tomado), sirve para volver a mandar la misma instruccion
+char* idESI;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
