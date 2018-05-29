@@ -96,8 +96,8 @@ void escucharConexiones() {
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 
 				log_info(logger, "Se ejecuta instruccion GET...");
-				informarResultadoOperacionOk(iSocketComunicacion,
-						socketPlanificador);
+				//informarResultadoOperacionOk(iSocketComunicacion,
+				//		socketPlanificador);
 
 				strcat(lineaLogOperacion,"GET");
 				strcat(lineaLogOperacion,operacion->clave);
@@ -105,6 +105,7 @@ void escucharConexiones() {
 				printf("Linea: %s\n",lineaLogOperacion);
 				escribirArchivo(archivoLog,lineaLogOperacion);
 
+				consultarPlanificador(operacion,iSocketComunicacion);
 				*tipoMensaje = DESCONEXION;
 				break;
 
@@ -123,6 +124,7 @@ void escucharConexiones() {
 
 
 				escribirArchivo(archivoLog, lineaLogOperacion);
+				consultarPlanificador(operacion,iSocketComunicacion);
 
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -135,9 +137,13 @@ void escucharConexiones() {
 						iSocketComunicacion);
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
+				strcat(lineaLogOperacion, "STORE");
 				strcat(lineaLogOperacion, operacion->clave);
 				printf("Linea: %s\n", lineaLogOperacion);
 				escribirArchivo(archivoLog, lineaLogOperacion);
+
+				consultarPlanificador(operacion,iSocketComunicacion);
+
 				*tipoMensaje = DESCONEXION;
 
 				break;
@@ -203,6 +209,55 @@ void escucharConexiones() {
 	finalizar(0);
 }
 
+void consultarPlanificador(t_operacionESI* operacion,int socket){
+	tPaquete pkgConsulta;
+	int enviados;
+
+
+	switch(operacion->operacion){
+	case GET:
+		pkgConsulta.type=C_CONSULTA_OPERACION_GET;
+		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
+				operacion->clave);
+
+		log_info(logger,"Se consulta al planificador");
+		enviados = enviarPaquete(socket, &pkgConsulta,
+				logger, "Se consulta al planificador");
+		log_info(logger,"Se envian %d bytes\n", enviados);
+
+
+		break;
+	case SET:
+		pkgConsulta.type=C_CONSULTA_OPERACION_SET;
+
+		pkgConsulta.length = serializar(pkgConsulta.payload, "%s%s",
+						operacion->clave,operacion->valor);
+
+		log_info(logger, "Se consulta al planificador");
+		enviados = enviarPaquete(socket, &pkgConsulta, logger,
+				"Se consulta al planificador");
+		log_info(logger, "Se envian %d bytes\n", enviados);
+		break;
+
+	case STORE:
+		pkgConsulta.type=C_CONSULTA_OPERACION_STORE;
+
+		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
+				operacion->clave);
+
+		log_info(logger, "Se consulta al planificador");
+		enviados = enviarPaquete(socket, &pkgConsulta, logger,
+				"Se consulta al planificador");
+		log_info(logger, "Se envian %d bytes\n", enviados);
+
+		break;
+
+	}
+
+
+}
+
+
 FILE* abrirArchivoLog(){
 
 return fopen(PATH_LOG,"rb+");
@@ -217,7 +272,6 @@ void escribirArchivo(FILE* archivo,char* operacion){
 void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
-	log_info(logger, "Se recibe sentencia SET a ser ejecutada");
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
 	resultadoOperacion->mensaje = malloc(100);
 	strcpy(resultadoOperacion->mensaje, "OK");

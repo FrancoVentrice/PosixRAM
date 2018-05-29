@@ -93,20 +93,75 @@ void enviarOrdenDeEjecucion() {
 
 	//recibir respuesta de esi:
 	//
-	//if (OK) {
+	tRespuesta *respuestaESI = malloc(sizeof(tRespuesta));
+
+	tMensaje tipoMensajeEsi;
+	char * sPayloadRespuestaHand = malloc(100);
+
+	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensajeEsi,
+			&sPayloadRespuestaHand, logger, "Hand Respuesta");
+	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
+	respuestaESI->mensaje = malloc(10);
+	char encabezado_mensaje;
+
+	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
+			respuestaESI->mensaje);
+	log_info(logger, "RESPUESTA: %s", respuestaESI->mensaje);
+
+
+	if (strcmp(respuestaESI,"OK")==0) {
+
+		//ESPERO MENSAJE DEL COORDINADOR
+
+	}else if{
+		recibirConsultaOperacion();
+
+		evaluarConsultaDeOperacion()
+	}
 	// -OK (el esi va a mandar una linea al coordinador)
 	//  Planificador no hace nada y queda a la espera de la respuesta del coordinador
 	// 	ejecuta un metodo que espere la consulta del coordinador sobre la clave a usar:
 	//
-	// recibirConsultaOperacion();
-	evaluarConsultaDeOperacion(); //este metodo envia un par de mensajes al coordinador
+	 //este metodo envia un par de mensajes al coordinador
 	//
 	//} else if (esi finalizado) {
 	// -Esi finalizado (trató de leer linea y se encontro con final de archivo)
 	//    replanifica y asigna a otro esi
-	esiFinalizado();
-	//}
 
+	esiFinalizado(); // OJO ACA QUE VUELVE A QUERER ENVIAR UN ESI QUE ESTA EN NULL
+	//}					//LLAMA A 'TRABAJAR' Y VUELVE A ESTE METODO CON
+						// UN ESI EN NULL
+
+}
+void recibirConsultaOperacion(){
+	tMensaje tipoMensaje;
+	char * sPayloadConsulta = malloc(100);
+
+	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
+			&sPayloadConsulta, logger, "Consulta coordinador");
+	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
+
+	switch(*tipoMensaje){
+
+	case C_CONSULTA_OPERACION_SET:
+
+		/*deserializar(sPayloadConsulta, "%s",operacion.);
+		log_info(logger, "RESPUESTA: %s",);*/
+
+		break;
+
+	case C_CONSULTA_OPERACION_GET:
+
+		break;
+
+	case C_CONSULTA_OPERACION_STORE:
+
+		break;
+
+
+
+
+	}
 }
 
 void finalizar(int codigo) {
@@ -275,7 +330,7 @@ void enviarOperacionValida() {
 	//
 	//
 	//para finalmente esperar el resultado de la operacion
-	recibirResultadoOperacion();
+	//recibirResultadoOperacion();
 }
 
 void evaluarConsultaDeOperacion() {

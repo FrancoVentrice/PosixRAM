@@ -186,9 +186,10 @@ void ordenRecibida() {
 		enviarOperacion();
 	} else {
 		if (leerLinea() < 0) {
-			enviarEsiFinalizado();
+			enviarEsiFinalizado(); //ENVIO FIN DE LECTURA AL PLANIFICADOR
 		} else {
-			enviarOperacion();
+			enviarOperacion();//ENVIO AL COORDINADOR LA SENTENCIA
+			enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
 		}
 	}
 }
@@ -247,7 +248,24 @@ int leerLinea() {
 	}
 	return 0;
 }
+void enviarLineaOK(){
+	tPaquete pkgLineaOk;
+	int bytesEnviados;
+	char* lineaOk=malloc(5);
+	strcpy(lineaOk,"OK");
+	pkgLineaOk.type = E_LINEA_OK;  //
 
+	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s",
+			lineaOk);
+
+	log_info(logger, "Se envia la instruccion GET al coordinador");
+	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
+			&pkgLineaOk, logger,
+			"Se envia la instruccion GET al coordinador");
+	log_info(logger, "Se envian %d bytes", bytesEnviados);
+
+
+}
 void enviarOperacion() {
 	lecturaRechazada = false;
 	//en este metodo se envia la operacion leida, la cual esta guardada en
@@ -298,4 +316,20 @@ void enviarOperacion() {
 void enviarEsiFinalizado() {
 	//en este metodo se informa al planificador que ya no hay lineas para leer
 	//y el ESI finalizo su ejecucion
+	tPaquete pkgSentencia;
+	int bytesEnviados;
+	char* mensajeOk=malloc(5);
+	strcpy(mensajeOk,"ESI FINALIZADO");
+
+	pkgSentencia.type = E_ESI_FINALIZADO;  //
+
+	pkgSentencia.length = serializar(pkgSentencia.payload, "%s",
+			mensajeOk);
+
+	log_info(logger, "Se envia respuesta Finalizado");
+	bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
+			&pkgSentencia, logger,
+			"Se envia respuesta Finalizado");
+	log_info(logger, "Se envian %d bytes", bytesEnviados);
+
 }

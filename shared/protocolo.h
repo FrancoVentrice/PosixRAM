@@ -24,12 +24,17 @@ typedef enum {
 	E_SENTENCIA_GET,
 	E_SENTENCIA_SET,
 	E_SENTENCIA_STORE,
+	E_ESI_FINALIZADO,
+	E_LINEA_OK,
 
 	/* Mensajes de Planificador */
 	P_HANDSHAKE,
 
 	/* Mensajes de Coordindor */
 	C_HANDSHAKE,
+	C_CONSULTA_OPERACION_GET,
+	C_CONSULTA_OPERACION_SET,
+	C_CONSULTA_OPERACION_STORE,
 	C_RESULTADO_OPERACION,
 
 	/* Mensajes de Instancia */
