@@ -10,6 +10,7 @@
 #include <string.h>
 #include "..//shared/protocolo.h"
 
+
 #define ALGORITMO_SJF_CD 1
 #define ALGORITMO_SJF_SD 2
 #define ALGORITMO_HRRN 3
@@ -79,6 +80,7 @@ bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesi
 pthread_mutex_t mutexColaDeListos;
 int socketCoordinador;
 tConsultaCoordinador* consultaCoordinador;
+int nId;
 
 
 t_esi * esiEnEjecucion; //vendria a ser la "cola" de ejecucion

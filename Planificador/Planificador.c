@@ -199,6 +199,7 @@ void escucharESIs() {
 	int idSiguienteEsi=0;
 	t_esi* esiNuevo=malloc(sizeof(t_esi));
 	pthread_t hiloESI;
+	nId=0;
 
 
 	int puertoEscucha = configuracion->puerto;
@@ -294,8 +295,9 @@ void escucharESIs() {
 
 				log_info(logger, "Se envian %d bytes", bytesEnviados);*/
 				//creo el hilo para el ESI que quiero atender
-				pthread_create(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
-				pthread_join(hiloESI,NULL);
+				//(&hiloESI,NULL,atenderESI,&iSocketComunicacion);
+			//	pthread_join(hiloESI,NULL);
+				atenderESI(&iSocketComunicacion);
 				//le envio el OK a ESI para ejecutar
 				tipoMensaje = DESCONEXION;
 				break;
@@ -609,7 +611,10 @@ void liberarPrimerProcesoBloqueado(char *clave) {
 }
 
 t_esi *esiNew(int* socket) {
+	nId++;
 	t_esi *esi = malloc(sizeof(t_esi));
+	esi->id=string_new();
+	string_append_with_format(&(esi->id),"%s %d","ESI",nId);
 	esi->clavesTomadas = list_create();
 	esi->estimacion = configuracion->estimacionInicial;
 	esi->socket = socket;
