@@ -10,6 +10,7 @@ int configValida(t_config* fd_configuracion) {
 
 int cargarConfiguracion() {
 	logger = log_create("LogCoordinador", "Coordinador", true, LOG_LEVEL_INFO);
+	logDeOperaciones = log_create("LogDeOperaciones", "Coordinador", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
 	diccionarioClaves = dictionary_create();
 	instancias = list_create();
@@ -55,6 +56,7 @@ void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
+	log_destroy(logDeOperaciones);
 	dictionary_destroy_and_destroy_elements(diccionarioClaves, instanciaDestroyer);
 	list_destroy_and_destroy_elements(instancias, instanciaDestroyer);
 }

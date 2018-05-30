@@ -17,6 +17,9 @@
 #define ALGORITMO_EL 2
 #define ALGORITMO_KE 3
 #define PATH_LOG "..//Coordinador/log/logOperaciones.txt"
+#define OPERACION_GET 1
+#define OPERACION_SET 2
+#define OPERACION_STORE 3
 
 typedef struct {
 	int puertoEscucha;
@@ -50,12 +53,12 @@ typedef struct{
 t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
+t_log * logDeOperaciones;
 t_instancia * instanciaElegida;//es la instancia que elige el algoritmo de distribucion. cuando devuelva un ok, se agrega la clave en el diccionario, esta instancia como valor
 t_dictionary * diccionarioClaves;//diccionario de claves e instancias que las poseen. key: clave, value: instancia que la tiene guardada
 t_list * instancias;//lista de instancias disponibles
 int punteroEL;//puntero usado en la distribucion Equitative Load
 t_operacionESI* operacion;
-FILE* archivoLog;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
@@ -67,7 +70,7 @@ void registrarClaveAgregadaAInstancia();
 void elegirInstanciaLSU();
 void elegirInstanciaEL();
 void elegirInstanciaKE();
-FILE* abrirArchivoLog();
+void escribirLogDeOperaciones(t_operacionESI *);
 
 //instancia
 void instanciaDestroyer(t_instancia *);

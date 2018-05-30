@@ -7,7 +7,6 @@
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
-	archivoLog=abrirArchivoLog();
 	escucharConexiones();
 }
 void finalizar(int codigo) {
@@ -95,16 +94,10 @@ void escucharConexiones() {
 				char* lineaLogOperacion=malloc(100);
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
-
-				log_info(logger, "Se ejecuta instruccion GET...");
+				operacion->operacion = OPERACION_GET;
+				escribirLogDeOperaciones(operacion);
 				//informarResultadoOperacionOk(iSocketComunicacion,
 				//		socketPlanificador);
-
-				strcat(lineaLogOperacion,"GET");
-				strcat(lineaLogOperacion,operacion->clave);
-
-				//printf("Linea: %s\n",lineaLogOperacion);
-				//escribirArchivo(archivoLog,lineaLogOperacion);
 
 				consultarPlanificador(operacion,socketPlanificador);
 				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
@@ -121,12 +114,9 @@ void escucharConexiones() {
 
 				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,
 						operacion->valor);
-				strcat(lineaLogOperacion, "GET");
-				strcat(lineaLogOperacion, operacion->clave);
-				strcat(lineaLogOperacion, operacion->valor);
+				operacion->operacion = OPERACION_SET;
+				escribirLogDeOperaciones(operacion);
 
-
-				//escribirArchivo(archivoLog, lineaLogOperacion);
 				consultarPlanificador(operacion,socketPlanificador);
 				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
 
@@ -141,10 +131,8 @@ void escucharConexiones() {
 						iSocketComunicacion);
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
-				strcat(lineaLogOperacion, "STORE");
-				strcat(lineaLogOperacion, operacion->clave);
-				printf("Linea: %s\n", lineaLogOperacion);
-				//escribirArchivo(archivoLog, lineaLogOperacion);
+				operacion->operacion = OPERACION_STORE;
+				escribirLogDeOperaciones(operacion);
 
 				consultarPlanificador(operacion,socketPlanificador);
 
@@ -215,7 +203,6 @@ void escucharConexiones() {
 			}
 		}
 	}
-	fclose(archivoLog);
 	finalizar(0);
 }
 
@@ -280,16 +267,20 @@ void recibirRespuestaConsulta(char* respuesta,int socket){
 
 }
 
-
-FILE* abrirArchivoLog(){
-
-return fopen(PATH_LOG,"rb+");
-
-}
-
-void escribirArchivo(FILE* archivo,char* operacion){
-	fwrite(operacion,strlen(operacion),1,archivo);
-
+void escribirLogDeOperaciones(t_operacionESI *operacion) {
+	char *stringOperacion = malloc(100);
+	switch (operacion->operacion) {
+	case OPERACION_GET:
+		strcpy(stringOperacion, string_from_format("GET %s", operacion->clave));
+		break;
+	case OPERACION_SET:
+		strcpy(stringOperacion, string_from_format("SET %s %s", operacion->clave, operacion->valor));
+		break;
+	case OPERACION_STORE:
+		strcpy(stringOperacion, string_from_format("STORE %s", operacion->clave));
+		break;
+	}
+	log_info(logDeOperaciones, "Proceso de operacion: %s", stringOperacion);
 }
 
 void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){
