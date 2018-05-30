@@ -91,7 +91,6 @@ void escucharConexiones() {
 
 				log_info(logger, "Socket comunicacion: %d \n",
 						iSocketComunicacion);
-				char* lineaLogOperacion=malloc(100);
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 				operacion->operacion = OPERACION_GET;
@@ -213,7 +212,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 
 	switch(operacion->operacion){
 	case GET:
-		pkgConsulta.type=C_CONSULTA_OPERACION_GET;
+		pkgConsulta.type = C_CONSULTA_OPERACION_GET;
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
 				operacion->clave);
 
@@ -225,7 +224,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 
 		break;
 	case SET:
-		pkgConsulta.type=C_CONSULTA_OPERACION_SET;
+		pkgConsulta.type = C_CONSULTA_OPERACION_SET;
 
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s%s",
 						operacion->clave,operacion->valor);
@@ -237,7 +236,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 		break;
 
 	case STORE:
-		pkgConsulta.type=C_CONSULTA_OPERACION_STORE;
+		pkgConsulta.type = C_CONSULTA_OPERACION_STORE;
 
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
 				operacion->clave);
@@ -248,7 +247,6 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 		log_info(logger, "Se envian %d bytes\n", enviados);
 
 		break;
-
 	}
 
 
@@ -281,6 +279,7 @@ void escribirLogDeOperaciones(t_operacionESI *operacion) {
 		break;
 	}
 	log_info(logDeOperaciones, "Proceso de operacion: %s", stringOperacion);
+	free(stringOperacion);
 }
 
 void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){

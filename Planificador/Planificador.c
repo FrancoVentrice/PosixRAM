@@ -73,7 +73,7 @@ void trabajar() {
 void enviarOrdenDeEjecucion() {
 	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
 	consultaCoordinador=malloc(sizeof(tConsultaCoordinador));
-	consultaCoordinador->clave=malloc(100);
+	consultaCoordinador->clave = malloc(40);
 	autorizarEjecucion->mensaje = malloc(100);
 	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
 	tPaquete pkgHandshakeRespuesta;
@@ -115,61 +115,46 @@ void enviarOrdenDeEjecucion() {
 
 	evaluarConsultaDeOperacion();
 
-	}else esiFinalizado();
-
-
-	// -OK (el esi va a mandar una linea al coordinador)
-	//  Planificador no hace nada y queda a la espera de la respuesta del coordinador
-	// 	ejecuta un metodo que espere la consulta del coordinador sobre la clave a usar:
-	//
-	 //este metodo envia un par de mensajes al coordinador
-	//
-	//} else if (esi finalizado) {
-	// -Esi finalizado (trató de leer linea y se encontro con final de archivo)
-	//    replanifica y asigna a otro esi
-
+	} else {
+		esiFinalizado();
+	}
 	// OJO ACA QUE VUELVE A QUERER ENVIAR UN ESI QUE ESTA EN NULL
 	//}					//LLAMA A 'TRABAJAR' Y VUELVE A ESTE METODO CON
 						// UN ESI EN NULL
 
 }
-void recibirConsultaOperacion(){
+
+void recibirConsultaOperacion() {
 	tMensaje tipoMensaje;
 	char * sPayloadConsulta = malloc(100);
-
-
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
 			&sPayloadConsulta, logger, "Consulta coordinador");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 
-	switch(tipoMensaje){
+	log_info(logger, "el tipo de mensaje es %d", tipoMensaje);
+
+	switch(tipoMensaje) {
 
 	case C_CONSULTA_OPERACION_GET:
 		deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
 		log_info(logger,"Operacion GET para clave %s: ",consultaCoordinador->clave);
-		consultaCoordinador->operacion=1;
+		consultaCoordinador->operacion = OPERACION_GET;
 		break;
-
 
 	case C_CONSULTA_OPERACION_SET:
 		deserializar(sPayloadConsulta, "%s%s", consultaCoordinador->clave,
 				consultaCoordinador->valor);
-		log_info(logger,"Operacion GET para clave %s y valor %s: ",consultaCoordinador->clave,
+		log_info(logger,"Operacion SET para clave %s y valor %s: ",consultaCoordinador->clave,
 				consultaCoordinador->valor);
-
-		consultaCoordinador->operacion=2;
-
+		consultaCoordinador->operacion = OPERACION_SET;
 		break;
 
 	case C_CONSULTA_OPERACION_STORE:
 		deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
-		consultaCoordinador->operacion=3;
+		consultaCoordinador->operacion = OPERACION_STORE;
 		log_info(logger,"Operacion STORE para clave %s: ",consultaCoordinador->clave);
-
 		break;
-
 	}
-
 }
 
 void finalizar(int codigo) {
@@ -355,10 +340,10 @@ void enviarOperacionValida() {
 }
 
 void evaluarConsultaDeOperacion() {
-	char *clave=consultaCoordinador->clave;
-	int operacion=consultaCoordinador->operacion;
+	char *clave = consultaCoordinador->clave;
+	int operacion = consultaCoordinador->operacion;
 	switch (operacion) {
-	case 1: //GET: numeros puestos a modo de prueba
+	case OPERACION_GET:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
 			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
@@ -375,7 +360,7 @@ void evaluarConsultaDeOperacion() {
 			esiTomaClave(esiEnEjecucion, clave);
 		}
 		break;
-	case 2: //SET: numeros puestos a modo de prueba
+	case OPERACION_SET:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
 			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
@@ -391,7 +376,7 @@ void evaluarConsultaDeOperacion() {
 			//creo que es un error
 		}
 		break;
-	case 3: //STORE: numeros puestos a modo de prueba
+	case OPERACION_STORE:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
 			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {

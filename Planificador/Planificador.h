@@ -18,6 +18,9 @@
 #define INSTRUCCION_DESBLOQUEAR 12
 #define INSTRUCCION_TERMINAR 13
 #define INSTRUCCION_DEADLOCK 14
+#define OPERACION_GET 1
+#define OPERACION_SET 2
+#define OPERACION_STORE 3
 
 typedef struct {
 	int puerto;
