@@ -211,37 +211,37 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 
 
 	switch(operacion->operacion){
-	case GET:
+	case OPERACION_GET:
 		pkgConsulta.type = C_CONSULTA_OPERACION_GET;
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
 				operacion->clave);
 
-		log_info(logger,"Se consulta al planificador");
+		log_info(logger,"Se consulta al planificador GET");
 		enviados = enviarPaquete(socket, &pkgConsulta,
 				logger, "Se consulta al planificador");
 		log_info(logger,"Se envian %d bytes\n", enviados);
 
 
 		break;
-	case SET:
+	case OPERACION_SET:
 		pkgConsulta.type = C_CONSULTA_OPERACION_SET;
 
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s%s",
 						operacion->clave,operacion->valor);
 
-		log_info(logger, "Se consulta al planificador");
+		log_info(logger, "Se consulta al planificador SET");
 		enviados = enviarPaquete(socket, &pkgConsulta, logger,
 				"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
 		break;
 
-	case STORE:
+	case OPERACION_STORE:
 		pkgConsulta.type = C_CONSULTA_OPERACION_STORE;
 
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
 				operacion->clave);
 
-		log_info(logger, "Se consulta al planificador");
+		log_info(logger, "Se consulta al planificador STORE");
 		enviados = enviarPaquete(socket, &pkgConsulta, logger,
 				"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
