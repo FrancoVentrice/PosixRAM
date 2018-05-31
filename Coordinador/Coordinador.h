@@ -71,6 +71,8 @@ void elegirInstanciaLSU();
 void elegirInstanciaEL();
 void elegirInstanciaKE();
 void escribirLogDeOperaciones(t_operacionESI *);
+char * recibirRespuestaConsulta(char *, int);
+void accionarFrenteAConsulta(char *);
 
 //instancia
 void instanciaDestroyer(t_instancia *);

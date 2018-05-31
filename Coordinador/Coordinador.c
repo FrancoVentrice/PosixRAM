@@ -24,7 +24,7 @@ void escucharConexiones() {
 	int socketPlanificador;
 	operacion->clave=malloc(100);
 	operacion->valor=malloc(100);
-	char*respuestaConsulta=malloc(10);
+	char *respuestaConsulta = malloc(10);
 
 
 
@@ -99,8 +99,8 @@ void escucharConexiones() {
 				//		socketPlanificador);
 
 				consultarPlanificador(operacion, socketPlanificador);
-				char *respuesta = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
-				accionarFrenteAConsulta(respuesta);
+				char *respuestaConsultaGet = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				accionarFrenteAConsulta(respuestaConsultaGet);
 				*tipoMensaje = DESCONEXION;
 				break;
 
@@ -117,8 +117,8 @@ void escucharConexiones() {
 				escribirLogDeOperaciones(operacion);
 
 				consultarPlanificador(operacion, socketPlanificador);
-				char *respuesta = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
-				accionarFrenteAConsulta(respuesta);
+				char *respuestaConsultaSet = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				accionarFrenteAConsulta(respuestaConsultaSet);
 
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -135,15 +135,15 @@ void escucharConexiones() {
 				escribirLogDeOperaciones(operacion);
 
 				consultarPlanificador(operacion, socketPlanificador);
-				char *respuesta = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
-				accionarFrenteAConsulta(respuesta);
+				char *respuestaConsultaStore = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				accionarFrenteAConsulta(respuestaConsultaStore);
 
 				*tipoMensaje = DESCONEXION;
 
 				break;
 			case P_HANDSHAKE:
 				printf("Socket comunicacion: %d \n", iSocketComunicacion);
-				socketPlanificador=iSocketComunicacion;
+				socketPlanificador = iSocketComunicacion;
 				puts("HANDSHAKE CON PLANIFICADOR");
 				tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
 				solicitud->mensaje = malloc(100);
@@ -250,7 +250,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket) {
 
 }
 
-char * recibirRespuestaConsulta(char * respuesta, int socket){
+char * recibirRespuestaConsulta(char * respuesta, int socket) {
 	tMensaje tipoMensajeEsi;
 	char * respuestaConsulta = malloc(100);
 
@@ -265,6 +265,7 @@ char * recibirRespuestaConsulta(char * respuesta, int socket){
 
 void accionarFrenteAConsulta(char * respuesta) {
 	if (strcmp(respuesta, "OK") == 0) {
+		log_info(logger, "eligiendo instancia");
 		elegirInstancia();
 		enviarOperacionAInstancia();
 		recibirOperacionDeInstancia();
