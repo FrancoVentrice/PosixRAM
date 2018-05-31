@@ -98,26 +98,27 @@ void escucharConexiones() {
 				//informarResultadoOperacionOk(iSocketComunicacion,
 				//		socketPlanificador);
 
-				consultarPlanificador(operacion,socketPlanificador);
-				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
-
+				consultarPlanificador(operacion, socketPlanificador);
+				char *respuesta = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				accionarFrenteAConsulta(respuesta);
 				*tipoMensaje = DESCONEXION;
 				break;
 
 			case E_SENTENCIA_SET:
 
-				//log_info(logger, "Se recibe sentencia SET a ser ejecutada");
+				log_info(logger, "Se recibe sentencia SET a ser ejecutada");
 
-				//	log_info(logger, "Socket comunicacion: %d \n",
-				//		iSocketComunicacion);
+					log_info(logger, "Socket comunicacion: %d \n",
+						iSocketComunicacion);
 
 				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,
 						operacion->valor);
 				operacion->operacion = OPERACION_SET;
 				escribirLogDeOperaciones(operacion);
 
-				consultarPlanificador(operacion,socketPlanificador);
-				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
+				consultarPlanificador(operacion, socketPlanificador);
+				char *respuesta = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				accionarFrenteAConsulta(respuesta);
 
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -133,9 +134,9 @@ void escucharConexiones() {
 				operacion->operacion = OPERACION_STORE;
 				escribirLogDeOperaciones(operacion);
 
-				consultarPlanificador(operacion,socketPlanificador);
-
-				recibirRespuestaConsulta(respuestaConsulta,socketPlanificador);
+				consultarPlanificador(operacion, socketPlanificador);
+				char *respuesta = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				accionarFrenteAConsulta(respuesta);
 
 				*tipoMensaje = DESCONEXION;
 
@@ -205,12 +206,11 @@ void escucharConexiones() {
 	finalizar(0);
 }
 
-void consultarPlanificador(t_operacionESI* operacion,int socket){
+void consultarPlanificador(t_operacionESI* operacion,int socket) {
 	tPaquete pkgConsulta;
 	int enviados;
-
-
 	switch(operacion->operacion){
+
 	case OPERACION_GET:
 		pkgConsulta.type = C_CONSULTA_OPERACION_GET;
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
@@ -220,9 +220,8 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 		enviados = enviarPaquete(socket, &pkgConsulta,
 				logger, "Se consulta al planificador");
 		log_info(logger,"Se envian %d bytes\n", enviados);
-
-
 		break;
+
 	case OPERACION_SET:
 		pkgConsulta.type = C_CONSULTA_OPERACION_SET;
 
@@ -245,14 +244,13 @@ void consultarPlanificador(t_operacionESI* operacion,int socket){
 		enviados = enviarPaquete(socket, &pkgConsulta, logger,
 				"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
-
 		break;
 	}
 
 
 }
 
-void recibirRespuestaConsulta(char* respuesta,int socket){
+char * recibirRespuestaConsulta(char * respuesta, int socket){
 	tMensaje tipoMensajeEsi;
 	char * respuestaConsulta = malloc(100);
 
@@ -262,7 +260,35 @@ void recibirRespuestaConsulta(char* respuesta,int socket){
 
 	deserializar(respuestaConsulta, "%s", respuesta);
 	log_info(logger, "Respuesta Consulta Planificador: %s", respuesta);
+	return respuesta;
+}
 
+void accionarFrenteAConsulta(char * respuesta) {
+	if (strcmp(respuesta, "OK") == 0) {
+		elegirInstancia();
+		enviarOperacionAInstancia();
+		recibirOperacionDeInstancia();
+	}
+	free(respuesta);
+}
+
+void enviarOperacionAInstancia() {
+	//aca se envia la operacion a ejecutar a la instancia elegida
+	//datos utiles:
+	//
+	//instanciaElegida->socket para enviar el mensaje
+	//
+	//operacion->operacion, operacion->clave y operacion->valor
+}
+
+void recibirOperacionDeInstancia() {
+	//aca se recibe el resultado de la operacion
+	//
+	//
+	//tiene que contener tambien la cantidad de entradas disponibles que le quedan a la instancia
+	//instanciaElegida->cantidadDeEntradasDisponibles = algo como "respuesta->entradasDisponibles"
+
+	//if (OK) informarResultadoOperacionOk();
 }
 
 void escribirLogDeOperaciones(t_operacionESI *operacion) {
@@ -310,8 +336,7 @@ void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){
 void informarResultadoOperacionError(int socketEsi, int socketPlanificador){
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
-	log_info(logger, "Se recibe sentencia SET a ser ejecutada");
-	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
+	tSolicitudESI * resultadoOperacion = malloc(sizeof(tSolicitudESI));
 	resultadoOperacion->mensaje = malloc(100);
 	strcpy(resultadoOperacion->mensaje, "ERROR");
 	tPaquete pkgHandshake2;
@@ -333,10 +358,9 @@ void informarResultadoOperacionError(int socketEsi, int socketPlanificador){
 
 }
 
-//se usa para elegir la instancia con
-//la cual operar los comandos SET
+//se usa para elegir la instancia en la cual ejecutar la operacion
 //elige la instancia a la cual le va a agregar o modificar la clave
-void elegirInstanciaSet() {
+void elegirInstancia() {
 	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
 		switch (configuracion->algoritmoDistribucion) {
 		case ALGORITMO_LSU:
