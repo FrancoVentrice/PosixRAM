@@ -21,7 +21,6 @@ void escucharConexiones() {
 	int iSocketEscucha;
 	int iSocketComunicacion;
 	int tamanioTotal = 0;
-	int socketPlanificador;
 	operacion->clave=malloc(100);
 	operacion->valor=malloc(100);
 	char *respuestaConsulta = malloc(10);
@@ -94,12 +93,11 @@ void escucharConexiones() {
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 				operacion->operacion = OPERACION_GET;
-				escribirLogDeOperaciones(operacion);
-				//informarResultadoOperacionOk(iSocketComunicacion,
-				//		socketPlanificador);
+				operacion->remitente = iSocketComunicacion;
+				escribirLogDeOperaciones();
 
-				consultarPlanificador(operacion, socketPlanificador);
-				char *respuestaConsultaGet = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				consultarPlanificador();
+				char *respuestaConsultaGet = recibirRespuestaConsulta(respuestaConsulta);
 				accionarFrenteAConsulta(respuestaConsultaGet);
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -114,10 +112,11 @@ void escucharConexiones() {
 				deserializar(sPayloadRespuesta, "%s%s", operacion->clave,
 						operacion->valor);
 				operacion->operacion = OPERACION_SET;
-				escribirLogDeOperaciones(operacion);
+				operacion->remitente = iSocketComunicacion;
+				escribirLogDeOperaciones();
 
-				consultarPlanificador(operacion, socketPlanificador);
-				char *respuestaConsultaSet = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				consultarPlanificador();
+				char *respuestaConsultaSet = recibirRespuestaConsulta(respuestaConsulta);
 				accionarFrenteAConsulta(respuestaConsultaSet);
 
 				*tipoMensaje = DESCONEXION;
@@ -132,10 +131,11 @@ void escucharConexiones() {
 
 				deserializar(sPayloadRespuesta, "%s", operacion->clave);
 				operacion->operacion = OPERACION_STORE;
-				escribirLogDeOperaciones(operacion);
+				operacion->remitente = iSocketComunicacion;
+				escribirLogDeOperaciones();
 
-				consultarPlanificador(operacion, socketPlanificador);
-				char *respuestaConsultaStore = recibirRespuestaConsulta(respuestaConsulta, socketPlanificador);
+				consultarPlanificador();
+				char *respuestaConsultaStore = recibirRespuestaConsulta(respuestaConsulta);
 				accionarFrenteAConsulta(respuestaConsultaStore);
 
 				*tipoMensaje = DESCONEXION;
@@ -206,7 +206,7 @@ void escucharConexiones() {
 	finalizar(0);
 }
 
-void consultarPlanificador(t_operacionESI* operacion,int socket) {
+void consultarPlanificador() {
 	tPaquete pkgConsulta;
 	int enviados;
 	switch(operacion->operacion){
@@ -217,7 +217,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket) {
 				operacion->clave);
 
 		log_info(logger,"Se consulta al planificador GET");
-		enviados = enviarPaquete(socket, &pkgConsulta,
+		enviados = enviarPaquete(socketPlanificador, &pkgConsulta,
 				logger, "Se consulta al planificador");
 		log_info(logger,"Se envian %d bytes\n", enviados);
 		break;
@@ -229,7 +229,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket) {
 						operacion->clave,operacion->valor);
 
 		log_info(logger, "Se consulta al planificador SET");
-		enviados = enviarPaquete(socket, &pkgConsulta, logger,
+		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,
 				"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
 		break;
@@ -241,7 +241,7 @@ void consultarPlanificador(t_operacionESI* operacion,int socket) {
 				operacion->clave);
 
 		log_info(logger, "Se consulta al planificador STORE");
-		enviados = enviarPaquete(socket, &pkgConsulta, logger,
+		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,
 				"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
 		break;
@@ -250,11 +250,11 @@ void consultarPlanificador(t_operacionESI* operacion,int socket) {
 
 }
 
-char * recibirRespuestaConsulta(char * respuesta, int socket) {
+char * recibirRespuestaConsulta(char *respuesta) {
 	tMensaje tipoMensajeEsi;
-	char * respuestaConsulta = malloc(100);
+	char *respuestaConsulta = malloc(100);
 
-	int bytesRecibidos = recibirPaquete(socket,
+	int bytesRecibidos = recibirPaquete(socketPlanificador,
 			&tipoMensajeEsi, &respuestaConsulta, logger, "Respuesta Consulta");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 
@@ -265,10 +265,17 @@ char * recibirRespuestaConsulta(char * respuesta, int socket) {
 
 void accionarFrenteAConsulta(char * respuesta) {
 	if (strcmp(respuesta, "OK") == 0) {
-		log_info(logger, "eligiendo instancia");
-		elegirInstancia();
-		enviarOperacionAInstancia();
-		recibirOperacionDeInstancia();
+		if (operacion->operacion != OPERACION_GET) {
+			log_info(logger, "eligiendo instancia");
+			instanciaElegida = elegirInstancia();
+			enviarOperacionAInstancia();
+			recibirOperacionDeInstancia();
+		} else {
+			registrarClaveAgregadaAInstancia();
+			informarResultadoOperacionOk(operacion->remitente);
+		}
+	} else {
+		informarResultadoOperacionError(operacion->remitente);
 	}
 	free(respuesta);
 }
@@ -292,7 +299,7 @@ void recibirOperacionDeInstancia() {
 	//if (OK) informarResultadoOperacionOk();
 }
 
-void escribirLogDeOperaciones(t_operacionESI *operacion) {
+void escribirLogDeOperaciones() {
 	char *stringOperacion = malloc(100);
 	switch (operacion->operacion) {
 	case OPERACION_GET:
@@ -309,7 +316,7 @@ void escribirLogDeOperaciones(t_operacionESI *operacion) {
 	free(stringOperacion);
 }
 
-void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){
+void informarResultadoOperacionOk(int socketEsi){
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
@@ -334,7 +341,7 @@ void informarResultadoOperacionOk(int socketEsi, int socketPlanificador){
 
 }
 
-void informarResultadoOperacionError(int socketEsi, int socketPlanificador){
+void informarResultadoOperacionError(int socketEsi){
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
 	tSolicitudESI * resultadoOperacion = malloc(sizeof(tSolicitudESI));
@@ -361,71 +368,76 @@ void informarResultadoOperacionError(int socketEsi, int socketPlanificador){
 
 //se usa para elegir la instancia en la cual ejecutar la operacion
 //elige la instancia a la cual le va a agregar o modificar la clave
-void elegirInstancia() {
+t_instancia * elegirInstancia() {
 	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
 		switch (configuracion->algoritmoDistribucion) {
 		case ALGORITMO_LSU:
-			elegirInstanciaLSU();
+			return elegirInstanciaLSU();
 			break;
 		case ALGORITMO_EL:
-			elegirInstanciaEL();
+			return elegirInstanciaEL();
 			break;
 		case ALGORITMO_KE:
-			elegirInstanciaKE();
+			return elegirInstanciaKE();
 			break;
 		}
 	} else {
-		instanciaElegida = dictionary_get(diccionarioClaves, operacion->clave);
+		return dictionary_get(diccionarioClaves, operacion->clave);
 	}
 }
 
-//metodo que se ejecuta cuando la instancia elegida
-//responde que guardo correctamente la clave.
-//no se debe llamar cuando la clave solamente es modificada
+//metodo que se ejecuta para registrar una nueva clave a una instancia
+//se ejecuta en el GET
 void registrarClaveAgregadaAInstancia() {
-	dictionary_put(diccionarioClaves, operacion->clave, instanciaElegida);
+	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
+		dictionary_put(diccionarioClaves, operacion->clave, elegirInstancia());
+	}
 }
 
 //LEAST SPACE USED
 //usa la clave de operacion (variable global)
-//setea la instancia elegida (variable global)
+//devuelve la instancia elegida (variable global)
 //
 //
 //To Do: la respuesta de una instancia a un SET deberia devolver la cantidad
 //de entradas disponibles asi el valor se mantiene actualizado para este algoritmo
 //
 //
-void elegirInstanciaLSU() {
+t_instancia * elegirInstanciaLSU() {
 	int i;
-	instanciaElegida = list_get(instancias, 0);
+	t_instancia *elegida = list_get(instancias, 0);
 	for (i = 1; i < instancias->elements_count; i++) {
 		t_instancia *iinstancia = list_get(instancias, i);
-		if (iinstancia->cantidadDeEntradasDisponibles > instanciaElegida->cantidadDeEntradasDisponibles) {
-			instanciaElegida = iinstancia;
+		if (iinstancia->cantidadDeEntradasDisponibles > elegida->cantidadDeEntradasDisponibles) {
+			elegida = iinstancia;
 		}
 	}
+	log_info(logger, "instancia elegida (LSU): %s", elegida->nombre);
+	return elegida;
 }
 
 //EQUITATIVE LOAD
 //usa la clave de operacion (variable global)
-//setea la instancia elegida (variable global)
-void elegirInstanciaEL() {
+//devuelve la instancia elegida (variable global)
+t_instancia * elegirInstanciaEL() {
 	if (punteroEL >= instancias->elements_count) {
 		punteroEL = 0;
 	}
-	instanciaElegida = list_get(instancias, punteroEL);
+	t_instancia *elegida = list_get(instancias, punteroEL);
 	punteroEL ++;
+	log_info(logger, "instancia elegida (EL): %s", elegida->nombre);
+	return elegida;
 }
 
 //KEY EXPLICIT
 //usa la clave de operacion (variable global)
-//setea la instancia elegida (variable global)
+//devuelve la instancia elegida (variable global)
 //valor de 'a' es 97
 //valor de 'z' es 122
 //122 - 97 = 25 letras a ser distribuidas entre las instancias
-void elegirInstanciaKE() {
+t_instancia * elegirInstanciaKE() {
 	if (instancias->elements_count == 0) {
-		return;
+		return NULL;
 	}
 	int letrasPorInstancia = 25 / instancias->elements_count;
 	if (25 % instancias->elements_count > 0) {
@@ -437,7 +449,9 @@ void elegirInstanciaKE() {
 	if (valorPrimerCaracter % letrasPorInstancia == 0) {
 		indexInstancia--;
 	}
-	instanciaElegida = list_get(instancias, indexInstancia);
+	t_instancia *elegida = list_get(instancias, indexInstancia);
+	log_info(logger, "instancia elegida (KE): %s", elegida->nombre);
+	return elegida;
 }
 
 void instanciaDestroyer(t_instancia * instancia) {
@@ -448,7 +462,6 @@ void instanciaDestroyer(t_instancia * instancia) {
 
 //cuando entra una nueva instancia la agrega a la lista
 void nuevaInstanciaConectada(char * nombreInstancia, int socketInst) {
-
 	t_instancia *instancia = malloc(sizeof(t_instancia));
 
 	instancia->nombre = strdup(nombreInstancia);

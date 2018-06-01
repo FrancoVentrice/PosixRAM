@@ -43,11 +43,11 @@ typedef struct {
 	int cantidadDeEntradasDisponibles;
 } t_instancia;
 
-
 typedef struct{
 	int operacion;
 	char* clave;
 	char* valor;
+	int remitente;
 } t_operacionESI;
 
 t_configuracion * configuracion;
@@ -59,19 +59,20 @@ t_dictionary * diccionarioClaves;//diccionario de claves e instancias que las po
 t_list * instancias;//lista de instancias disponibles
 int punteroEL;//puntero usado en la distribucion Equitative Load
 t_operacionESI * operacion;
+int socketPlanificador;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
 void escucharConexiones();
-void elegirInstancia();
+t_instancia * elegirInstancia();
 void registrarClaveAgregadaAInstancia();
-void elegirInstanciaLSU();
-void elegirInstanciaEL();
-void elegirInstanciaKE();
-void escribirLogDeOperaciones(t_operacionESI *);
-char * recibirRespuestaConsulta(char *, int);
+t_instancia * elegirInstanciaLSU();
+t_instancia * elegirInstanciaEL();
+t_instancia * elegirInstanciaKE();
+void escribirLogDeOperaciones();
+char * recibirRespuestaConsulta(char *);
 void accionarFrenteAConsulta(char *);
 
 //instancia
