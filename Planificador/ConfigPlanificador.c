@@ -26,6 +26,8 @@ void bloquearClavesIniciales() {
 
 int cargarConfiguracion() {
 	ejecutando = true;
+	vivo = true;
+	aptoEjecucion = false;
 	planificacionNecesaria = false;
 	logger = log_create("LogPlanificador", "Planificador", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));

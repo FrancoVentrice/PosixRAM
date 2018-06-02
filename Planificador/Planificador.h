@@ -65,7 +65,7 @@ typedef struct {
 	float estimacion; //se puede usar con los dos algoritmos
 	int rafagaAnterior; //necesario para SJF. Se suma uno cada vez que el ESI ejecuta correctamente una sentencia
 	float estimacionAnterior;//necesario para SJF
-	int *socket; //socket que se esta usando para la comunicacion con el ESI en particular
+	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
 	int responseRatio;
 	int instanteLlegadaAListos;
@@ -76,9 +76,12 @@ t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 pthread_t hiloConsola;
+pthread_t hiloHandshakeESIs;
 t_list * bufferConsola; //buffer de instrucciones a ejecutar cuando se complete una tarea atomica
 int tiempoTotalEjecucion;
 bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
+bool vivo; //se usa para repetir el ciclo de trabajo y eventualmente finalizar el proceso
+bool aptoEjecucion; //esta en true siempre y cuando haya algun ESI apto de ejecucion
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
 int socketCoordinador;
@@ -93,13 +96,15 @@ t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clav
 t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada. key: clave, value: esi que la tomo
 
 void trabajar();
+void enviarOrdenDeEjecucion();
 int cargarConfiguracion();
 int configValida(t_config *);
 void limpiarConfiguracion();
 void finalizar(int);
 void levantarConsola();
 void consola();
-void escucharESIs();
+void realizarConexiones();
+void escucharHandshakesESIs();
 void agregarEsiAColaDeListos(t_esi *);
 void planificar();
 void bloquearESIConClave(t_esi *, char *);

@@ -28,11 +28,8 @@ void finalizar(int codigo) {
 void iniciarConexiones() {
 	int bytesEnviados;
 	int bytesRecibidos;
-	/*
-	 *
-	 */
 	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
-	tRespuestaPlanificador *respuestaCoordinador = malloc(
+	tRespuestaCoordinador *respuestaCoordinador = malloc(
 			sizeof(tRespuestaCoordinador));
 	tRespuestaPlanificador *respuestaPlanificador = malloc(
 			sizeof(tRespuestaPlanificador));
@@ -93,7 +90,7 @@ void iniciarConexiones() {
 
 	log_info(logger, "Se envia solicitud al Planificador");
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
-			&pkgHandshake, logger, "Se envia solicitud de ejecucion");
+			&pkgHandshake, logger, "Se envia solicitud al Planificador");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
 	//Recibo respuesta del Planificador
 	char * sPayloadRespuestaHand = malloc(100);
@@ -251,21 +248,21 @@ int leerLinea() {
 void enviarLineaOK(){
 	tPaquete pkgLineaOk;
 	int bytesEnviados;
-	char* lineaOk=malloc(5);
+	char* lineaOk = malloc(5);
 	strcpy(lineaOk,"OK");
-	pkgLineaOk.type = E_LINEA_OK;  //
+	pkgLineaOk.type = E_LINEA_OK;
 
 	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s",
 			lineaOk);
 
-	log_info(logger, "Se envia OK al Planificador");
+	log_info(logger, "Se envia %s al Planificador", lineaOk);
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
 			&pkgLineaOk, logger,
 			"Se envia OK al Planificador");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
-
-
+	free(lineaOk);
 }
+
 void enviarOperacion() {
 	lecturaRechazada = false;
 	//en este metodo se envia la operacion leida, la cual esta guardada en

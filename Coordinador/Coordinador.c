@@ -464,7 +464,7 @@ void instanciaDestroyer(t_instancia * instancia) {
 void nuevaInstanciaConectada(char * nombreInstancia, int socketInst) {
 	t_instancia *instancia = malloc(sizeof(t_instancia));
 
-	instancia->nombre = strdup(nombreInstancia);
+	instancia->nombre = nombreInstancia;
 	instancia->cantidadDeEntradasDisponibles = configuracion->cantidadDeEntradas;
 	instancia->socket = socketInst;
 	list_add(instancias, instancia);
