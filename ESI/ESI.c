@@ -108,6 +108,17 @@ void iniciarConexiones() {
 			respuesta->mensaje);
 	log_info(logger, "RESPUESTA: %s", respuesta->mensaje);
 
+	free(solicitud);
+	free(respuestaCoordinador);
+	free(respuestaPlanificador);
+
+	esperarOrdenDeEjecucion();
+}
+
+void esperarOrdenDeEjecucion() {
+	int bytesRecibidos;
+	tRespuestaPlanificador *respuestaPlanificador = malloc(
+			sizeof(tRespuestaPlanificador));
 	//Recibir respuesta por parte del Planificador para ejecutar el script
 	tMensaje tipoMensajePlanificador;
 	char * sPayloadRespuestaPlanificador = malloc(100);
@@ -137,17 +148,8 @@ void iniciarConexiones() {
 											  //ESTO ES SOLO UNA PRUEBA
 		ordenRecibida();
 	}*/
-
-	// TODO en este procedimiento se hacen 10 malloc() y ningún free() !!! corregir estosolicitud
-	/*free(solicitud);
-	 free(respuestaCoordinador);
-	 free(sPayloadRespuestaHandC);//
-	 free(sPayloadRespuestaPlanificador);
-	 free(respuestaCoordinador);
-	 free(sPayloadRespuestaHand);
-	 free(sPayloadRespuestaHandC);*/
-
 }
+
 void recibirResultadoOperacion(int recibidos,
 		tRespuestaCoordinador* respuestaCoordinador) {
 	tMensaje tipoMensajeCoordinador;

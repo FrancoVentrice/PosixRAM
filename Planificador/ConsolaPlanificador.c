@@ -76,6 +76,10 @@ void deadlock() {
 	newInstruccion(INSTRUCCION_DEADLOCK, NULL, NULL);
 }
 
+void exitPlanificador() {
+	vivo = false;
+}
+
 void instruccionDestroyer(t_instruccion_consola *instruccion) {
 	free(instruccion->primerParametro);
 	free(instruccion->segundoParametro);

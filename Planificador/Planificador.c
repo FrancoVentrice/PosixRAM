@@ -75,8 +75,6 @@ void trabajar() {
 //(avisar al ESI a ejecutar, esperar consulta, evaluar, y esperar fin de ejecucion de operacion)
 void enviarOrdenDeEjecucion() {
 	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
-	consultaCoordinador=malloc(sizeof(tConsultaCoordinador));
-	consultaCoordinador->clave = malloc(40);
 	autorizarEjecucion->mensaje = malloc(100);
 	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
 	tPaquete pkgHandshakeRespuesta;
@@ -125,6 +123,11 @@ void enviarOrdenDeEjecucion() {
 }
 
 void recibirConsultaOperacion() {
+	if(consultaCoordinador) {
+		free(consultaCoordinador);
+	}
+	consultaCoordinador = malloc(sizeof(tConsultaCoordinador));
+	consultaCoordinador->clave = malloc(40);
 	tMensaje tipoMensaje;
 	char * sPayloadConsulta = malloc(100);
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
@@ -224,7 +227,6 @@ void escucharHandshakesESIs() {
 	fd_set setSocketsOrquestador;
 	FD_ZERO(&setSocketsOrquestador);
 	int iSocketComunicacion;
-	tMensaje tipoMensaje;
 
 	// Inicializacion de sockets y actualizacion del log
 	iSocketEscucha = crearSocketEscucha(configuracion->puerto, logger);
@@ -241,15 +243,17 @@ void escucharHandshakesESIs() {
 	log_info(logger,"Escuchando");
 
 	while (1) {
+		tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
+		FD_ZERO(&setSocketsOrquestador);
+		FD_SET(iSocketEscucha, &setSocketsOrquestador);
 		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
-				iSocketEscucha, &tipoMensaje, &sPayloadRespuesta, logger);
+				iSocketEscucha, tipoMensaje, &sPayloadRespuesta, logger);
 
 		if (iSocketComunicacion != -1) {
-			switch (tipoMensaje) {
+			switch (*tipoMensaje) {
 			case E_HANDSHAKE:
 				atenderESI(iSocketComunicacion);
-				tipoMensaje = DESCONEXION;
-				sleep(1);
+				*tipoMensaje = DESCONEXION;
 				break;
 
 			case DESCONEXION:
@@ -277,10 +281,6 @@ void recibirResultadoOperacion() {
 
 	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
 			respuestaCoordinador->mensaje);
-
-	//if (OK) {
-	trabajar();
-	//}
 }
 
 void enviarOperacionValida() {
@@ -318,7 +318,6 @@ void evaluarConsultaDeOperacion() {
 				//informar al coordinador que la clave ya esta tomada
 				bloquearESIConClave(esiEnEjecucion, clave);
 				planificacionNecesaria = true;
-				trabajar();
 			}
 		} else {
 			enviarOperacionValida();
@@ -334,7 +333,6 @@ void evaluarConsultaDeOperacion() {
 				//informar al coordinador que la clave ya esta tomada
 				bloquearESIConClave(esiEnEjecucion, clave);
 				planificacionNecesaria = true;
-				trabajar();
 			}
 		} else {
 			//informar al coordinador que la clave esta libre pero el esi no la tiene asignada
@@ -351,7 +349,6 @@ void evaluarConsultaDeOperacion() {
 				//informar al coordinador que la clave ya esta tomada
 				bloquearESIConClave(esiEnEjecucion, clave);
 				planificacionNecesaria = true;
-				trabajar();
 			}
 		} else {
 			//informar al coordinador que la clave esta libre pero el esi no la tiene asignada
@@ -433,7 +430,6 @@ void esiFinalizado() {
 	log_info(logger, "Finalizando ESI %s", esiEnEjecucion->id);
 	finalizarEsiEnEjecucion();
 	planificacionNecesaria = true;
-	trabajar();
 }
 
 int planificarHRRN() {
@@ -636,6 +632,7 @@ void finalizarEsiEnEjecucion() {
 	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
+	aptoEjecucion = colaDeListos->elements_count > 0;
 }
 
 void ejecutarComandosConsola() {
@@ -689,6 +686,10 @@ void abortarEsiPorId(char *id) {
 	}
 
 	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
+
+	if (!esiEnEjecucion && colaDeListos->elements_count <= 0) {
+		aptoEjecucion = false;
+	}
 }
 
 t_esi * encontrarEsiPorId(t_list *lista, char *id) {

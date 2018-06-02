@@ -150,6 +150,7 @@ void list(char *);
 void kill(char *);
 void status(char *);
 void deadlock();
+void exitPlanificador();
 void instruccionDestroyer(t_instruccion_consola *);
 void newInstruccion(int , char *, char *);
 

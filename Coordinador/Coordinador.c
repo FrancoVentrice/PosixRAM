@@ -56,7 +56,6 @@ void escucharConexiones() {
 			case E_HANDSHAKE:
 				log_info(logger,"Socket comunicacion: %d \n", iSocketComunicacion);
 				log_info(logger,"HANDSHAKE CON ESI");
-				char* encabezado = malloc(10);
 				char encabezadoMensaje;
 
 

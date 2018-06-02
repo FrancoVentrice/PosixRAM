@@ -70,5 +70,6 @@ void ordenRecibida();
 int leerLinea();
 void enviarOperacion();
 void enviarEsiFinalizado();
+void esperarOrdenDeEjecucion();
 
 #endif /* ESI_H_ */
