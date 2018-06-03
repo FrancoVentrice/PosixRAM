@@ -166,6 +166,15 @@ void escucharConexiones() {
 				*tipoMensaje = DESCONEXION;
 				break;
 
+			case P_RESPUESTA_CONSULTA:
+
+				log_info(logger,"Respuesta Consulta Operacion");
+				char* respuesta= malloc(10);
+				recibirRespuestaConsulta(respuesta);
+
+				*tipoMensaje = DESCONEXION;
+				break;
+
 
 			case C_HANDSHAKE:
 				/* se agrega para que no genere warning

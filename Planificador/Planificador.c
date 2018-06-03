@@ -39,7 +39,7 @@ int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	realizarConexiones();
 	//levantarConsola();
-	trabajar();
+	//trabajar();
 	finalizar(EXIT_SUCCESS);
 }
 
@@ -97,7 +97,7 @@ void enviarOrdenDeEjecucion() {
 	//
 	tRespuesta *respuestaESI = malloc(sizeof(tRespuesta));
 
-	tMensaje tipoMensajeEsi;
+	tMensaje tipoMensajeEsi=DESCONEXION;;
 	char * sPayloadRespuestaHand = malloc(100);
 
 	int bytesRecibidos = recibirPaquete(esiEnEjecucion->socket, &tipoMensajeEsi,
@@ -214,11 +214,14 @@ void realizarConexiones() {
 
 	//Levanta hilo para escuchar handshakes de ESIs
 	int respHilo = 0;
-	respHilo = pthread_create(&hiloHandshakeESIs, NULL, escucharHandshakesESIs, NULL);
+	//respHilo = pthread_create(&hiloHandshakeESIs, NULL, escucharHandshakesESIs, NULL);
+	//escucharHandshakesESIs();
+	escucharHandshakesESIs();
+	/*
 	if (respHilo) {
 		log_error(logger, "Error al levantar hilo para escucha de ESIs");
 		finalizar(EXIT_FAILURE);
-	}
+	}*/
 }
 
 void escucharHandshakesESIs() {
@@ -240,18 +243,22 @@ void escucharHandshakesESIs() {
 	tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
 	solicitud->mensaje = malloc(100);
 	int recibidos;
+	tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
+	FD_ZERO(&setSocketsOrquestador);
+	FD_SET(iSocketEscucha, &setSocketsOrquestador);
 	log_info(logger,"Escuchando");
 
+
 	while (1) {
-		tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
-		FD_ZERO(&setSocketsOrquestador);
-		FD_SET(iSocketEscucha, &setSocketsOrquestador);
+
 		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
 				iSocketEscucha, tipoMensaje, &sPayloadRespuesta, logger);
 
 		if (iSocketComunicacion != -1) {
 			switch (*tipoMensaje) {
 			case E_HANDSHAKE:
+				//atenderESI(iSocketComunicacion);
+				//pthread_create(&hiloHandshakeESIs, NULL, atenderESI, iSocketComunicacion);
 				atenderESI(iSocketComunicacion);
 				*tipoMensaje = DESCONEXION;
 				break;
@@ -375,6 +382,7 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	}
 	//re/afirma la capacidad del planificador de enviar ordenes de ejecucion
 	aptoEjecucion = true;
+	trabajar();
 	//Si entra otro ESI entonces se queda en cola de listos esperando el ok del planificador
 }
 
