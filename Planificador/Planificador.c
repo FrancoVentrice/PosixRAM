@@ -77,19 +77,34 @@ void comenzarCicloDeSentencia() {
 	enviarOrdenDeEjecucion();
 	sentenciaActiva = true;
 	while (sentenciaActiva) {
+		log_info(logger, "iteracion de sentenciaActiva");
 		fd_set temp;
 		tMensaje tipoMensaje;
 		char *buffer = malloc(100);
-		if (multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) > 0) {
+		if (multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) >= 0) {
+			log_info(logger, "tipo de mensaje %d", tipoMensaje);
 			switch (tipoMensaje) {
 			case E_ESI_FINALIZADO:
+				log_info(logger, "ESI finalizado");
+				esiFinalizado();
+				sentenciaActiva = false;
+				break;
 			case E_LINEA_OK:
+				log_info(logger, "Linea OK ESI");
+				break;
 			case C_CONSULTA_OPERACION_GET:
 			case C_CONSULTA_OPERACION_SET:
 			case C_CONSULTA_OPERACION_STORE:
+				log_info(logger, "consulta del coordinador");
+				recibirConsultaOperacion(tipoMensaje, buffer);
+				evaluarConsultaDeOperacion();
+				break;
 			case C_RESULTADO_OPERACION:
-				log_info(logger, "Holiiss ################");
+				log_info(logger, "resultado de operacion");
+				break;
 			}
+		} else  {
+			log_info(logger, "multiplexar devolvio negativo");
 		}
 	}
 }
@@ -145,19 +160,12 @@ void enviarOrdenDeEjecucion() {
 	}*/
 }
 
-void recibirConsultaOperacion() {
+void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
 	if(consultaCoordinador) {
 		free(consultaCoordinador);
 	}
 	consultaCoordinador = malloc(sizeof(tConsultaCoordinador));
 	consultaCoordinador->clave = malloc(40);
-	tMensaje tipoMensaje;
-	char * sPayloadConsulta = malloc(100);
-	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
-			&sPayloadConsulta, logger, "Consulta coordinador");
-	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-
-	log_info(logger, "el tipo de mensaje es %d", tipoMensaje);
 
 	switch(tipoMensaje) {
 
