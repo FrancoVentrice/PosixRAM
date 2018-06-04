@@ -31,4 +31,6 @@ signed int connectToServer(char *, int , t_log *);
 
 int desconectarseDe(int);
 
+int getNewConnection(int , fd_set *, int *);
+
 #endif /* LIBSOCKETS_H_ */

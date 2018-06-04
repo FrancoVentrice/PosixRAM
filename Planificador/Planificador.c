@@ -37,9 +37,11 @@ void atenderESI(int iSocketComunicacion) {
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
-	realizarConexiones();
+	inicializarSockets();
+	realizarHandshakeCoordinador();
+	levantarHiloEscuchaESIs();
 	//levantarConsola();
-	//trabajar();
+	cicloPrincipal();
 	finalizar(EXIT_SUCCESS);
 }
 
@@ -59,14 +61,35 @@ void test() {
 //METODO PRINCIPAL
 //una vez que todas las conexiones estan hechas, y el planificador pueda empezar, se llama a este metodo
 //representa un ciclo en el cual atiende los comandos de consola, planifica (si es necesario) y avisa al ESI que ejecute
-void trabajar() {
+void cicloPrincipal() {
 	while(vivo) {
 		ejecutarComandosConsola();
 		if (ejecutando && aptoEjecucion) {
 			if (planificacionNecesaria) {
 				planificar();
 			}
-			enviarOrdenDeEjecucion();
+			comenzarCicloDeSentencia();
+		}
+	}
+}
+
+void comenzarCicloDeSentencia() {
+	enviarOrdenDeEjecucion();
+	sentenciaActiva = true;
+	while (sentenciaActiva) {
+		fd_set temp;
+		tMensaje tipoMensaje;
+		char *buffer = malloc(100);
+		if (multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) > 0) {
+			switch (tipoMensaje) {
+			case E_ESI_FINALIZADO:
+			case E_LINEA_OK:
+			case C_CONSULTA_OPERACION_GET:
+			case C_CONSULTA_OPERACION_SET:
+			case C_CONSULTA_OPERACION_STORE:
+			case C_RESULTADO_OPERACION:
+				log_info(logger, "Holiiss ################");
+			}
 		}
 	}
 }
@@ -95,7 +118,7 @@ void enviarOrdenDeEjecucion() {
 
 	//recibir respuesta de esi si la linea es correcta:
 	//
-	tRespuesta *respuestaESI = malloc(sizeof(tRespuesta));
+	/*tRespuesta *respuestaESI = malloc(sizeof(tRespuesta));
 
 	tMensaje tipoMensajeEsi=DESCONEXION;;
 	char * sPayloadRespuestaHand = malloc(100);
@@ -119,7 +142,7 @@ void enviarOrdenDeEjecucion() {
 		esiFinalizado();
 	} else {
 		abortarEsiPorId(esiEnEjecucion->id);
-	}
+	}*/
 }
 
 void recibirConsultaOperacion() {
@@ -162,7 +185,7 @@ void recibirConsultaOperacion() {
 
 void finalizar(int codigo) {
 	pthread_join(hiloConsola, NULL);
-	pthread_join(hiloHandshakeESIs, NULL);
+	pthread_join(hiloEscuchaESIs, NULL);
 	limpiarConfiguracion();
 	exit(codigo);
 }
@@ -176,7 +199,7 @@ void levantarConsola() {
 	}
 }
 
-void realizarConexiones() {
+void realizarHandshakeCoordinador() {
 	//Conexion al Coordinador
 	socketCoordinador = connectToServer(configuracion->ipCoordinador, configuracion->puertoCoordinador,
 			logger);
@@ -211,61 +234,28 @@ void realizarConexiones() {
 	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
 			respuesta->mensaje);
 	log_info(logger,"RESPUESTA: %s", respuesta->mensaje);
-
-	//Levanta hilo para escuchar handshakes de ESIs
-	int respHilo = 0;
-	//respHilo = pthread_create(&hiloHandshakeESIs, NULL, escucharHandshakesESIs, NULL);
-	//escucharHandshakesESIs();
-	escucharHandshakesESIs();
-	/*
-	if (respHilo) {
-		log_error(logger, "Error al levantar hilo para escucha de ESIs");
-		finalizar(EXIT_FAILURE);
-	}*/
 }
 
-void escucharHandshakesESIs() {
-	int iSocketEscucha;
-	int maxSock;
-	fd_set setSocketsOrquestador;
-	FD_ZERO(&setSocketsOrquestador);
-	int iSocketComunicacion;
+void inicializarSockets() {
+	socketEscucha = crearSocketEscucha(configuracion->puerto, logger);
+	FD_ZERO(&setSockets);
+	//agrego el socket de coordinador al set de sockets
+	FD_SET(socketCoordinador, &setSockets);
+	maxSock = socketCoordinador;
+}
 
-	// Inicializacion de sockets y actualizacion del log
-	iSocketEscucha = crearSocketEscucha(configuracion->puerto, logger);
+void levantarHiloEscuchaESIs() {
+	if (pthread_create(&hiloEscuchaESIs, NULL, escucharConexionesESIs, NULL)) {
+		log_error(logger, "Error al levantar el hilo de escucha de ESIs");
+		finalizar(EXIT_FAILURE);
+	}
+}
 
-	FD_SET(iSocketEscucha, &setSocketsOrquestador);
-	maxSock = iSocketEscucha;
-
-	tPaquete pkgHandshake;
-	char * sPayloadRespuesta = malloc(100);
-	char encabezadoMensaje;
-	tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
-	solicitud->mensaje = malloc(100);
-	int recibidos;
-	tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
-	FD_ZERO(&setSocketsOrquestador);
-	FD_SET(iSocketEscucha, &setSocketsOrquestador);
-	log_info(logger,"Escuchando");
-
-
+void escucharConexionesESIs() {
 	while (1) {
-
-		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
-				iSocketEscucha, tipoMensaje, &sPayloadRespuesta, logger);
-
-		if (iSocketComunicacion != -1) {
-			switch (*tipoMensaje) {
-			case E_HANDSHAKE:
-				//atenderESI(iSocketComunicacion);
-				//pthread_create(&hiloHandshakeESIs, NULL, atenderESI, iSocketComunicacion);
-				atenderESI(iSocketComunicacion);
-				*tipoMensaje = DESCONEXION;
-				break;
-
-			case DESCONEXION:
-				break;
-			}
+		int iSocketComunicacion = getNewConnection(socketEscucha, &setSockets, &maxSock);
+		if (iSocketComunicacion > 0) {
+			atenderESI(iSocketComunicacion);
 		}
 	}
 }
@@ -382,7 +372,6 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 	}
 	//re/afirma la capacidad del planificador de enviar ordenes de ejecucion
 	aptoEjecucion = true;
-	trabajar();
 	//Si entra otro ESI entonces se queda en cola de listos esperando el ok del planificador
 }
 

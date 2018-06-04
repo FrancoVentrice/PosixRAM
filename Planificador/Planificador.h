@@ -6,6 +6,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include "..//shared/protocolo.h"
@@ -72,19 +73,25 @@ typedef struct {
 	t_list *clavesTomadas;
 } t_esi;
 
+
+fd_set setSockets;
+int socketEscucha;
+int socketCoordinador;
+int maxSock;
+
 t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 pthread_t hiloConsola;
-pthread_t hiloHandshakeESIs;
+pthread_t hiloEscuchaESIs;
 t_list * bufferConsola; //buffer de instrucciones a ejecutar cuando se complete una tarea atomica
 int tiempoTotalEjecucion;
 bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
 bool vivo; //se usa para repetir el ciclo de trabajo y eventualmente finalizar el proceso
 bool aptoEjecucion; //esta en true siempre y cuando haya algun ESI apto de ejecucion
+bool sentenciaActiva; //esta en true cuando se esta realizando la ejecucion de una sentencia particular
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
-int socketCoordinador;
 tConsultaCoordinador* consultaCoordinador;
 int nId;
 
@@ -95,7 +102,7 @@ t_list * colaDeFinalizados; //lista de t_esi. es la cola de esis finalizados
 t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
 t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada. key: clave, value: esi que la tomo
 
-void trabajar();
+void cicloPrincipal();
 void enviarOrdenDeEjecucion();
 int cargarConfiguracion();
 int configValida(t_config *);
@@ -103,8 +110,8 @@ void limpiarConfiguracion();
 void finalizar(int);
 void levantarConsola();
 void consola();
-void realizarConexiones();
-void escucharHandshakesESIs();
+void realizarHandshakeCoordinador();
+void escucharConexionesESIs();
 void agregarEsiAColaDeListos(t_esi *);
 void planificar();
 void bloquearESIConClave(t_esi *, char *);
@@ -147,7 +154,7 @@ void play();
 void lock(char *);
 void unlock(char *);
 void list(char *);
-void kill(char *);
+void killEsi(char *);
 void status(char *);
 void deadlock();
 void exitPlanificador();

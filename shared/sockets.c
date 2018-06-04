@@ -351,3 +351,19 @@ int desconectarseDe(int iSocket)
 	}
 }
 
+int getNewConnection(int socketListener, fd_set *setSockets, int *maxSock) {
+	struct sockaddr_in clientAddress;
+	socklen_t sinClientSize;
+	sinClientSize = sizeof(clientAddress);
+	int iNewSocket = accept(socketListener, (struct sockaddr*) &clientAddress, &sinClientSize);
+	if (iNewSocket == -1) {
+		//error de conexion
+	} else {
+		FD_SET(iNewSocket, setSockets);
+		if (iNewSocket > *maxSock) {
+			*maxSock = iNewSocket;
+		}
+	}
+	return iNewSocket;
+}
+

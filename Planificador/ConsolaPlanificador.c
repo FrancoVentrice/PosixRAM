@@ -15,7 +15,7 @@ void consola() {
 		} else if (string_starts_with(comando, "list")) {
 			list(comando);
 		} else if (string_starts_with(comando, "kill")) {
-			kill(comando);
+			killEsi(comando);
 		} else if (string_starts_with(comando, "status")) {
 			status(comando);
 		} else if (strcmp(comando, "deadlock") == 0) {
@@ -62,7 +62,7 @@ void list(char *comando) {
 	printf("\nlogica para listar procesos encolados esperando al recurso %s\n", recurso);
 }
 
-void kill(char *comando) {
+void killEsi(char *comando) {
 	char *esi = obtenerPrimerParametro(comando);
 	newInstruccion(INSTRUCCION_TERMINAR, esi, NULL);
 }

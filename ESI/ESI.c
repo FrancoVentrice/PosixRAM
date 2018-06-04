@@ -78,12 +78,12 @@ void iniciarConexiones() {
 			configuracion->ipPlanificador, configuracion->puertoPlanificador,
 			logger);
 
-	solicitud->mensaje = malloc(100);
+	/*solicitud->mensaje = malloc(100);
 	strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
 	tPaquete pkgHandshake;
 	pkgHandshake.type = E_HANDSHAKE;
 
-	tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));
+	*/tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));/*
 
 	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
 			pkgHandshake.type, solicitud->mensaje);
@@ -92,7 +92,7 @@ void iniciarConexiones() {
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
 			&pkgHandshake, logger, "Se envia solicitud al Planificador");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
-	//Recibo respuesta del Planificador
+	//Recibo respuesta del Planificador*/
 	char * sPayloadRespuestaHand = malloc(100);
 
 	tMensaje tipoMensaje;
