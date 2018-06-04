@@ -9,7 +9,7 @@ void prepararTablaDeEntradas() {
 	/* prepara la estructura de la tabla de entradas y asigna el espacio para almacenar los valores */
 
 	unsigned int espacioTotal;
-	int i;
+	unsigned int i;
 
 	espacioTotal = (configuracion->cantidadEntradas) * (configuracion->tamanioEntrada);
 	log_info(logger,"Reservando espacio de almacenamiento para %d bytes.",espacioTotal);
@@ -31,7 +31,7 @@ unsigned int entradasDisponibles() {
 	/* determina cuántas entradas quedan por ocupar */
 
 	unsigned int entradasDisponibles;
-	int i;
+	unsigned int i;
 
 	log_debug(logger,"Calculando entradas disponibles");
 	entradasDisponibles = 0;
@@ -121,21 +121,69 @@ int inicializarPuntoDeMontaje() {
 void cargarEntradasDesdeArchivos() {
 	/* lee los archivos del punto de montaje y carga las entradas con sus valores */
 
-    struct dirent *entrada;
+	unsigned int i = 0;
+    char * archivoFullPath;
+	int fdArchivoLeido;
+	struct stat infoArchivo;
+	char * archivoMapeado;
+	char * posicionValor;
+
+    struct dirent * archivoClave;
     DIR *dir = opendir(configuracion->puntoDeMontaje);
 
     if (dir == NULL) {
         return;
     }
 
-    // TODO corregir esta parte
-    while ((entrada = readdir(dir)) != NULL) {
-    	if (!strcmp (entrada->d_name, "."))
+    while ((archivoClave = readdir(dir)) != NULL) {
+    	if (!strcmp (archivoClave->d_name, "."))
     		continue;
-    	if (!strcmp (entrada->d_name, ".."))
+    	if (!strcmp (archivoClave->d_name, ".."))
     		continue;
-        printf("%s\n",entrada->d_name);
+
+    	posicionValor = almacenamientoEntradas + (i * configuracion->tamanioEntrada);
+
+    	log_info(logger, "Leyendo archivo: %s", archivoClave->d_name);
+    	strcpy(tablaDeEntradas[i].clave,archivoClave->d_name);
+    	archivoFullPath = string_new();
+    	string_append_with_format(&archivoFullPath, "%s/%s", configuracion->puntoDeMontaje, archivoClave->d_name);
+    	stat (archivoFullPath, &infoArchivo);
+    	if (!(infoArchivo.st_size == 0)) {
+    		tablaDeEntradas[i].tamanio = (size_t) infoArchivo.st_size;
+        	fdArchivoLeido = open (archivoFullPath, O_RDONLY);
+    		archivoMapeado = (char *) mmap(NULL, tablaDeEntradas[i].tamanio, PROT_READ, MAP_SHARED, fdArchivoLeido, 0);
+        	memcpy(posicionValor, archivoMapeado, tablaDeEntradas[i].tamanio);
+        	munmap(archivoMapeado, tablaDeEntradas[i].tamanio);
+    		close(fdArchivoLeido);
+    	}
+    	free(archivoFullPath);
+
+    	// unstable code: comparo un size_t con unsigned int pero... dale que va
+    	if (tablaDeEntradas[i].tamanio > configuracion->tamanioEntrada) {
+    		/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
+    		int entradasExtraOcupadas;
+    		entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion->tamanioEntrada;
+    		while (entradasExtraOcupadas) {
+    			i++;
+    			strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
+    			entradasExtraOcupadas--;
+    		}
+    	}
+    	i++;
     }
 
     closedir(dir);
+    log_info(logger,"Se cargaron %d entradas.", i);
+}
+
+char * valorDeEntrada(unsigned int indice) {
+	/* Lee el valor correspondiente a una entrada, le agrega el terminador, y lo retorna */
+
+	char * valor;
+	valor = (char *)malloc((tablaDeEntradas[indice].tamanio)+1);
+	memcpy(valor,almacenamientoEntradas + (indice * configuracion->tamanioEntrada), tablaDeEntradas[indice].tamanio);
+	valor[tablaDeEntradas[indice].tamanio] = '\0';
+
+	// unstable code: no puedo hacer free() de la memoria reservada acá. feo feo.
+	return valor;
 }

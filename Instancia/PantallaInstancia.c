@@ -48,6 +48,22 @@ void mostrarTablaDeEntradas(void) {
 	fflush(stdout);
 }
 
+void listarEntradas(void) {
+	/* Muestra una tabla con las entradas y sus valores. Usar solo para debug. */
+
+	if(parametrosEntrada.logPantalla)
+		return;
+
+	unsigned int i;
+
+	printf(BOLD " #  | Tam. | Clave                                    | Valor\n" RESET);
+	for (i=0 ; i < configuracion->cantidadEntradas ; i++) {
+		printf("%3u | %4u | %-40s | %.80s\n", i, strlen(valorDeEntrada(i)), tablaDeEntradas[i].clave, valorDeEntrada(i));
+	}
+
+	fflush(stdout);
+}
+
 void pantallaFin() {
 	printf(AMARILLO_T);
 	centrarTexto("PosixRAM (c) 2018");

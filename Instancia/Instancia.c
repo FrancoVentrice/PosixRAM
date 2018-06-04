@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
 	inicializarInstancia();
 
-	pantallaInicio ();
+	pantallaInicio();
 
 	iniciarLogger();
 	log_info(logger,"Iniciando Instancia PosixRAM para ReDistinto");
@@ -33,9 +33,9 @@ int main(int argc, char *argv[]) {
 	mostrarConexionCoordinador();
 
 	prepararTablaDeEntradas();
-	mostrarTablaDeEntradas();
 	if (!inicializarPuntoDeMontaje())
 		finalizar(EXIT_FAILURE);
+	mostrarTablaDeEntradas();
 
 	/* iniciamos el timeout para el vuelco seteando una alarma */
 	iniciarDumpTimeout();
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 	/* se agrega el socket de teclado */
 	FD_SET(STDIN,&master);
 
-	/* se agrega el socket de escucha para habitacion*/
+	/* se agrega el socket del coordinador */
 	FD_SET(configuracion->fdSocketCoordinador,&master);
 	if(iFdmax < configuracion->fdSocketCoordinador)
 		iFdmax = configuracion->fdSocketCoordinador;
@@ -86,14 +86,17 @@ int main(int argc, char *argv[]) {
 				case 'D':
 					// forzar Dump
 				break;
-				case 'E':
-					// listar Entradas
+				case 'E': // listar Entradas
+					listarEntradas();
 				break;
 				case 'L':
 					// últimas 10 líneas del Log
 				break;
-				case 'R':
-					// Refresh status
+				case 'R': // Refresh status
+					pantallaInicio();
+					mostrarConfiguracion();
+					mostrarConexionCoordinador();
+					mostrarTablaDeEntradas();
 				break;
 				case 'Q': // Quit (salir)
 					sigue = 0;

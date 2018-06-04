@@ -12,6 +12,7 @@
 #include <sys/mman.h> // mmap
 #include <sys/types.h>
 #include <sys/stat.h> // mkdir - stat
+#include <fcntl.h>
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/process.h>
@@ -53,14 +54,12 @@ typedef struct {
 	int realizarDump; // 1 = realizar dump . 0 = no realizar dump
 	time_t ultimoDump;
 	unsigned int instruccionesProcesadas;
-	//unsigned int cantidadEntradasOcupadas;
-	//unsigned int espacioOcupado; // bytes
 } t_instanceStatus;
 
 /* estructura que representa una entrada en la tabla */
 typedef struct {
 	char clave[MAX_LONG_CLAVE];
-	unsigned int tamanio;
+	size_t tamanio;
 	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas al momento de crearse
 } t_entrada;
 
@@ -97,12 +96,14 @@ unsigned int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
 int inicializarPuntoDeMontaje(void);
 void cargarEntradasDesdeArchivos(void);
+char * valorDeEntrada(unsigned int);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
 void mostrarConfiguracion(void);
 void mostrarConexionCoordinador(void);
 void mostrarTablaDeEntradas(void);
+void listarEntradas(void);
 void pantallaFin(void);
 void mostrarTexto(char *);
 void mostrarMenu(void);
