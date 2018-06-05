@@ -35,6 +35,10 @@
 *.i*86
 *.x86_64
 *.hex
+/Instancia/Default/Instancia
+/ESI/Default/ESI
+/Coordinador/Default/Coordinador
+/Planificador/Default/Planificador
 
 # Debug files
 *.dSYM/
@@ -57,6 +61,13 @@ LogPlanificador
 LogInstancia
 LogESI
 *.log
+Log*.txt
 /logs/
 /Instancia/logs/
 /Instancia/Default/logs/
+/ESI/logs/
+/ESI/Default/logs/
+/Coordinador/logs/
+/Coordinador/Default/logs/
+/Planificador/logs/
+/Planificador/Default/logs/
