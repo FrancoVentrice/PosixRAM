@@ -83,7 +83,7 @@ void cicloDeSentencia() {
 		char *buffer = malloc(100);
 		int socketMultiplexado;
 		if (socketMultiplexado = multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) >= 0) {
-			log_info(logger, "tipo de mensaje %d, del socket %d", tipoMensaje, socketMultiplexado);
+			log_info(logger, "tipo de mensaje %d del socket %d", tipoMensaje, socketMultiplexado);
 			switch (tipoMensaje) {
 			case E_ESI_FINALIZADO:
 				log_info(logger, "ESI finalizado");
@@ -132,34 +132,6 @@ void enviarOrdenDeEjecucion() {
 			&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
-
-	//recibir respuesta de esi si la linea es correcta:
-	//
-	/*tRespuesta *respuestaESI = malloc(sizeof(tRespuesta));
-
-	tMensaje tipoMensajeEsi=DESCONEXION;;
-	char * sPayloadRespuestaHand = malloc(100);
-
-	int bytesRecibidos = recibirPaquete(esiEnEjecucion->socket, &tipoMensajeEsi,
-			&sPayloadRespuestaHand, logger, "Ejecucion ESI respuesta");
-	log_info(logger, "RECIBIDOS: %d bytes", bytesRecibidos);
-	respuestaESI->mensaje = malloc(40);
-
-	deserializar(sPayloadRespuestaHand, "%s",respuestaESI->mensaje);
-	log_info(logger, "Respuesta Linea: %s", respuestaESI->mensaje);
-	log_info(logger, "Tipo mensaje ESI: %d", tipoMensajeEsi);
-
-
-	if (tipoMensajeEsi == E_LINEA_OK) {
-		log_info(logger, "La respuesta de ejecucion fue OK", tipoMensajeEsi);
-		//ESPERO MENSAJE DEL COORDINADOR
-		recibirConsultaOperacion();
-		evaluarConsultaDeOperacion();
-	} else if (tipoMensajeEsi == E_ESI_FINALIZADO) {
-		esiFinalizado();
-	} else {
-		abortarEsiPorId(esiEnEjecucion->id);
-	}*/
 }
 
 void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
@@ -316,12 +288,15 @@ void evaluarConsultaDeOperacion() {
 	case OPERACION_GET:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
+			log_info(logger, "El ESI %s quiere hacer un GET de la clave %s tomada por el ESI %s", esiEnEjecucion->id, clave, esi->id);
 			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
 				enviarOperacionValida();
 				esiTomaClave(esiEnEjecucion, clave);
 			} else {
 				//informar al coordinador que la clave ya esta tomada
 				bloquearESIConClave(esiEnEjecucion, clave);
+				log_info(logger, "El ESI %s esta siendo bloqueado por hacer un GET de la clave %s tomada", esiEnEjecucion->id, clave);
+
 				planificacionNecesaria = true;
 			}
 		} else {
@@ -384,6 +359,10 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 }
 
 void planificar() {
+	log_info(logger, "Planifico: \nESI en ejecucion?: %d", (bool) esiEnEjecucion);
+	if (esiEnEjecucion) {
+		log_info(logger, "\nESI en ejecucion: %s", esiEnEjecucion->id);
+	}
 	//me hago una pasadita para volar los bloqueados
 	pthread_mutex_lock(&mutexColaDeListos);
 	list_remove_by_condition(colaDeListos, evaluarBloqueoDeEsi);
@@ -423,6 +402,7 @@ void planificar() {
 
 	log_info(logger,"Proximo ESI a ejecutar: %s con socket: %d", esiEnEjecucion->id, esiEnEjecucion->socket);
 	list_remove(colaDeListos, indexProximoAEjecutar);
+	planificacionNecesaria = false;
 }
 
 void sentenciaEjecutada() {
@@ -521,6 +501,7 @@ void esiTomaClave(t_esi *esi, char *clave) {
 	}
 	dictionary_put(diccionarioClavesTomadas, clave, esi);
 	list_add(esi->clavesTomadas, clave);
+	log_info(logger, "Se agrega la clave %s a la lista de claves tomadas del ESI %s y viceversa", clave, esi->id);
 }
 
 void bloquearClaveSola(char *clave) {
