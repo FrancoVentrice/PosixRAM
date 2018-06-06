@@ -29,7 +29,7 @@ void cicloPrincipal() {
 
 		if (strcmp(resultadoDeEjecucion->mensaje, "OK") == 0) {
 			log_info(logger, "lectura aprobada!");
-		} else if (strcmp(resultadoDeEjecucion->mensaje, "BLOCKED") == 0) {
+		} else if (strcmp(resultadoDeEjecucion->mensaje, "BLOQUEADO") == 0) {
 			log_info(logger, "me bloquearon :(");
 			lecturaRechazada = true;
 		} else if (strcmp(resultadoDeEjecucion->mensaje, "ERROR") == 0) {
@@ -176,7 +176,7 @@ void cargarArchivo(char *path) {
 void ordenRecibida() {
 	if (lecturaRechazada) {
 		enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
-		sleep(1);
+		usleep(200 * 1000);
 		enviarOperacion(); //ENVIO AL COORDINADOR LA SENTENCIA
 	} else {
 		if (leerLinea() < 0) {
@@ -184,7 +184,7 @@ void ordenRecibida() {
 			finalizar(EXIT_SUCCESS);
 		} else {
 			enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
-			sleep(1);
+			usleep(200 * 1000);
 			enviarOperacion();//ENVIO AL COORDINADOR LA SENTENCIA
 		}
 	}

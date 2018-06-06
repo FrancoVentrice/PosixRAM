@@ -282,7 +282,9 @@ void accionarFrenteAConsulta(char * respuesta) {
 			registrarClaveAgregadaAInstancia();
 			informarResultadoOperacionOk(operacion->remitente);
 		}
-	} else {
+	} else if (strcmp(respuesta, "BLOQUEADO") == 0) {
+		informarResultadoOperacionBloqueado(operacion->remitente);
+	} else if (strcmp(respuesta, "ERROR") == 0) {
 		informarResultadoOperacionError(operacion->remitente);
 	}
 	free(respuesta);
@@ -330,6 +332,31 @@ void informarResultadoOperacionOk(int socketEsi){
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
 	resultadoOperacion->mensaje = malloc(100);
 	strcpy(resultadoOperacion->mensaje, "OK");
+	tPaquete pkgHandshake2;
+	pkgHandshake2.type = C_RESULTADO_OPERACION;
+
+	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
+
+	log_info(logger,"Se envia respuesta al ESI");
+	bytesEnviados = enviarPaquete(socketEsi, &pkgHandshake2, logger,
+			"Se envia respuesta al ESI");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
+	//ENVIO RESPUESTA AL PLANIFICADOR
+
+	log_info(logger,"Se envia respuesta al Planificador");
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger,
+			"Se envia respuesta al Planificador");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
+}
+
+void informarResultadoOperacionBloqueado(int socketEsi){
+	//ENVIO RESPUESTA AL ESI
+	int bytesEnviados;
+	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
+	resultadoOperacion->mensaje = malloc(100);
+	strcpy(resultadoOperacion->mensaje, "BLOQUEADO");
 	tPaquete pkgHandshake2;
 	pkgHandshake2.type = C_RESULTADO_OPERACION;
 

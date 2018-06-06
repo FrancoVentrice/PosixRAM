@@ -254,19 +254,20 @@ void recibirResultadoOperacion(char *bufferResultado) {
 	if (strcmp(respuestaCoordinador->mensaje, "OK") == 0) {
 		log_info(logger, "Sentencia finalizada: saxeeees!");
 		log_info(logger, "El exito fue gracias al ESI %s de socket %d", esiEnEjecucion->id, esiEnEjecucion->socket);
-	} else {
+	} else if (strcmp(respuestaCoordinador->mensaje, "BLOQUEADO") == 0) {
+		log_info(logger, "Sentencia finalizada: BAN HAMMER!!");
+	} else if (strcmp(respuestaCoordinador->mensaje, "ERROR") == 0) {
 		log_info(logger, "Sentencia finalizada: error :(");
 	}
 	sentenciaEjecutada();
 }
 
 void enviarOperacionValida() {
-	//aca se envia al coordinador que la operacion sobre la clave es valida
 	tPaquete pkgOperacionValida;
 	int enviados;
 	char* respuesta = malloc(10);
 	strcpy(respuesta,"OK");
-	pkgOperacionValida.type=P_RESPUESTA_CONSULTA;
+	pkgOperacionValida.type = P_RESPUESTA_CONSULTA;
 
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
@@ -275,13 +276,49 @@ void enviarOperacionValida() {
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
 		log_info(logger, "Se envian %d bytes\n", enviados);
-	//
-	//
-	//para finalmente esperar el resultado de la operacion
-	//recibirResultadoOperacion();
+		free(respuesta);
+}
+
+void enviarOperacionInvalidaBloqueo() {
+	tPaquete pkgOperacionValida;
+	int enviados;
+	char* respuesta = malloc(15);
+	strcpy(respuesta,"BLOQUEADO");
+	pkgOperacionValida.type = P_RESPUESTA_CONSULTA;
+
+	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
+			"%s",respuesta);
+
+		log_info(logger, "Se envia respuesta consulta");
+		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
+				logger, "Se envia respuesta consulta");
+		log_info(logger, "Se envian %d bytes\n", enviados);
+		free(respuesta);
+}
+
+void enviarOperacionInvalidaError() {
+	tPaquete pkgOperacionValida;
+	int enviados;
+	char* respuesta = malloc(15);
+	strcpy(respuesta,"ERROR");
+	pkgOperacionValida.type = P_RESPUESTA_CONSULTA;
+
+	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
+			"%s",respuesta);
+
+		log_info(logger, "Se envia respuesta consulta");
+		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
+				logger, "Se envia respuesta consulta");
+		log_info(logger, "Se envian %d bytes\n", enviados);
+		free(respuesta);
 }
 
 void evaluarConsultaDeOperacion() {
+	/*
+	 * ToDo: actualizar logica de envio de mensaje,
+	 * es un placeholder
+	 *
+	 * */
 	char *clave = consultaCoordinador->clave;
 	int operacion = consultaCoordinador->operacion;
 	switch (operacion) {
@@ -293,7 +330,7 @@ void evaluarConsultaDeOperacion() {
 				enviarOperacionValida();
 				esiTomaClave(esiEnEjecucion, clave);
 			} else {
-				//informar al coordinador que la clave ya esta tomada
+				enviarOperacionInvalidaBloqueo();
 				bloquearESIConClave(esiEnEjecucion, clave);
 				log_info(logger, "El ESI %s esta siendo bloqueado por hacer un GET de la clave %s tomada", esiEnEjecucion->id, clave);
 
@@ -310,13 +347,12 @@ void evaluarConsultaDeOperacion() {
 			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
 				enviarOperacionValida();
 			} else {
-				//informar al coordinador que la clave ya esta tomada
+				enviarOperacionInvalidaBloqueo();
 				bloquearESIConClave(esiEnEjecucion, clave);
 				planificacionNecesaria = true;
 			}
 		} else {
-			//informar al coordinador que la clave esta libre pero el esi no la tiene asignada
-			//creo que es un error
+			enviarOperacionInvalidaError();
 		}
 		break;
 	case OPERACION_STORE:
@@ -326,13 +362,12 @@ void evaluarConsultaDeOperacion() {
 				enviarOperacionValida();
 				liberarClave(clave);
 			} else {
-				//informar al coordinador que la clave ya esta tomada
+				enviarOperacionInvalidaBloqueo();
 				bloquearESIConClave(esiEnEjecucion, clave);
 				planificacionNecesaria = true;
 			}
 		} else {
-			//informar al coordinador que la clave esta libre pero el esi no la tiene asignada
-			//creo que es un error
+			enviarOperacionInvalidaError();
 		}
 		break;
 	}
@@ -390,6 +425,7 @@ void planificar() {
 	//si es < 0, corresponde que siga ejecutando el que estaba
 	if (indexProximoAEjecutar < 0) {
 		log_info(logger,"Sigue ejecutando el mismo ESI");
+		planificacionNecesaria = false;
 		return;
 	}
 
