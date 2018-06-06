@@ -89,7 +89,6 @@ int tiempoTotalEjecucion;
 bool ejecutando; //se usa para saber si seguir ejecutando operaciones. se modifica desde consola
 bool vivo; //se usa para repetir el ciclo de trabajo y eventualmente finalizar el proceso
 bool aptoEjecucion; //esta en true siempre y cuando haya algun ESI apto de ejecucion
-bool sentenciaActiva; //esta en true cuando se esta realizando la ejecucion de una sentencia particular
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
 tConsultaCoordinador* consultaCoordinador;
@@ -103,6 +102,7 @@ t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clav
 t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada. key: clave, value: esi que la tomo
 
 void cicloPrincipal();
+void cicloDeSentencia();
 void enviarOrdenDeEjecucion();
 int cargarConfiguracion();
 int configValida(t_config *);
@@ -139,7 +139,7 @@ t_esi *buscarEsiNoBloqueadoPorId(char *);
 void clavesTomadasDestroyer(char *);
 void finalizarEsiEnEjecucion();
 void estimar(t_esi *);
-void sentenciaEjecutadaCorrectamente();
+void sentenciaEjecutada();
 void esiFinalizado();
 
 //metodos de HRRN

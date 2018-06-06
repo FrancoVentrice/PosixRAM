@@ -18,6 +18,26 @@ int main(int argn, char *argv[]) {
 	cargarConfiguracion();
 	cargarArchivo(argv[1]);
 	iniciarConexiones();
+	cicloPrincipal();
+}
+
+void cicloPrincipal() {
+	while (ejecucion) {
+		esperarOrdenDeEjecucion();
+		ordenRecibida();
+		tRespuestaCoordinador * resultadoDeEjecucion = recibirResultadoOperacion();
+
+		if (strcmp(resultadoDeEjecucion->mensaje, "OK") == 0) {
+			log_info(logger, "lectura aprobada!");
+		} else if (strcmp(resultadoDeEjecucion->mensaje, "BLOCKED") == 0) {
+			log_info(logger, "me bloquearon :(");
+			lecturaRechazada = true;
+		} else if (strcmp(resultadoDeEjecucion->mensaje, "ERROR") == 0) {
+			log_info(logger, "adios mundo crueeel!!");
+			ejecucion = false;
+		}
+	}
+	finalizar(EXIT_FAILURE);
 }
 
 void finalizar(int codigo) {
@@ -78,21 +98,7 @@ void iniciarConexiones() {
 			configuracion->ipPlanificador, configuracion->puertoPlanificador,
 			logger);
 
-	/*solicitud->mensaje = malloc(100);
-	strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
-	tPaquete pkgHandshake;
-	pkgHandshake.type = E_HANDSHAKE;
-
-	*/tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));/*
-
-	pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s",
-			pkgHandshake.type, solicitud->mensaje);
-
-	log_info(logger, "Se envia solicitud al Planificador");
-	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
-			&pkgHandshake, logger, "Se envia solicitud al Planificador");
-	log_info(logger, "Se envian %d bytes", bytesEnviados);
-	//Recibo respuesta del Planificador*/
+	tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));
 	char * sPayloadRespuestaHand = malloc(100);
 
 	tMensaje tipoMensaje;
@@ -111,8 +117,6 @@ void iniciarConexiones() {
 	free(solicitud);
 	free(respuestaCoordinador);
 	free(respuestaPlanificador);
-
-	esperarOrdenDeEjecucion();
 }
 
 void esperarOrdenDeEjecucion() {
@@ -136,27 +140,15 @@ void esperarOrdenDeEjecucion() {
 
 	log_info(logger, "RESPUESTA PLANIFICADOR: %s",
 			respuestaPlanificador->mensaje);
-
-	//ENVIO AL COORDINADOR LA INSTRUCCION A EJECUTAR
-
-	ordenRecibida();
-
-	/*recibirResultadoOperacion(bytesRecibidos, respuestaCoordinador);
-
-	if (strcmp(respuestaCoordinador, "OK")) { // ACA DEBERIA RECIBIR EL OK DEL PLANIFIFCADOR
-											  //PARA SEGUIR EJECUTANDO LA SIGUIENTE LINEA.
-											  //ESTO ES SOLO UNA PRUEBA
-		ordenRecibida();
-	}*/
 }
 
-void recibirResultadoOperacion(int recibidos,
-		tRespuestaCoordinador* respuestaCoordinador) {
+tRespuestaCoordinador * recibirResultadoOperacion() {
+	tRespuestaCoordinador *respuestaCoordinador = malloc(sizeof(tRespuestaCoordinador));
 	tMensaje tipoMensajeCoordinador;
 	char * sPayloadRespuestaCoordinador = malloc(100);
 
 	log_info(logger, "Esperando respuesta de la operacion...");
-	recibidos = recibirPaquete(configuracion->socketCoordinador,
+	int recibidos = recibirPaquete(configuracion->socketCoordinador,
 			&tipoMensajeCoordinador, &sPayloadRespuestaCoordinador, logger,
 			"Respuesta a la ejecucion");
 	log_info(logger, "RECIBIDOS:%d", recibidos);
@@ -167,8 +159,9 @@ void recibirResultadoOperacion(int recibidos,
 
 	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
 			respuestaCoordinador->mensaje);
-
+	return respuestaCoordinador;
 }
+
 void cargarArchivo(char *path) {
 	archivo = fopen(path, "r");
 	if (archivo == NULL) {
@@ -182,13 +175,17 @@ void cargarArchivo(char *path) {
 //tambien evalua si el programa finalizo
 void ordenRecibida() {
 	if (lecturaRechazada) {
-		enviarOperacion();
+		enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
+		sleep(1);
+		enviarOperacion(); //ENVIO AL COORDINADOR LA SENTENCIA
 	} else {
 		if (leerLinea() < 0) {
 			enviarEsiFinalizado(); //ENVIO FIN DE LECTURA AL PLANIFICADOR
+			finalizar(EXIT_SUCCESS);
 		} else {
-			enviarOperacion();//ENVIO AL COORDINADOR LA SENTENCIA
 			enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
+			sleep(1);
+			enviarOperacion();//ENVIO AL COORDINADOR LA SENTENCIA
 		}
 	}
 }
@@ -247,20 +244,18 @@ int leerLinea() {
 	}
 	return 0;
 }
-void enviarLineaOK(){
+
+void enviarLineaOK() {
 	tPaquete pkgLineaOk;
 	int bytesEnviados;
 	char* lineaOk = malloc(5);
 	strcpy(lineaOk,"OK");
 	pkgLineaOk.type = E_LINEA_OK;
 
-	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s",
-			lineaOk);
+	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s", lineaOk);
 
 	log_info(logger, "Se envia %s al Planificador", lineaOk);
-	bytesEnviados = enviarPaquete(configuracion->socketPlanificador,
-			&pkgLineaOk, logger,
-			"Se envia OK al Planificador");
+	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgLineaOk, logger, "Se envia OK al Planificador");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
 	free(lineaOk);
 }
@@ -330,5 +325,4 @@ void enviarEsiFinalizado() {
 			&pkgSentencia, logger,
 			"Se envia respuesta Finalizado");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
-
 }

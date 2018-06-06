@@ -58,10 +58,12 @@ size_t *n; //necesaria para ir leyendo el archivo
 char *lineptr; //necesaria para ir leyendo el archivo
 t_operacionESI *operacion;
 bool lecturaRechazada; //cuando una operacion es rechazada (ej: un get de un recurso tomado), sirve para volver a mandar la misma instruccion
+bool ejecucion;
 char* idESI;
 
 int cargarConfiguracion();
 void limpiarConfiguracion();
+void cicloPrincipal();
 void finalizar(int);
 int configValida(t_config *);
 void iniciarConexiones();
@@ -71,5 +73,7 @@ int leerLinea();
 void enviarOperacion();
 void enviarEsiFinalizado();
 void esperarOrdenDeEjecucion();
+void enviarLineaOK();
+tRespuestaCoordinador * recibirResultadoOperacion();
 
 #endif /* ESI_H_ */

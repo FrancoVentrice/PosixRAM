@@ -14,6 +14,7 @@ int cargarConfiguracion() {
 	lineptr = NULL;
 	n = 0;
 	lecturaRechazada = false;
+	ejecucion = true;
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /ESI
 	fd_configuracion = config_create("../ESI.conf");

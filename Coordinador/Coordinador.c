@@ -36,7 +36,6 @@ void escucharConexiones() {
 	FD_SET(iSocketEscucha, &setSocketsOrquestador);
 	maxSock = iSocketEscucha;
 
-	tMensaje *tipoMensaje = malloc(sizeof(tMensaje));
 	char * sPayloadRespuesta = malloc(100);
 
 	tSolicitudESI *solicitud = malloc(sizeof(tSolicitudESI));
@@ -45,13 +44,14 @@ void escucharConexiones() {
 	puts("Escuchando");
 
 	while (1) {
+		tMensaje tipoMensaje;
 		iSocketComunicacion = getConnection(&setSocketsOrquestador, &maxSock,
-				iSocketEscucha, tipoMensaje, &sPayloadRespuesta,
+				iSocketEscucha, &tipoMensaje, &sPayloadRespuesta,
 				logger);
 
 		if (iSocketComunicacion != -1) {
 
-			switch (*tipoMensaje) {
+			switch (tipoMensaje) {
 
 			case E_HANDSHAKE:
 				log_info(logger,"Socket comunicacion: %d \n", iSocketComunicacion);
@@ -79,7 +79,7 @@ void escucharConexiones() {
 						"Se envia solicitud de ejecucion");
 				printf("Se envian %d bytes\n", tamanioTotal);
 
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 				break;
 
 
@@ -98,7 +98,7 @@ void escucharConexiones() {
 				consultarPlanificador();
 				char *respuestaConsultaGet = recibirRespuestaConsulta(respuestaConsulta);
 				accionarFrenteAConsulta(respuestaConsultaGet);
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 				break;
 
 			case E_SENTENCIA_SET:
@@ -118,7 +118,7 @@ void escucharConexiones() {
 				char *respuestaConsultaSet = recibirRespuestaConsulta(respuestaConsulta);
 				accionarFrenteAConsulta(respuestaConsultaSet);
 
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 				break;
 
 			case E_SENTENCIA_STORE:
@@ -137,7 +137,7 @@ void escucharConexiones() {
 				char *respuestaConsultaStore = recibirRespuestaConsulta(respuestaConsulta);
 				accionarFrenteAConsulta(respuestaConsultaStore);
 
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 
 				break;
 			case P_HANDSHAKE:
@@ -163,7 +163,7 @@ void escucharConexiones() {
 
 
 
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 				break;
 
 			case P_RESPUESTA_CONSULTA:
@@ -172,7 +172,7 @@ void escucharConexiones() {
 				char* respuesta= malloc(10);
 				recibirRespuestaConsulta(respuesta);
 
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 				break;
 
 
@@ -203,7 +203,7 @@ void escucharConexiones() {
 
 				// TODO liberar nombreInstancia cuando se termina de crear la instancia
 
-				*tipoMensaje = DESCONEXION;
+				tipoMensaje = DESCONEXION;
 				break;
 			case DESCONEXION:
 				break;

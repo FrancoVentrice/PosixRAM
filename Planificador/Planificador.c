@@ -37,8 +37,8 @@ void atenderESI(int iSocketComunicacion) {
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
-	inicializarSockets();
 	realizarHandshakeCoordinador();
+	inicializarSockets();
 	levantarHiloEscuchaESIs();
 	//levantarConsola();
 	cicloPrincipal();
@@ -68,21 +68,22 @@ void cicloPrincipal() {
 			if (planificacionNecesaria) {
 				planificar();
 			}
-			comenzarCicloDeSentencia();
+			cicloDeSentencia();
 		}
 	}
 }
 
-void comenzarCicloDeSentencia() {
+void cicloDeSentencia() {
 	enviarOrdenDeEjecucion();
-	sentenciaActiva = true;
+	bool sentenciaActiva = true;
 	while (sentenciaActiva) {
 		log_info(logger, "iteracion de sentenciaActiva");
 		fd_set temp;
 		tMensaje tipoMensaje;
 		char *buffer = malloc(100);
-		if (multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) >= 0) {
-			log_info(logger, "tipo de mensaje %d", tipoMensaje);
+		int socketMultiplexado;
+		if (socketMultiplexado = multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) >= 0) {
+			log_info(logger, "tipo de mensaje %d, del socket %d", tipoMensaje, socketMultiplexado);
 			switch (tipoMensaje) {
 			case E_ESI_FINALIZADO:
 				log_info(logger, "ESI finalizado");
@@ -100,7 +101,8 @@ void comenzarCicloDeSentencia() {
 				evaluarConsultaDeOperacion();
 				break;
 			case C_RESULTADO_OPERACION:
-				log_info(logger, "resultado de operacion");
+				recibirResultadoOperacion(buffer);
+				sentenciaActiva = false;
 				break;
 			}
 		} else  {
@@ -224,9 +226,9 @@ void realizarHandshakeCoordinador() {
 			"%c%s", pkgHandshakeCoordinador.type,
 			solicitudPlanificador->mensaje);
 
-	log_info(logger,"Se envia solicitud de ejecucion");
+	log_info(logger,"Se envia solicitud de handshake con coordinador");
 	tamanioTotal = enviarPaquete(socketCoordinador, &pkgHandshakeCoordinador,
-			logger, "Se envia solicitud de ejecucion");
+			logger, "Se envia solicitud de handshake con coordinador");
 	log_info("Se envian %d bytes\n", tamanioTotal);
 
 	//RESPUESTA DEL COORDINADOR
@@ -268,24 +270,22 @@ void escucharConexionesESIs() {
 	}
 }
 
-void recibirResultadoOperacion() {
+void recibirResultadoOperacion(char *bufferResultado) {
 	tRespuestaCoordinador* respuestaCoordinador = malloc(sizeof(tRespuestaCoordinador));
-	tMensaje tipoMensajeCoordinador;
-	int recibidos;
-	char * sPayloadRespuestaCoordinador = malloc(100);
-
-	log_info(logger, "Esperando respuesta de la operacion...");
-	recibidos = recibirPaquete(socketCoordinador,
-			&tipoMensajeCoordinador, &sPayloadRespuestaCoordinador, logger,
-			"Respuesta a la ejecucion");
-	log_info(logger, "RECIBIDOS:%d", recibidos);
 	respuestaCoordinador->mensaje = malloc(100);
 
-	deserializar(sPayloadRespuestaCoordinador, "%s",
+	deserializar(bufferResultado, "%s",
 			respuestaCoordinador->mensaje);
 
 	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
 			respuestaCoordinador->mensaje);
+	if (strcmp(respuestaCoordinador->mensaje, "OK") == 0) {
+		log_info(logger, "Sentencia finalizada: saxeeees!");
+		log_info(logger, "El exito fue gracias al ESI %s de socket %d", esiEnEjecucion->id, esiEnEjecucion->socket);
+	} else {
+		log_info(logger, "Sentencia finalizada: error :(");
+	}
+	sentenciaEjecutada();
 }
 
 void enviarOperacionValida() {
@@ -425,7 +425,7 @@ void planificar() {
 	list_remove(colaDeListos, indexProximoAEjecutar);
 }
 
-void sentenciaEjecutadaCorrectamente() {
+void sentenciaEjecutada() {
 	esiEnEjecucion->rafagaAnterior ++;
 	esiEnEjecucion->estimacion--;
 	tiempoTotalEjecucion ++;
@@ -634,6 +634,7 @@ void clavesTomadasDestroyer(char *clave) {
 }
 
 void finalizarEsiEnEjecucion() {
+	log_info(logger, "finalizando esi en ejecucion: %s", esiEnEjecucion->id);
 	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
