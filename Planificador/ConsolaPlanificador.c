@@ -3,17 +3,23 @@
 void consola() {
 	while (1) {
 		char *comando = readline("Ingrese un comando: ");
-
+		bool valido;
 		if (strcmp(comando, "pause") == 0) {
+			printf("Planificador pausado\n");
 			pause();
 		} else if (strcmp(comando, "play") == 0) {
+			printf("Planificador reanudado\n");
 			play();
 		} else if (string_starts_with(comando, "lock")) {
 			lock(comando);
 		} else if (string_starts_with(comando, "unlock")) {
 			unlock(comando);
 		} else if (string_starts_with(comando, "list")) {
-			list(comando);
+			valido = list(comando);
+			if (valido) {
+				free(comando);
+				return;
+			}
 		} else if (string_starts_with(comando, "kill")) {
 			killEsi(comando);
 		} else if (string_starts_with(comando, "status")) {
@@ -22,6 +28,7 @@ void consola() {
 			deadlock();
 		} else if (strcmp(comando, "exit") == 0) {
 			free(comando);
+			exitPlanificador();
 			return;
 		}
 		free(comando);
@@ -29,12 +36,20 @@ void consola() {
 }
 
 char* obtenerPrimerParametro(char *comando) {
+	if (!string_contains(comando, " ")) {
+		printf("No hay suficientes parametros\n");
+		return NULL;
+	}
 	char** palabras = string_split(comando, " ");
 	return palabras[1];
 }
 
 char* obtenerSegundoParametro(char *comando) {
 	char** palabras = string_split(comando, " ");
+	if (palabras[2] == NULL) {
+		printf("No hay suficientes parametros\n");
+		return NULL;
+	}
 	return palabras[2];
 }
 
@@ -57,9 +72,13 @@ void unlock(char *comando) {
 	newInstruccion(INSTRUCCION_DESBLOQUEAR, clave, NULL);
 }
 
-void list(char *comando) {
+bool list(char *comando) {
 	char *recurso = obtenerPrimerParametro(comando);
-	printf("\nlogica para listar procesos encolados esperando al recurso %s\n", recurso);
+	if (recurso == NULL) {
+		return false;
+	}
+	newInstruccion(INSTRUCCION_LISTAR, recurso, NULL);
+	return true;
 }
 
 void killEsi(char *comando) {
@@ -88,11 +107,12 @@ void instruccionDestroyer(t_instruccion_consola *instruccion) {
 
 void newInstruccion(int instruccion, char *primerParametro, char *segundoParametro) {
 	t_instruccion_consola *instruccionConsola = malloc(sizeof(t_instruccion_consola));
+	instruccionConsola->instruccion = instruccion;
 	if (primerParametro) {
 		instruccionConsola->primerParametro = primerParametro;
 	}
 	if (segundoParametro) {
 		instruccionConsola->segundoParametro = segundoParametro;
 	}
-	list_add(bufferConsola, instruccion);
+	list_add(bufferConsola, instruccionConsola);
 }

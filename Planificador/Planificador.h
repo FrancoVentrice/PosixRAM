@@ -19,6 +19,7 @@
 #define INSTRUCCION_DESBLOQUEAR 12
 #define INSTRUCCION_TERMINAR 13
 #define INSTRUCCION_DEADLOCK 14
+#define INSTRUCCION_LISTAR 15
 #define OPERACION_GET 1
 #define OPERACION_SET 2
 #define OPERACION_STORE 3
@@ -155,7 +156,7 @@ void pause();
 void play();
 void lock(char *);
 void unlock(char *);
-void list(char *);
+bool list(char *);
 void killEsi(char *);
 void status(char *);
 void deadlock();

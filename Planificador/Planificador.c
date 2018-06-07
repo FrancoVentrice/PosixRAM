@@ -55,7 +55,6 @@ void test() {
 	agregarEsiAColaDeListos(esiNew(3));
 	log_info(logger, "agrego esi 4\n");
 	agregarEsiAColaDeListos(esiNew(4));
-
 }
 
 //METODO PRINCIPAL
@@ -680,6 +679,8 @@ void ejecutarComandosConsola() {
 		case INSTRUCCION_DEADLOCK:
 			analizarDeadlock();
 			break;
+		case INSTRUCCION_LISTAR:
+			listarEsisPorRecurso(instruccion->primerParametro);
 		}
 		list_remove_and_destroy_element(bufferConsola, 0, instruccionDestroyer);
 	}
@@ -815,4 +816,24 @@ void analizarDeadlock() {
 	}
 	//con esta iteracion analizo todas las claves del diccionario de bloqueados
 	dictionary_iterator(diccionarioBloqueados, analizarDiccionarioBloqueados);
+}
+
+void listarEsisPorRecurso(char *clave) {
+	pthread_join(hiloConsola, NULL);
+	printf(string_from_format("Listando ESIs bloqueados por el recurso %s:\n", clave));
+	if (dictionary_has_key(diccionarioBloqueados, clave)) {
+		t_list *esis = dictionary_get(diccionarioBloqueados, clave);
+		if (esis->elements_count == 0) {
+			printf("No hay ESIs bloqueados por la clave\n");
+		} else {
+			int i;
+			for (i = 0; i < esis->elements_count; i++) {
+				t_esi *iesi = list_get(esis, i);
+				printf(string_from_format("%s\n", iesi->id));
+			}
+		}
+	} else {
+		printf("No hay ESIs bloqueados por la clave\n");
+	}
+	levantarConsola();
 }
