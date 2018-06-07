@@ -81,8 +81,8 @@ void cicloDeSentencia() {
 		fd_set temp;
 		tMensaje tipoMensaje;
 		char *buffer = malloc(100);
-		int socketMultiplexado;
-		if (socketMultiplexado = multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger) >= 0) {
+		int socketMultiplexado = multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger);
+		if (socketMultiplexado >= 0) {
 			log_info(logger, "tipo de mensaje %d del socket %d", tipoMensaje, socketMultiplexado);
 			switch (tipoMensaje) {
 			case E_ESI_FINALIZADO:
@@ -104,6 +104,12 @@ void cicloDeSentencia() {
 				recibirResultadoOperacion(buffer);
 				sentenciaActiva = false;
 				break;
+			case DESCONEXION:
+				esiDesconectado(socketMultiplexado);
+				if (!esiEnEjecucion) {
+					sentenciaActiva = false;
+					log_info(logger, "sentencia activa? %d", sentenciaActiva);
+				}
 			}
 		} else  {
 			log_info(logger, "multiplexar devolvio negativo");
@@ -689,18 +695,15 @@ void bloquearEsiPorConsola(char *clave, char *id) {
 void abortarEsiPorId(char *id) {
 	log_info(logger, "Abortando ESI %s", id);
 	t_esi *esi;
-	if (esi->id == esiEnEjecucion->id) {
-		liberarClavesDeEsi(esi);
+	if (id == esiEnEjecucion->id) {
+		liberarClavesDeEsi(esiEnEjecucion);
 		esiDestroyer(esiEnEjecucion);
 		planificacionNecesaria = true;
-		return;
-	}
-	if (esi = encontrarEsiPorId(colaDeListos, id)) {
+		esiEnEjecucion = NULL;
+	} else if (esi = encontrarEsiPorId(colaDeListos, id)) {
 		liberarClavesDeEsi(esi);
 		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
-		return;
-	}
-
+	} else {
 	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
 		if (esi = encontrarEsiPorId(bloqueados, id)) {
 			liberarClavesDeEsi(esi);
@@ -709,6 +712,7 @@ void abortarEsiPorId(char *id) {
 	}
 
 	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
+	}
 
 	if (!esiEnEjecucion && colaDeListos->elements_count <= 0) {
 		aptoEjecucion = false;
@@ -731,6 +735,40 @@ int getIndexDeEsi(t_list *lista, t_esi *esi) {
 		}
 	}
 	return -1;
+}
+
+t_esi * encontrarEsiPorSocket(t_list *lista, int socket) {
+	bool matcheaSocket(t_esi *esi) {
+		return esi->socket == socket;
+	}
+	return list_find(lista, matcheaSocket);
+}
+
+void esiDesconectado(int socket) {
+	log_info(logger, "Abortando ESI de socket %d", socket);
+	t_esi *esi;
+	if (socket == esiEnEjecucion->socket) {
+		log_info(logger, "Encontrado, esi en ejecucion va a ser abortado");
+		liberarClavesDeEsi(esiEnEjecucion);
+		esiDestroyer(esiEnEjecucion);
+		planificacionNecesaria = true;
+		esiEnEjecucion = NULL;
+	} else if (esi = encontrarEsiPorSocket(colaDeListos, socket)) {
+		liberarClavesDeEsi(esi);
+		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
+	} else {
+	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
+		if (esi = encontrarEsiPorSocket(bloqueados, socket)) {
+			liberarClavesDeEsi(esi);
+			list_remove_and_destroy_element(bloqueados, getIndexDeEsi(bloqueados, esi), esiDestroyer);
+		}
+	}
+	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
+	}
+
+	if (!esiEnEjecucion && colaDeListos->elements_count <= 0) {
+		aptoEjecucion = false;
+	}
 }
 
 void analizarDeadlock() {

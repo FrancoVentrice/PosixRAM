@@ -141,6 +141,7 @@ void finalizarEsiEnEjecucion();
 void estimar(t_esi *);
 void sentenciaEjecutada();
 void esiFinalizado();
+void esiDesconectado(int socket);
 
 //metodos de HRRN
 int planificarHRRN();
