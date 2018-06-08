@@ -233,8 +233,7 @@ void consultarPlanificador() {
 	case OPERACION_SET:
 		pkgConsulta.type = C_CONSULTA_OPERACION_SET;
 
-		pkgConsulta.length = serializar(pkgConsulta.payload, "%s%s",
-						operacion->clave,operacion->valor);
+		pkgConsulta.length = serializar(pkgConsulta.payload, "%s", operacion->clave);
 
 		log_info(logger, "Se consulta al planificador SET");
 		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,

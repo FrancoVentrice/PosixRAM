@@ -59,7 +59,6 @@ typedef struct {
 typedef struct{
 	int operacion;
 	char* clave;
-	char* valor;
 } tConsultaCoordinador;
 
 typedef struct {

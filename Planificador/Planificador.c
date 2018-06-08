@@ -120,7 +120,7 @@ void cicloDeSentencia() {
 //(avisar al ESI a ejecutar, esperar consulta, evaluar, y esperar fin de ejecucion de operacion)
 void enviarOrdenDeEjecucion() {
 	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
-	autorizarEjecucion->mensaje = malloc(100);
+	autorizarEjecucion->mensaje = malloc(30);
 	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
 	tPaquete pkgHandshakeRespuesta;
 	pkgHandshakeRespuesta.type = P_HANDSHAKE;
@@ -137,33 +137,25 @@ void enviarOrdenDeEjecucion() {
 			&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
 
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
+	free(autorizarEjecucion->mensaje);
+	free(autorizarEjecucion);
 }
 
 void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
-	if(consultaCoordinador) {
-		free(consultaCoordinador);
-	}
-	consultaCoordinador = malloc(sizeof(tConsultaCoordinador));
-	consultaCoordinador->clave = malloc(40);
-
+	deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
 	switch(tipoMensaje) {
 
 	case C_CONSULTA_OPERACION_GET:
-		deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
 		log_info(logger,"Operacion GET para clave %s",consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_GET;
 		break;
 
 	case C_CONSULTA_OPERACION_SET:
-		deserializar(sPayloadConsulta, "%s%s", consultaCoordinador->clave,
-				consultaCoordinador->valor);
-		log_info(logger,"Operacion SET para clave %s y valor %s",consultaCoordinador->clave,
-				consultaCoordinador->valor);
+		log_info(logger,"Operacion SET para clave %s",consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_SET;
 		break;
 
 	case C_CONSULTA_OPERACION_STORE:
-		deserializar(sPayloadConsulta, "%s", consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_STORE;
 		log_info(logger,"Operacion STORE para clave %s",consultaCoordinador->clave);
 		break;
@@ -277,7 +269,7 @@ void enviarOperacionValida() {
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta");
+		log_info(logger, "Se envia respuesta consulta OK");
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
 		log_info(logger, "Se envian %d bytes\n", enviados);
@@ -294,7 +286,7 @@ void enviarOperacionInvalidaBloqueo() {
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta");
+		log_info(logger, "Se envia respuesta consulta BLOQUEADO");
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
 		log_info(logger, "Se envian %d bytes\n", enviados);
@@ -311,7 +303,7 @@ void enviarOperacionInvalidaError() {
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta");
+		log_info(logger, "Se envia respuesta consulta ERROR");
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
 		log_info(logger, "Se envian %d bytes\n", enviados);
@@ -324,7 +316,7 @@ void evaluarConsultaDeOperacion() {
 	 * es un placeholder
 	 *
 	 * */
-	char *clave = consultaCoordinador->clave;
+	char *clave = strdup(consultaCoordinador->clave);
 	int operacion = consultaCoordinador->operacion;
 	switch (operacion) {
 	case OPERACION_GET:

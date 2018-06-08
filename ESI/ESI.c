@@ -176,7 +176,7 @@ void cargarArchivo(char *path) {
 void ordenRecibida() {
 	if (lecturaRechazada) {
 		enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
-		usleep(200 * 1000);
+		usleep(20 * 1000);
 		enviarOperacion(); //ENVIO AL COORDINADOR LA SENTENCIA
 	} else {
 		if (leerLinea() < 0) {
@@ -184,7 +184,7 @@ void ordenRecibida() {
 			finalizar(EXIT_SUCCESS);
 		} else {
 			enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
-			usleep(200 * 1000);
+			usleep(20 * 1000);
 			enviarOperacion();//ENVIO AL COORDINADOR LA SENTENCIA
 		}
 	}
