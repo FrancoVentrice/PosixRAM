@@ -192,10 +192,14 @@ void ordenRecibida() {
 
 int leerLinea() {
 	ssize_t lectura;
-	free(operacion->clave);
-	free(operacion->valor);
-	operacion->clave = NULL;
-	operacion->valor = NULL;
+	if (operacion->clave != NULL) {
+		free(operacion->clave);
+		operacion->clave = NULL;
+	}
+	if (operacion->valor != NULL) {
+		free(operacion->valor);
+		operacion->valor = NULL;
+	}
 	if ((lectura = getline(&lineptr, &n, archivo)) != -1) {
 
 		t_esi_operacion lineaParseada = parse(lineptr);

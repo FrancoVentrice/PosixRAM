@@ -146,18 +146,18 @@ void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
 	switch(tipoMensaje) {
 
 	case C_CONSULTA_OPERACION_GET:
-		log_info(logger,"Operacion GET para clave %s",consultaCoordinador->clave);
+		log_info(logger,"Operacion GET para clave %s", consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_GET;
 		break;
 
 	case C_CONSULTA_OPERACION_SET:
-		log_info(logger,"Operacion SET para clave %s",consultaCoordinador->clave);
+		log_info(logger,"Operacion SET para clave %s", consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_SET;
 		break;
 
 	case C_CONSULTA_OPERACION_STORE:
 		consultaCoordinador->operacion = OPERACION_STORE;
-		log_info(logger,"Operacion STORE para clave %s",consultaCoordinador->clave);
+		log_info(logger,"Operacion STORE para clave %s", consultaCoordinador->clave);
 		break;
 	}
 }
