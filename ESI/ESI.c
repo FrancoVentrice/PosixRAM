@@ -192,6 +192,7 @@ void ordenRecibida() {
 
 int leerLinea() {
 	ssize_t lectura;
+	log_info(logger, "principio de leerLinea()");
 	if (operacion->clave != NULL) {
 		free(operacion->clave);
 		operacion->clave = NULL;
@@ -200,6 +201,7 @@ int leerLinea() {
 		free(operacion->valor);
 		operacion->valor = NULL;
 	}
+	log_info(logger, "despues de los free() de clave y valor");
 	if ((lectura = getline(&lineptr, &n, archivo)) != -1) {
 
 		t_esi_operacion lineaParseada = parse(lineptr);
@@ -209,23 +211,23 @@ int leerLinea() {
 			case GET:
 				operacion->operacion = OPERACION_GET;
 				operacion->clave = malloc(
-						string_length(lineaParseada.argumentos.GET.clave));
+						string_length(lineaParseada.argumentos.GET.clave) + 1);
 				strcpy(operacion->clave, lineaParseada.argumentos.GET.clave);
 				break;
 			case SET:
 				operacion->operacion = OPERACION_SET;
 				operacion->clave = malloc(
-						string_length(lineaParseada.argumentos.SET.clave));
+						string_length(lineaParseada.argumentos.SET.clave) + 1);
 				strcpy(operacion->clave, lineaParseada.argumentos.SET.clave);
 				operacion->valor = malloc(
-						string_length(lineaParseada.argumentos.SET.valor));
+						string_length(lineaParseada.argumentos.SET.valor) + 1);
 				strcpy(operacion->valor, lineaParseada.argumentos.SET.valor);
 
 				break;
 			case STORE:
 				operacion->operacion = OPERACION_STORE;
 				operacion->clave = malloc(
-						string_length(lineaParseada.argumentos.STORE.clave));
+						string_length(lineaParseada.argumentos.STORE.clave) + 1);
 				strcpy(operacion->clave, lineaParseada.argumentos.STORE.clave);
 
 				break;

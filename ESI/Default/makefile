@@ -36,7 +36,7 @@ dependents:
 ESI: $(OBJS) $(USER_OBJS) /home/utnso/tp-2018-1c-PosixRAM/shared/Default/libshared.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L/home/utnso/tp-2018-1c-PosixRAM/shared/Default -o "ESI" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/tp-2018-1c-PosixRAM/shared/Default" -o "ESI" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
