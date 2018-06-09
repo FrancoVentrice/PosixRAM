@@ -18,6 +18,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	inicializarInstancia();
+	/* se limpian la estructuras de sockets */
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
+
+	/* se agrega el socket de teclado */
+	FD_SET(STDIN,&master);
 
 	pantallaInicio();
 
@@ -30,29 +36,29 @@ int main(int argc, char *argv[]) {
 
 	if (!conectarACoordinador())
 		finalizar(EXIT_FAILURE);
+	/* se agrega el socket del coordinador */
+	FD_SET(configuracion.fdSocketCoordinador,&master);
+	if(iFdmax < configuracion.fdSocketCoordinador)
+		iFdmax = configuracion.fdSocketCoordinador;
 	mostrarConexionCoordinador();
 
 	prepararTablaDeEntradas();
 	if (!inicializarPuntoDeMontaje())
 		finalizar(EXIT_FAILURE);
-	mostrarTablaDeEntradas();
+	mostrarEstadoTablaDeEntradas();
 
-	/* iniciamos el timeout para el vuelco seteando una alarma */
+	// TODO sincronizar entradas con coordinador
+	char ** entradasSincronizadas = string_split("clave_mas_de_100;Clave_de_100_bytes;Nuevo_archivo_con_Clave_de_Cuarenta_byte;clavedos;clave1punto1;clave1", ";");
+	cargarEntradasDesdeArchivos(entradasSincronizadas);
+
+	/* iniciamos el timeout para el vuelco seteando un timer */
 	iniciarDumpTimeout();
+	/* se agrega el file descriptor del timeout para el vuelco */
+	FD_SET(configuracion.fdTimerDump,&master);
+	if(iFdmax < configuracion.fdTimerDump)
+		iFdmax = configuracion.fdTimerDump;
 
 	mostrarMenu();
-
-	/* se limpian la estructuras */
-	FD_ZERO(&master);
-	FD_ZERO(&read_fds);
-
-	/* se agrega el socket de teclado */
-	FD_SET(STDIN,&master);
-
-	/* se agrega el socket del coordinador */
-	FD_SET(configuracion->fdSocketCoordinador,&master);
-	if(iFdmax < configuracion->fdSocketCoordinador)
-		iFdmax = configuracion->fdSocketCoordinador;
 
 	// while principal
 	int sigue = 1;
@@ -62,11 +68,12 @@ int main(int argc, char *argv[]) {
 		if(select(iFdmax+1,&read_fds,NULL,NULL,NULL)==-1)
 			log_error(logger,"Falló función select().");
 
-		if(FD_ISSET(configuracion->fdSocketCoordinador, &read_fds)) {
+		/* si hay algo en el socket de coordinador */
+		if(FD_ISSET(configuracion.fdSocketCoordinador, &read_fds)) {
 			// TODO leer el socket
 			// iBytesLeidos = LeerSocket();
 			if (iBytesLeidos == 0) { // coordinador caído
-				FD_CLR(configuracion->fdSocketCoordinador, &master);
+				FD_CLR(configuracion.fdSocketCoordinador, &master);
 				sigue = 0;
 				fflush(stdin);
 				fflush(stdout);
@@ -74,7 +81,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		/* si tengo algo en el teclado */
+		/* si hay algo en el teclado */
 		if (FD_ISSET(STDIN,&read_fds)) {
 			scanf("%c", &letra);
 			letra = toupper(letra);
@@ -96,7 +103,7 @@ int main(int argc, char *argv[]) {
 					pantallaInicio();
 					mostrarConfiguracion();
 					mostrarConexionCoordinador();
-					mostrarTablaDeEntradas();
+					mostrarEstadoTablaDeEntradas();
 				break;
 				case 'Q': // Quit (salir)
 					sigue = 0;
@@ -107,73 +114,14 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		if (estadoInstancia.realizarDump) {
+		/* si se activó el timeout del vuelco */
+		if (FD_ISSET(configuracion.fdTimerDump,&read_fds)) {
+			size_t sBuf = 0;
+			iBytesLeidos = read(configuracion.fdTimerDump, &sBuf, sizeof(sBuf));
 			volcarEntradas();
 		}
 		letra = '-';
 	}
 
 	finalizar(EXIT_SUCCESS);
-}
-
-void capturaSenial(int iSignal) {
-	/* handler de señales */
-
-	switch(iSignal) {
-		case SIGINT:
-			// interrupción del teclado no se está tratando
-		break;
-		case SIGTERM:
-			// terminación del programa no se está tratando
-		break;
-		case SIGCHLD:
-			signal(SIGCHLD, SIG_IGN);
-			while(waitpid(WAIT_MYPGRP, NULL, WNOHANG) > 0)
-			signal(SIGCHLD, capturaSenial);
-		break;
-		case SIGALRM:
-			signal(SIGALRM, SIG_IGN);
-			alarm(0);
-			estadoInstancia.realizarDump = 1;
-		break;
-	}
-}
-
-int conectarACoordinador() {
-	/* conecta con el coordinador y hace el handshake */
-
-	log_info(logger,"Conectando con el Coordinador (IP: %s Puerto: %d)...", configuracion->ipCoordinador,configuracion->puertoCoordinador);
-	configuracion->fdSocketCoordinador = connectToServer(configuracion->ipCoordinador,configuracion->puertoCoordinador, logger);
-	if (configuracion->fdSocketCoordinador < 0) {
-		log_error(logger,"No se pudo conectar con el Coordinador.");
-		mostrarTexto("ERROR: No se pudo conectar con el Coordinador.");
-		return 0;
-	}
-	log_info(logger,"Conexión exitosa con el Coordinador.");
-
-	// handshake con coordinador
-	log_info(logger,"Realizando handshake con el Coordinador.");
-	tPaquete pkgHandshake;
-	pkgHandshake.type = I_HANDSHAKE;
-	pkgHandshake.length = serializar(pkgHandshake.payload, "%s",configuracion->nombreDeInstancia);
-	enviarPaquete(configuracion->fdSocketCoordinador, &pkgHandshake, logger,"Enviando Handshake...");
-
-	char * sPayloadRespuesta = (char *)malloc(50);
-	char * mensajeRespuesta = (char *)malloc(50);
-	tMensaje tipoMensaje;
-	recibirPaquete(configuracion->fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo respuesta de coordinador...");
-	deserializar(sPayloadRespuesta, "%d;%d;%s", &(configuracion->cantidadEntradas), &(configuracion->tamanioEntrada), mensajeRespuesta);
-	free(sPayloadRespuesta);
-
-	if (!(configuracion->cantidadEntradas * configuracion->tamanioEntrada)) {
-		log_error(logger,"Handshake no completado con el Coordinador: %s", mensajeRespuesta);
-		mostrarTexto("ERROR: Handshake no completado con el Coordinador");
-		mostrarTexto(mensajeRespuesta);
-		free(mensajeRespuesta);
-		return 0;
-	}
-	log_info(logger,"Handshake exitoso con el Coordinador: %s", mensajeRespuesta);
-	free(mensajeRespuesta);
-
-	return 1;
 }

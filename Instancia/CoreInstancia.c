@@ -51,9 +51,9 @@ int procesarLineaDeComandos (int argc, char *argv[]) {
 
 /* prepara el estado de la instancia */
 void inicializarInstancia() {
-	memset(estadoInstancia.czNomProc, 0, 20);
-	strcpy(estadoInstancia.czNomProc,"InstanciaPosixRAM");
-	estadoInstancia.instruccionesProcesadas = 0;
+	memset(configuracion.czNomProc, 0, 20);
+	strcpy(configuracion.czNomProc,"InstanciaPosixRAM");
+	configuracion.instruccionesProcesadas = 0;
 }
 
 /* inicia el logger para este proceso */
@@ -70,14 +70,14 @@ void iniciarLogger(){
 	char *nombreArchivoLog;
 	nombreArchivoLog = (char *)malloc(50);
 	memset(nombreArchivoLog,0,50);
-	sprintf(nombreArchivoLog, "./logs/%s%d_%s.LOG", estadoInstancia.czNomProc, process_getpid(), czFecha);
+	sprintf(nombreArchivoLog, "./logs/%s%d_%s.LOG", configuracion.czNomProc, process_getpid(), czFecha);
 
 	if (parametrosEntrada.debugMode) {
-		logger = log_create(nombreArchivoLog, estadoInstancia.czNomProc, parametrosEntrada.logPantalla, LOG_LEVEL_TRACE);
+		logger = log_create(nombreArchivoLog, configuracion.czNomProc, parametrosEntrada.logPantalla, LOG_LEVEL_TRACE);
 		log_debug(logger,"Modo debug activado.");
 	}
 	else
-		logger = log_create(nombreArchivoLog, estadoInstancia.czNomProc, parametrosEntrada.logPantalla, LOG_LEVEL_INFO);
+		logger = log_create(nombreArchivoLog, configuracion.czNomProc, parametrosEntrada.logPantalla, LOG_LEVEL_INFO);
 
 	/*
 	log_trace(logger,"Nivel trace %d",LOG_LEVEL_TRACE);
@@ -93,8 +93,9 @@ void iniciarLogger(){
 void finalizar(int codigo) {
 	alarm(0);
 	if (fd_configuracion != NULL) {
-		desconectarseDe(configuracion->fdSocketCoordinador);
-		log_info(logger,"Instancia %s finalizada" , configuracion->nombreDeInstancia);
+		desconectarseDe(configuracion.fdSocketCoordinador);
+		close(configuracion.fdTimerDump);
+		log_info(logger,"Instancia %s finalizada" , configuracion.nombreDeInstancia);
 		limpiarConfiguraion();
 	}
 	log_destroy(logger);
