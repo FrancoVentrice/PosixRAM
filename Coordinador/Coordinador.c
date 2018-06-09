@@ -296,6 +296,18 @@ void enviarOperacionAInstancia() {
 	//instanciaElegida->socket para enviar el mensaje
 	//
 	//operacion->operacion, operacion->clave y operacion->valor
+
+	tPaquete pkgOperacion;
+
+	int bytesEnviados;
+	pkgOperacion.type = I_RESULTADO_SET;
+
+	pkgOperacion.length = serializar(pkgOperacion.payload, "%s%s", operacion->clave,operacion->valor);
+
+	bytesEnviados = enviarPaquete(instanciaElegida->socket, &pkgOperacion,
+			logger, "Se envia OK al Planificador");
+	log_info(logger, "Se envian %d bytes", bytesEnviados);
+
 }
 
 void recibirOperacionDeInstancia() {
@@ -306,6 +318,18 @@ void recibirOperacionDeInstancia() {
 	//instanciaElegida->cantidadDeEntradasDisponibles = algo como "respuesta->entradasDisponibles"
 
 	//if (OK) informarResultadoOperacionOk();
+	char* resultadoOkSet=malloc(5);
+	char* respuesta=malloc(5);
+	tMensaje tipoMensajeEsi;
+
+
+	int bytesRecibidos = recibirPaquete(socketPlanificador,
+			&tipoMensajeEsi, &resultadoOkSet, logger, "Respuesta Consulta");
+	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
+
+	deserializar(resultadoOkSet, "%s", respuesta);
+	log_info(logger, "Respuesta Consulta Planificador: %s", respuesta);
+
 }
 
 void escribirLogDeOperaciones() {

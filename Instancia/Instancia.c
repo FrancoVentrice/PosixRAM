@@ -70,6 +70,9 @@ int main(int argc, char *argv[]) {
 
 		/* si hay algo en el socket de coordinador */
 		if(FD_ISSET(configuracion.fdSocketCoordinador, &read_fds)) {
+			tMensaje tipoMensaje;
+			char *clave;
+			char *valor;
 			// TODO leer el socket
 			// iBytesLeidos = LeerSocket();
 			if (iBytesLeidos == 0) { // coordinador caído
@@ -78,6 +81,18 @@ int main(int argc, char *argv[]) {
 				fflush(stdin);
 				fflush(stdout);
 				log_warning(logger,"El coordinador dejó de responder.");
+			}
+			switch (tipoMensaje) {
+			case C_EJECUTAR_SET:
+				//ToDo: ejecutar una funcion que obtenga la posicion para guardar el valor
+				//y cambiarla por el 0 en el llamado de ejecutarSet
+				ejecutarSet(clave, valor, 0);
+				enviarMensajeOK();
+				break;
+			case C_EJECUTAR_STORE:
+				break;
+			case C_EJECUTAR_COMPACTACION:
+				break;
 			}
 		}
 
@@ -124,4 +139,44 @@ int main(int argc, char *argv[]) {
 	}
 
 	finalizar(EXIT_SUCCESS);
+}
+
+void ejecutarSet(char *clave, char *valor, int posicion) {
+	char * posicionValor;
+	unsigned int i = posicion;
+
+	    	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
+	    	//posicionValor = almacenamientoEntradas[i * configuracion.tamanioEntrada];
+
+	    	strcpy(tablaDeEntradas[i].clave, clave);
+	    	tablaDeEntradas[i].tamanio = string_length(valor);
+	        memcpy(posicionValor, valor, tablaDeEntradas[i].tamanio);
+
+	    	// unstable code: comparo un size_t con unsigned int pero... dale que va
+	    	if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
+	    		/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
+	    		int entradasExtraOcupadas;
+	    		entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada;
+	    		while (entradasExtraOcupadas) {
+	    			i++;
+	    			strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
+	    			entradasExtraOcupadas--;
+	    		}
+	    	}
+}
+
+void enviarMensajeOK() {
+	tPaquete pkgSetOk;
+	int bytesEnviados;
+	char* lineaOk = malloc(5);
+	strcpy(lineaOk, "OK");
+	pkgSetOk.type = I_RESULTADO_SET;
+
+	pkgSetOk.length = serializar(pkgSetOk.payload, "%s", lineaOk);
+
+	log_info(logger, "Se envia %s al Planificador", lineaOk);
+	bytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador,
+			&pkgSetOk, logger, "Se envia OK al Planificador");
+	log_info(logger, "Se envian %d bytes", bytesEnviados);
+	free(lineaOk);
 }

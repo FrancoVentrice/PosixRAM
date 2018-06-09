@@ -98,6 +98,7 @@ int inicializarPuntoDeMontaje(void);
 void cargarEntradasDesdeArchivos(char **);
 char * valorDeEntrada(unsigned int);
 void deprecated_cargarEntradasDesdeArchivos(void);
+void ejecutarSet(char *, char *, int);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
