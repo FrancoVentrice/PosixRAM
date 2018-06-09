@@ -40,7 +40,7 @@ int main(int argn, char *argv[]) {
 	realizarHandshakeCoordinador();
 	inicializarSockets();
 	levantarHiloEscuchaESIs();
-	//levantarConsola();
+	levantarConsola();
 	cicloPrincipal();
 	finalizar(EXIT_SUCCESS);
 }
@@ -163,8 +163,9 @@ void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
 }
 
 void finalizar(int codigo) {
+	log_info(logger, "Finalizando Planificador. Buenas noches :)");
 	pthread_join(hiloConsola, NULL);
-	pthread_join(hiloEscuchaESIs, NULL);
+	pthread_cancel(hiloEscuchaESIs);
 	limpiarConfiguracion();
 	exit(codigo);
 }
@@ -590,9 +591,11 @@ t_esi *esiNew(int socket) {
 }
 
 void esiDestroyer(t_esi *esi) {
-	list_destroy_and_destroy_elements(esi->clavesTomadas, clavesTomadasDestroyer);
-	free(esi->id);
-	free(esi);
+	if (esi != NULL) {
+		list_destroy_and_destroy_elements(esi->clavesTomadas, clavesTomadasDestroyer);
+		free(esi->id);
+		free(esi);
+	}
 }
 
 void esiListDestroyer(t_list *esis) {
@@ -811,21 +814,19 @@ void analizarDeadlock() {
 }
 
 void listarEsisPorRecurso(char *clave) {
-	pthread_join(hiloConsola, NULL);
-	printf(string_from_format("Listando ESIs bloqueados por el recurso %s:\n", clave));
+	log_info(logger, "Listando ESIs bloqueados por el recurso %s:\n", clave);
 	if (dictionary_has_key(diccionarioBloqueados, clave)) {
 		t_list *esis = dictionary_get(diccionarioBloqueados, clave);
 		if (esis->elements_count == 0) {
-			printf("No hay ESIs bloqueados por la clave\n");
+			log_info(logger, "No hay ESIs bloqueados por la clave\n");
 		} else {
 			int i;
 			for (i = 0; i < esis->elements_count; i++) {
 				t_esi *iesi = list_get(esis, i);
-				printf(string_from_format("%s\n", iesi->id));
+				log_info(logger, "%s\n", iesi->id);
 			}
 		}
 	} else {
-		printf("No hay ESIs bloqueados por la clave\n");
+		log_info(logger, "No hay ESIs bloqueados por la clave\n");
 	}
-	levantarConsola();
 }

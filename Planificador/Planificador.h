@@ -155,7 +155,7 @@ void pause();
 void play();
 void lock(char *);
 void unlock(char *);
-bool list(char *);
+void list(char *);
 void killEsi(char *);
 void status(char *);
 void deadlock();

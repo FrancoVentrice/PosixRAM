@@ -29,7 +29,7 @@ int cargarConfiguracion() {
 	vivo = true;
 	aptoEjecucion = false;
 	planificacionNecesaria = false;
-	logger = log_create("LogPlanificador", "Planificador", true, LOG_LEVEL_INFO);
+	logger = log_create("LogPlanificador", "Planificador", false, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
 	bufferConsola = list_create();
 	colaDeListos = list_create();
@@ -88,15 +88,26 @@ int cargarConfiguracion() {
 }
 
 void limpiarConfiguracion() {
+	log_info(logger, "free(configuracion);");
 	free(configuracion);
+	log_info(logger, "config_destroy(fd_configuracion);");
 	config_destroy(fd_configuracion);
-	log_destroy(logger);
+	log_info(logger, "dictionary_destroy_and_destroy_elements(diccionarioBloqueados, esiListDestroyer);");
 	dictionary_destroy_and_destroy_elements(diccionarioBloqueados, esiListDestroyer);
+	log_info(logger, "dictionary_destroy_and_destroy_elements(diccionarioClavesTomadas, esiDestroyer);");
 	dictionary_destroy_and_destroy_elements(diccionarioClavesTomadas, esiDestroyer);
+	log_info(logger, "list_destroy_and_destroy_elements(colaDeListos, esiDestroyer);");
 	list_destroy_and_destroy_elements(colaDeListos, esiDestroyer);
+	log_info(logger, "list_destroy_and_destroy_elements(colaDeFinalizados, esiDestroyer);");
 	list_destroy_and_destroy_elements(colaDeFinalizados, esiDestroyer);
+	log_info(logger, "list_destroy_and_destroy_elements(bufferConsola, instruccionDestroyer);");
 	list_destroy_and_destroy_elements(bufferConsola, instruccionDestroyer);
+	log_info(logger, "free(esiEnEjecucion);");
 	free(esiEnEjecucion);
+	log_info(logger, "free(consultaCoordinador->clave);");
 	free(consultaCoordinador->clave);
+	log_info(logger, "free(consultaCoordinador);");
 	free(consultaCoordinador);
+	log_info(logger, "log_destroy(logger);");
+	log_destroy(logger);
 }

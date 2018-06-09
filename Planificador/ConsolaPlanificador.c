@@ -3,7 +3,6 @@
 void consola() {
 	while (1) {
 		char *comando = readline("Ingrese un comando: ");
-		bool valido;
 		if (strcmp(comando, "pause") == 0) {
 			printf("Planificador pausado\n");
 			pause();
@@ -15,11 +14,7 @@ void consola() {
 		} else if (string_starts_with(comando, "unlock")) {
 			unlock(comando);
 		} else if (string_starts_with(comando, "list")) {
-			valido = list(comando);
-			if (valido) {
-				free(comando);
-				return;
-			}
+			list(comando);
 		} else if (string_starts_with(comando, "kill")) {
 			killEsi(comando);
 		} else if (string_starts_with(comando, "status")) {
@@ -37,7 +32,7 @@ void consola() {
 
 char* obtenerPrimerParametro(char *comando) {
 	if (!string_contains(comando, " ")) {
-		printf("No hay suficientes parametros\n");
+		log_error(logger, "No hay suficientes parametros\n");
 		return NULL;
 	}
 	char** palabras = string_split(comando, " ");
@@ -47,7 +42,7 @@ char* obtenerPrimerParametro(char *comando) {
 char* obtenerSegundoParametro(char *comando) {
 	char** palabras = string_split(comando, " ");
 	if (palabras[2] == NULL) {
-		printf("No hay suficientes parametros\n");
+		log_error(logger, "No hay suficientes parametros\n");
 		return NULL;
 	}
 	return palabras[2];
@@ -63,31 +58,45 @@ void play() {
 
 void lock(char *comando) {
 	char *clave = obtenerPrimerParametro(comando);
+	if (clave == NULL) {
+		return;
+	}
 	char *esi = obtenerSegundoParametro(comando);
+	if (esi == NULL) {
+		return;
+	}
 	newInstruccion(INSTRUCCION_BLOQUEAR, clave, esi);
 }
 
 void unlock(char *comando) {
 	char *clave = obtenerPrimerParametro(comando);
+	if (clave == NULL) {
+		return;
+	}
 	newInstruccion(INSTRUCCION_DESBLOQUEAR, clave, NULL);
 }
 
-bool list(char *comando) {
+void list(char *comando) {
 	char *recurso = obtenerPrimerParametro(comando);
 	if (recurso == NULL) {
-		return false;
+		return;
 	}
 	newInstruccion(INSTRUCCION_LISTAR, recurso, NULL);
-	return true;
 }
 
 void killEsi(char *comando) {
 	char *esi = obtenerPrimerParametro(comando);
+	if (esi == NULL) {
+		return;
+	}
 	newInstruccion(INSTRUCCION_TERMINAR, esi, NULL);
 }
 
 void status(char *comando) {
 	char *clave = obtenerPrimerParametro(comando);
+	if (clave == NULL) {
+		return;
+	}
 	printf("\nlogica para mostrar estatus de clave %s\n", clave);
 }
 
