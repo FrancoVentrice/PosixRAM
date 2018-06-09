@@ -40,7 +40,7 @@ int main(int argn, char *argv[]) {
 	realizarHandshakeCoordinador();
 	inicializarSockets();
 	levantarHiloEscuchaESIs();
-	levantarConsola();
+	//levantarConsola();
 	cicloPrincipal();
 	finalizar(EXIT_SUCCESS);
 }

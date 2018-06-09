@@ -27,6 +27,8 @@ signed int getConnectionTimeOut(fd_set *, int *, int , tMensaje *, char** , stru
 
 signed int multiplexar(fd_set *, fd_set *, int *, tMensaje* , char** , t_log* );
 
+signed int multiplexarTimed(fd_set *, fd_set *, int *, tMensaje* , char** , t_log* , int, int);
+
 signed int connectToServer(char *, int , t_log *);
 
 int desconectarseDe(int);

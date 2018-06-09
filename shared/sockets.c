@@ -312,6 +312,48 @@ signed int multiplexar(fd_set *master, fd_set *temp, int *maxSock, tMensaje* tip
 
 
 
+signed int multiplexarTimed(fd_set *master, fd_set *temp, int *maxSock, tMensaje* tipoMensaje, char** buffer, t_log* logger, int timeOutSec, int timeOutUsec)
+{
+	int iSocket;
+	int nBytes;
+	memcpy(temp, master, sizeof(fd_set));
+	struct timeval tv = {timeOutSec, timeOutUsec};
+
+	if (select(*maxSock + 1, temp, NULL, NULL, &tv) == -1) {
+		log_error(logger, "select: %s", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	//--Cicla las conexiones para ver cual cambió
+	for (iSocket = 0; iSocket <= *maxSock; iSocket++) {
+
+		if (FD_ISSET(iSocket, temp)) {
+			//--Gestiona un cliente ya conectado
+
+			if ((nBytes = recibirPaquete(iSocket, tipoMensaje, buffer, logger, "Se recibe Mensaje")) <= 0) {
+				//--Si cerró la conexión o hubo error
+				if (nBytes == 0) {
+					log_trace(logger, "Fin de conexion de %d.", iSocket);
+
+				} else {
+					log_error(logger, "multiplexar :: recv in %d: %s", iSocket, strerror(errno));
+				}
+				//--Cierra la conexión y lo saca de la lista
+				close(iSocket);
+				FD_CLR(iSocket, master);
+				*tipoMensaje = DESCONEXION;
+
+			}
+
+			return iSocket;
+		}
+	}
+
+	return -1;
+}
+
+
+
 signed int connectToServer(char *ip_server, int puerto, t_log *logger)
 {
 	int iSocket; 					// Escuchar sobre sock_fd, nuevas conexiones sobre new_fd

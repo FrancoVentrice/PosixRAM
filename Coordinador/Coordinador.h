@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <parsi/parser.h>
+#include <pthread.h>
 #include "../shared/sockets.h"
 #include "../shared/serializar.h"
 #include "../shared/protocolo.h"
@@ -59,13 +60,21 @@ t_dictionary * diccionarioClaves;//diccionario de claves e instancias que las po
 t_list * instancias;//lista de instancias disponibles
 int punteroEL;//puntero usado en la distribucion Equitative Load
 t_operacionESI * operacion;
+
+fd_set setSockets;
 int socketPlanificador;
+int socketEscucha;
+int maxSock;
+pthread_t hiloEscucha;
 
 int cargarConfiguracion();
+void inicializarSockets();
+void levantarHiloEscucha();
+void escucharConexiones();
+void cicloPrincipal();
 void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
-void escucharConexiones();
 t_instancia * elegirInstancia();
 void registrarClaveAgregadaAInstancia();
 t_instancia * elegirInstanciaLSU();
