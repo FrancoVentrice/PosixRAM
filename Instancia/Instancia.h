@@ -12,6 +12,7 @@
 #include <sys/mman.h> // mmap
 #include <sys/types.h>
 #include <sys/stat.h> // mkdir - stat
+#include <sys/timerfd.h> // create_timer
 #include <fcntl.h>
 #include <commons/config.h>
 #include <commons/log.h>
@@ -37,24 +38,24 @@ typedef struct {
 
 /* estructura para la configuración general */
 typedef struct {
+	char czNomProc[20]; // nombre para mostrar en el sistema
 	char *nombreDeInstancia;
+
+	unsigned int cantidadEntradas;
+	unsigned int tamanioEntrada; // bytes
 	char *puntoDeMontaje;
 	int algoritmoDeReemplazo;
-	unsigned int intervaloDump; // segundos
+
+	struct itimerspec intervaloDump; // segundos
+	int fdTimerDump;
+	time_t ultimoDump;
+
 	char *ipCoordinador;
 	unsigned int puertoCoordinador;
 	int fdSocketCoordinador;
-	unsigned int cantidadEntradas;
-	unsigned int tamanioEntrada; // bytes
-} t_confInstancia;
 
-/* estructura para llevar el estado y las estadísticas */
-typedef struct {
-	char czNomProc[20]; // nombre para mostrar en el sistema
-	int realizarDump; // 1 = realizar dump . 0 = no realizar dump
-	time_t ultimoDump;
 	unsigned int instruccionesProcesadas;
-} t_instanceStatus;
+} t_confInstancia;
 
 /* estructura que representa una entrada en la tabla */
 typedef struct {
@@ -65,8 +66,7 @@ typedef struct {
 
 // TODO revisar si es necesario que todas estas sean globales (mala práctica, muy mala)
 t_commandLineParameters parametrosEntrada;
-t_confInstancia * configuracion;
-t_instanceStatus estadoInstancia;
+t_confInstancia configuracion;
 t_config * fd_configuracion;
 t_log * logger;
 
@@ -95,14 +95,15 @@ void volcarEntradas(void);
 unsigned int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
 int inicializarPuntoDeMontaje(void);
-void cargarEntradasDesdeArchivos(void);
+void cargarEntradasDesdeArchivos(char **);
 char * valorDeEntrada(unsigned int);
+void deprecated_cargarEntradasDesdeArchivos(void);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
 void mostrarConfiguracion(void);
 void mostrarConexionCoordinador(void);
-void mostrarTablaDeEntradas(void);
+void mostrarEstadoTablaDeEntradas(void);
 void listarEntradas(void);
 void pantallaFin(void);
 void mostrarTexto(char *);

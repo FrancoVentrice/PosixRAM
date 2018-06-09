@@ -20,10 +20,10 @@ void mostrarConfiguracion() {
 		return;
 
 	printf("\nArchivo de configuración cargado: " BOLD "%s\n" RESET, parametrosEntrada.archivoConf);
-	printf(" - Instancia: " BOLD "%s\n" RESET, configuracion->nombreDeInstancia);
+	printf(" - Instancia: " BOLD "%s\n" RESET, configuracion.nombreDeInstancia);
 	printf(" - Algoritmo de reemplazo: " BOLD "%s\n" RESET, config_get_string_value(fd_configuracion, "ALGORITMO_REEMPLAZO"));
-	printf(" - Punto de montaje: " BOLD "%s\n" RESET, configuracion->puntoDeMontaje);
-	printf(" - Intervalo para dump: " BOLD "%d segundos\n" RESET, configuracion->intervaloDump);
+	printf(" - Punto de montaje: " BOLD "%s\n" RESET, configuracion.puntoDeMontaje);
+	printf(" - Intervalo para dump: " BOLD "%d segundos\n" RESET, (int)configuracion.intervaloDump.it_value.tv_sec);
 	fflush(stdout);
 }
 
@@ -32,18 +32,18 @@ void mostrarConexionCoordinador(void) {
 		return;
 
 	printf("Conectado con Coordinador - IP: " BOLD "%s" RESET " - Puerto: " BOLD "%d\n" RESET ,
-				configuracion->ipCoordinador,
-				configuracion->puertoCoordinador);
+				configuracion.ipCoordinador,
+				configuracion.puertoCoordinador);
 	fflush(stdout);
 }
 
-void mostrarTablaDeEntradas(void) {
+void mostrarEstadoTablaDeEntradas(void) {
 	if(parametrosEntrada.logPantalla)
 		return;
 
 	printf("Preparado espacio de almacenamiento para " BOLD "%d" RESET " entradas de " BOLD "%d bytes" RESET ". Entradas disponibles: " BOLD "%d" RESET ".\n"
-				,configuracion->cantidadEntradas
-				,configuracion->tamanioEntrada
+				,configuracion.cantidadEntradas
+				,configuracion.tamanioEntrada
 				,entradasDisponibles());
 	fflush(stdout);
 }
@@ -57,7 +57,7 @@ void listarEntradas(void) {
 	unsigned int i;
 
 	printf(BOLD " #  | Tam. | Clave                                    | Valor\n" RESET);
-	for (i=0 ; i < configuracion->cantidadEntradas ; i++) {
+	for (i=0 ; i < configuracion.cantidadEntradas ; i++) {
 		printf("%3u | %4u | %-40s | %.80s\n", i, strlen(valorDeEntrada(i)), tablaDeEntradas[i].clave, valorDeEntrada(i));
 	}
 

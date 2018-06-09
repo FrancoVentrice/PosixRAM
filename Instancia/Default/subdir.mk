@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../ComunicacionesInstancia.c \
 ../ConfigInstancia.c \
 ../CoreInstancia.c \
 ../EntradasInstancia.c \
@@ -11,6 +12,7 @@ C_SRCS += \
 ../PantallaInstancia.c 
 
 OBJS += \
+./ComunicacionesInstancia.o \
 ./ConfigInstancia.o \
 ./CoreInstancia.o \
 ./EntradasInstancia.o \
@@ -18,6 +20,7 @@ OBJS += \
 ./PantallaInstancia.o 
 
 C_DEPS += \
+./ComunicacionesInstancia.d \
 ./ConfigInstancia.d \
 ./CoreInstancia.d \
 ./EntradasInstancia.d \
