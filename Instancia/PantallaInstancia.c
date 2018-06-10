@@ -54,11 +54,14 @@ void listarEntradas(void) {
 	if(parametrosEntrada.logPantalla)
 		return;
 
+	char * valorDeEntrada;
 	unsigned int i;
 
 	printf(BOLD " #  | Tam. | Clave                                    | Valor\n" RESET);
 	for (i=0 ; i < configuracion.cantidadEntradas ; i++) {
-		printf("%3u | %4u | %-40s | %.80s\n", i, strlen(valorDeEntrada(i)), tablaDeEntradas[i].clave, valorDeEntrada(i));
+		valorDeEntrada = valorDeEntradaPorIndice(i);
+		printf("%3u | %4u | %-40s | %.80s\n", i, strlen(valorDeEntrada), tablaDeEntradas[i].clave, valorDeEntrada);
+		free(valorDeEntrada);
 	}
 
 	fflush(stdout);
