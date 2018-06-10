@@ -72,3 +72,4 @@ Log*.txt
 /Planificador/logs/
 /Planificador/Default/logs/
 /Coordinador/Default/LogDeOperaciones
+/Coordinador/LogDeOperaciones

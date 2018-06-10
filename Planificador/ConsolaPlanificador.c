@@ -97,7 +97,7 @@ void status(char *comando) {
 	if (clave == NULL) {
 		return;
 	}
-	printf("\nlogica para mostrar estatus de clave %s\n", clave);
+	newInstruccion(INSTRUCCION_STATUS, clave, NULL);
 }
 
 void deadlock() {

@@ -216,6 +216,7 @@ void accionarFrenteAConsulta(char * respuesta) {
 		if (operacion->operacion != OPERACION_GET) {
 			log_info(logger, "eligiendo instancia");
 			instanciaElegida = elegirInstancia();
+			log_info(logger, "Instancia elegida: %s", instanciaElegida->nombre);
 			enviarOperacionAInstancia();
 			recibirOperacionDeInstancia();
 		} else {
@@ -368,7 +369,9 @@ void informarResultadoOperacionError(int socketEsi){
 //se usa para elegir la instancia en la cual ejecutar la operacion
 //elige la instancia a la cual le va a agregar o modificar la clave
 t_instancia * elegirInstancia() {
+	log_info(logger, "eligiendo instancia para clave %s", operacion->clave);
 	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
+		log_info(logger, "algoritmoDistribucion %d", configuracion->algoritmoDistribucion);
 		switch (configuracion->algoritmoDistribucion) {
 		case ALGORITMO_LSU:
 			return elegirInstanciaLSU();
@@ -381,8 +384,10 @@ t_instancia * elegirInstancia() {
 			break;
 		}
 	} else {
+		log_info(logger, "dictionary has key!");
 		return dictionary_get(diccionarioClaves, operacion->clave);
 	}
+	return NULL;
 }
 
 //metodo que se ejecuta para registrar una nueva clave a una instancia
@@ -433,17 +438,25 @@ t_instancia * elegirInstanciaEL() {
 //devuelve la instancia elegida (variable global)
 //valor de 'a' es 97
 //valor de 'z' es 122
+//valor de 'A' es 65
+//valor de 'Z' es 90
 //122 - 97 = 25 letras a ser distribuidas entre las instancias
 t_instancia * elegirInstanciaKE() {
 	if (instancias->elements_count == 0) {
+		log_info(logger, "no hay instancias para elegir");
 		return NULL;
 	}
-	int letrasPorInstancia = 25 / instancias->elements_count;
-	if (25 % instancias->elements_count > 0) {
+	int letrasPorInstancia = 26 / instancias->elements_count;
+	if (26 % instancias->elements_count > 0) {
 		letrasPorInstancia++;
 	}
 	//'a' tendria valor 1, 'b' 2, y asi
-	int valorPrimerCaracter = operacion->clave[0] - 96;
+	int valorPrimerCaracter = operacion->clave[0];
+	if (valorPrimerCaracter < 91) {
+		valorPrimerCaracter -= 64;
+	} else {
+		valorPrimerCaracter -= 96;
+	}
 	int indexInstancia = valorPrimerCaracter / letrasPorInstancia;
 	if (valorPrimerCaracter % letrasPorInstancia == 0) {
 		indexInstancia--;

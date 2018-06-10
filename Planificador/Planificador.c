@@ -519,6 +519,9 @@ void bloquearESIConClave(t_esi *esi, char *clave) {
 	}
 	t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
 	list_add(bloqueados, esi);
+	if (esiEnEjecucion != NULL && strcmp(esi->id, esiEnEjecucion->id)) {
+		planificacionNecesaria = true;
+	}
 }
 
 //Cuando ESI hace un GET exitosamente
@@ -676,6 +679,10 @@ void ejecutarComandosConsola() {
 			break;
 		case INSTRUCCION_LISTAR:
 			listarEsisPorRecurso(instruccion->primerParametro);
+			break;
+		case INSTRUCCION_STATUS:
+			statusDeClave(instruccion->primerParametro);
+			break;
 		}
 		list_remove_and_destroy_element(bufferConsola, 0, instruccionDestroyer);
 	}
@@ -829,4 +836,39 @@ void listarEsisPorRecurso(char *clave) {
 	} else {
 		log_info(logger, "No hay ESIs bloqueados por la clave\n");
 	}
+}
+
+void statusDeClave(char *clave) {
+	log_info(logger, "Status de clave: %s", clave);
+
+	//Se envia consulta de estado de clave al coordinador
+	tPaquete pkgConsultaClave;
+	int enviados;
+	char *consulta = strdup(clave);
+	pkgConsultaClave.type = P_ESTADO_CLAVE;
+	pkgConsultaClave.length = serializar(pkgConsultaClave.payload, "%s", consulta);
+	log_info(logger, "Se envia consulta de clave %s al coordinador", clave);
+	enviados = enviarPaquete(socketCoordinador, &pkgConsultaClave, logger, "Se envia consulta de clave al coordinador");
+	log_info(logger, "Se envian %d bytes\n", enviados);
+	free(consulta);
+
+	//Se recibe respuesta de consulta del coordinador
+	tMensaje tipoMensaje;
+	char * sPayloadRespuestaPlanificador = malloc(100);
+	log_info(logger, "Esperando respuesta de consulta por clave %s", clave);
+	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje, &sPayloadRespuestaPlanificador, logger, "Esperando respuesta de consulta");
+	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
+	char *valor = malloc(200);
+	char *instanciaActual = malloc(40);
+	char *instanciaProbable = malloc(40);
+	deserializar(sPayloadRespuestaPlanificador, "%s%s%s", valor, instanciaActual, instanciaProbable);
+	log_info(logger, "\nESTADO DE CLAVE\nclave: %s\nvalor: %s\ninstancia actual: %s\ninstancia donde se guardaria: %s", clave, valor, instanciaActual, instanciaProbable);
+	listarEsisPorRecurso(clave);
+
+	//Liberamos la memoria asignada
+	free(sPayloadRespuestaPlanificador);
+	free(clave);
+	free(valor);
+	free(instanciaActual);
+	free(instanciaProbable);
 }

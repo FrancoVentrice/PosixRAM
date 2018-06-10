@@ -20,6 +20,7 @@
 #define INSTRUCCION_TERMINAR 13
 #define INSTRUCCION_DEADLOCK 14
 #define INSTRUCCION_LISTAR 15
+#define INSTRUCCION_STATUS 16
 #define OPERACION_GET 1
 #define OPERACION_SET 2
 #define OPERACION_STORE 3
@@ -126,6 +127,7 @@ t_esi * encontrarEsiPorId(t_list *, char *);
 int getIndexDeEsi(t_list *, t_esi *);
 void analizarDeadlock();
 void recibirConsultaOperacion(tMensaje, char *);
+void statusDeClave(char *);
 
 //metodos de ESI
 void liberarClavesDeEsi(t_esi *);
