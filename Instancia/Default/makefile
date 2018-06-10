@@ -30,7 +30,7 @@ all:
 main-build: Instancia
 
 dependents:
-	-cd /home/utnso/tp-2018-1c-PosixRAM/shared/Default && $(MAKE) clean all
+	-cd /home/utnso/tp-2018-1c-PosixRAM/shared/Default && $(MAKE) all
 
 # Tool invocations
 Instancia: $(OBJS) $(USER_OBJS) /home/utnso/tp-2018-1c-PosixRAM/shared/Default/libshared.so

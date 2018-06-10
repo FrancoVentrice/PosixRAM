@@ -118,37 +118,61 @@ int inicializarPuntoDeMontaje() {
 	return 1;
 }
 
+char * valorDeEntradaPorClave(char * clave) {
+	/* Lee el valor correspondiente a una entrada de clave NNNNN, le agrega el terminador, y lo retorna */
 
-char * valorDeEntrada(unsigned int indice) {
-	/* Lee el valor correspondiente a una entrada, le agrega el terminador, y lo retorna */
+	unsigned int i = 0;
+	int encontrado = 0;
+
+	while (!encontrado && i < configuracion.cantidadEntradas) {
+		if (strcmp(tablaDeEntradas[i].clave, clave) == 0)
+			encontrado = 1;
+		else
+			i++;
+	}
+
+	// ToDo si no la encontró hay que devolver error!
+	return valorDeEntradaPorIndice(i);
+}
+
+char * valorDeEntradaPorIndice(unsigned int indice) {
+	/* Lee el valor correspondiente a una entrada i, le agrega el terminador, y lo retorna */
 
 	char * valor;
 	valor = (char *)malloc((tablaDeEntradas[indice].tamanio)+1);
 	memcpy(valor,almacenamientoEntradas + (indice * configuracion.tamanioEntrada), tablaDeEntradas[indice].tamanio);
 	valor[tablaDeEntradas[indice].tamanio] = '\0';
 
-	// unstable code: no puedo hacer free() de la memoria reservada acá. feo feo.
+	// se debe hacer el free del valor devuelvo en el lugar que se utilice
 	return valor;
 }
 
-void cargarEntradasDesdeArchivos(char ** entradasSincronizadas) {
-	/* lee los archivos del punto de montaje y carga las entradas con sus valores */
+void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
+	/* lee los archivos del punto de montaje y carga las entradas con sus valores.
+	 * recibe un string que es una lista de entradas separadas por ; */
 
 	unsigned int i = 0, j = 0;
+	char ** entradasACargar;
     char * archivoFullPath;
 	int fdArchivoLeido;
 	struct stat infoArchivo;
 	char * archivoMapeado;
 	char * posicionValor;
 
-    while (entradasSincronizadas[j] != NULL) {
+	entradasACargar = string_split(clavesSincronizadas, ";");
+
+    while (entradasACargar[j] != NULL) {
 
     	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
+    	// ToDo revisar esto --->> posicionValor = almacenamientoEntradas[i * configuracion.tamanioEntrada];
 
-    	log_info(logger, "Leyendo archivo: %s", entradasSincronizadas[j]);
-    	strcpy(tablaDeEntradas[i].clave,entradasSincronizadas[j]);
+    	log_info(logger, "Leyendo archivo: %s", entradasACargar[j]);
+    	strcpy(tablaDeEntradas[i].clave,entradasACargar[j]);
     	archivoFullPath = string_new();
-    	string_append_with_format(&archivoFullPath, "%s/%s", configuracion.puntoDeMontaje, entradasSincronizadas[j]);
+    	string_append_with_format(&archivoFullPath, "%s/%s", configuracion.puntoDeMontaje, entradasACargar[j]);
+
+    	// ToDo verificar qué pasa acá si el archivono existe!!!
+
     	stat (archivoFullPath, &infoArchivo);
     	if (!(infoArchivo.st_size == 0)) {
     		tablaDeEntradas[i].tamanio = (size_t) infoArchivo.st_size;
@@ -172,11 +196,35 @@ void cargarEntradasDesdeArchivos(char ** entradasSincronizadas) {
     		}
     	}
     	i++;
-    	free(entradasSincronizadas[j]);
+    	free(entradasACargar[j]);
     	j++;
     }
 
     log_info(logger,"Se cargaron %d entradas desde %d archivos.", i, j);
+}
+
+void ejecutarSet(char *clave, char *valor, int posicion) {
+	char * posicionValor;
+	unsigned int i = posicion;
+
+	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
+	//ToDo revisar ===> posicionValor = almacenamientoEntradas[i * configuracion.tamanioEntrada];
+
+	strcpy(tablaDeEntradas[i].clave, clave);
+	tablaDeEntradas[i].tamanio = string_length(valor);
+	memcpy(posicionValor, valor, tablaDeEntradas[i].tamanio);
+
+	// unstable code: comparo un size_t con unsigned int pero... dale que va
+	if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
+		/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
+		int entradasExtraOcupadas;
+		entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada;
+		while (entradasExtraOcupadas) {
+			i++;
+			strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
+			entradasExtraOcupadas--;
+		}
+	}
 }
 
 

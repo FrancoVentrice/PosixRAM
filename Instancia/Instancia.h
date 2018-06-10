@@ -85,8 +85,13 @@ int configValida(t_config *);
 void limpiarConfiguraion(void);
 
 // procesamiento
-int conectarACoordinador(void);
 void capturaSenial(int);
+int sincronizarClavesYCargarEntradas(void);
+
+// conexiones [ComunicacionesInstancia.c]
+int conectarACoordinador(void);
+char * sincronizarClavesConCoordinador(void);
+void enviarMensajeOK(void);
 
 // manejo de entrads [EntradasInstancia.c]
 void prepararTablaDeEntradas(void);
@@ -95,10 +100,12 @@ void volcarEntradas(void);
 unsigned int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
 int inicializarPuntoDeMontaje(void);
-void cargarEntradasDesdeArchivos(char **);
-char * valorDeEntrada(unsigned int);
-void deprecated_cargarEntradasDesdeArchivos(void);
+void cargarEntradasDesdeArchivos(char *);
+char * valorDeEntradaPorIndice(unsigned int);
+char * valorDeEntradaPorClave(char *);
+
 void ejecutarSet(char *, char *, int);
+void deprecated_cargarEntradasDesdeArchivos(void);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

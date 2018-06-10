@@ -5,8 +5,8 @@
 
 #include "Instancia.h"
 
-/* procesa los parámetros de línea de comandos */
 int procesarLineaDeComandos (int argc, char *argv[]) {
+	/* procesa los parámetros de línea de comandos */
 
 	parametrosEntrada.debugMode = 0;
 	parametrosEntrada.logPantalla = 0;
@@ -49,15 +49,15 @@ int procesarLineaDeComandos (int argc, char *argv[]) {
 	return 1;
 }
 
-/* prepara el estado de la instancia */
 void inicializarInstancia() {
+	/* prepara el estado de la instancia */
 	memset(configuracion.czNomProc, 0, 20);
 	strcpy(configuracion.czNomProc,"InstanciaPosixRAM");
 	configuracion.instruccionesProcesadas = 0;
 }
 
-/* inicia el logger para este proceso */
 void iniciarLogger(){
+	/* inicia el logger para este proceso */
 	time_t tiempoActual;
 	// Se obtiene el tiempo actual
 	tiempoActual = time(NULL);
@@ -89,8 +89,8 @@ void iniciarLogger(){
 	free(nombreArchivoLog);
 }
 
-/* termina el proceso correctamente liberando recursos */
 void finalizar(int codigo) {
+	/* termina el proceso correctamente liberando recursos */
 	alarm(0);
 	if (fd_configuracion != NULL) {
 		desconectarseDe(configuracion.fdSocketCoordinador);
@@ -106,4 +106,19 @@ void finalizar(int codigo) {
 	pantallaFin();
 
 	exit(codigo);
+}
+
+int sincronizarClavesYCargarEntradas() {
+	/* Le pide la lista de claves al coordinador y las carga en la tabla de entradas */
+
+	char * clavesSincronizadas;
+
+	clavesSincronizadas = sincronizarClavesConCoordinador();
+	if (string_is_empty(clavesSincronizadas)) // clavesSincronizadas == NULL  // strlen(text) == 0
+		return 1;
+
+	cargarEntradasDesdeArchivos(clavesSincronizadas);
+	free(clavesSincronizadas);
+
+	return 1;
 }
