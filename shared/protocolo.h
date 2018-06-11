@@ -42,6 +42,7 @@ typedef enum {
 	C_EJECUTAR_SET,
 	C_EJECUTAR_STORE,
 	C_EJECUTAR_COMPACTACION,
+	C_ESTADO_CLAVE,
 
 	/* Mensajes de Instancia */
 	I_HANDSHAKE,

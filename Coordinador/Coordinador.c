@@ -141,9 +141,16 @@ void cicloPrincipal() {
 
 			case P_RESPUESTA_CONSULTA:
 				log_info(logger,"Respuesta Consulta Operacion");
-				char* respuesta= malloc(10);
+				char *respuesta = malloc(10);
 				recibirRespuestaConsulta(respuesta);
 				tipoMensaje = DESCONEXION;
+				break;
+
+			case P_ESTADO_CLAVE:
+				log_info(logger,"Consulta estado de clave");
+				char *claveConsultada = malloc(41);
+				deserializar(sPayloadRespuesta, "%s", claveConsultada);
+				evaluarEstadoDeClave(claveConsultada);
 				break;
 
 			case DESCONEXION:
@@ -215,7 +222,7 @@ void accionarFrenteAConsulta(char * respuesta) {
 	if (strcmp(respuesta, "OK") == 0) {
 		if (operacion->operacion != OPERACION_GET) {
 			log_info(logger, "eligiendo instancia");
-			instanciaElegida = elegirInstancia();
+			instanciaElegida = elegirInstancia(false);
 			log_info(logger, "Instancia elegida: %s", instanciaElegida->nombre);
 			enviarOperacionAInstancia();
 			recibirOperacionDeInstancia();
@@ -368,7 +375,7 @@ void informarResultadoOperacionError(int socketEsi){
 
 //se usa para elegir la instancia en la cual ejecutar la operacion
 //elige la instancia a la cual le va a agregar o modificar la clave
-t_instancia * elegirInstancia() {
+t_instancia * elegirInstancia(bool consulta) {
 	log_info(logger, "eligiendo instancia para clave %s", operacion->clave);
 	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
 		log_info(logger, "algoritmoDistribucion %d", configuracion->algoritmoDistribucion);
@@ -377,7 +384,7 @@ t_instancia * elegirInstancia() {
 			return elegirInstanciaLSU();
 			break;
 		case ALGORITMO_EL:
-			return elegirInstanciaEL();
+			return elegirInstanciaEL(consulta);
 			break;
 		case ALGORITMO_KE:
 			return elegirInstanciaKE();
@@ -394,7 +401,7 @@ t_instancia * elegirInstancia() {
 //se ejecuta en el GET
 void registrarClaveAgregadaAInstancia() {
 	if (!dictionary_has_key(diccionarioClaves, operacion->clave)) {
-		dictionary_put(diccionarioClaves, operacion->clave, elegirInstancia());
+		dictionary_put(diccionarioClaves, operacion->clave, elegirInstancia(false));
 	}
 }
 
@@ -423,13 +430,21 @@ t_instancia * elegirInstanciaLSU() {
 //EQUITATIVE LOAD
 //usa la clave de operacion (variable global)
 //devuelve la instancia elegida (variable global)
-t_instancia * elegirInstanciaEL() {
+t_instancia * elegirInstanciaEL(bool consulta) {
+	int punteroConsulta;
+	if (consulta) {
+		punteroConsulta = punteroEL;
+	}
 	if (punteroEL >= instancias->elements_count) {
 		punteroEL = 0;
 	}
 	t_instancia *elegida = list_get(instancias, punteroEL);
 	punteroEL ++;
 	log_info(logger, "instancia elegida (EL): %s", elegida->nombre);
+
+	if (consulta) {
+		punteroEL = punteroConsulta;
+	}
 	return elegida;
 }
 
@@ -492,4 +507,19 @@ int existeInstancia(char *nombreInstancia) {
 		}
 	}
 	return 0;
+}
+
+void evaluarEstadoDeClave(char *claveConsultada) {
+	t_instancia *instancia = elegirInstancia(true);
+
+	//Respondo lo averiguado
+	//ToDo: hacer consulta con la instancia para saber el valor de la clave
+	char *valor = strdup("VALOR MOCKEADO");
+	char *nombreInstancia = instancia->nombre;
+	tPaquete pkgEstadoClave;
+	pkgEstadoClave.type = C_ESTADO_CLAVE;
+	pkgEstadoClave.length = serializar(pkgEstadoClave.payload, "%s%s", valor, nombreInstancia);
+	log_info(logger,"Se envia estado de clave %s, valor %s, instancia %s", claveConsultada, valor, nombreInstancia);
+	int bytesEnviados = enviarPaquete(socketPlanificador, &pkgEstadoClave, logger, "Se envia estado de clave");
+	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 }

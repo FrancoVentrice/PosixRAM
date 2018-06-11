@@ -860,9 +860,8 @@ void statusDeClave(char *clave) {
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 	char *valor = malloc(200);
 	char *instanciaActual = malloc(40);
-	char *instanciaProbable = malloc(40);
-	deserializar(sPayloadRespuestaPlanificador, "%s%s%s", valor, instanciaActual, instanciaProbable);
-	log_info(logger, "\nESTADO DE CLAVE\nclave: %s\nvalor: %s\ninstancia actual: %s\ninstancia donde se guardaria: %s", clave, valor, instanciaActual, instanciaProbable);
+	deserializar(sPayloadRespuestaPlanificador, "%s%s", valor, instanciaActual);
+	log_info(logger, "\nESTADO DE CLAVE\nclave: %s\nvalor: %s\ninstancia actual/probable: %s", clave, valor, instanciaActual);
 	listarEsisPorRecurso(clave);
 
 	//Liberamos la memoria asignada
@@ -870,5 +869,4 @@ void statusDeClave(char *clave) {
 	free(clave);
 	free(valor);
 	free(instanciaActual);
-	free(instanciaProbable);
 }

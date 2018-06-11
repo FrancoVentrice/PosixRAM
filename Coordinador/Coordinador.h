@@ -75,14 +75,15 @@ void cicloPrincipal();
 void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
-t_instancia * elegirInstancia();
+t_instancia * elegirInstancia(bool consulta);
 void registrarClaveAgregadaAInstancia();
 t_instancia * elegirInstanciaLSU();
-t_instancia * elegirInstanciaEL();
+t_instancia * elegirInstanciaEL(bool consulta);
 t_instancia * elegirInstanciaKE();
 void escribirLogDeOperaciones();
 char * recibirRespuestaConsulta(char *);
 void accionarFrenteAConsulta(char *);
+void evaluarEstadoDeClave(char *);
 
 //instancia
 void instanciaDestroyer(t_instancia *);
