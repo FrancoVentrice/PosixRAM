@@ -166,41 +166,44 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
     	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
     	// ToDo revisar esto --->> posicionValor = almacenamientoEntradas[i * configuracion.tamanioEntrada];
 
-    	log_info(logger, "Leyendo archivo: %s", entradasACargar[j]);
+    	log_info(logger, "Cargando clave: %s", entradasACargar[j]);
     	strcpy(tablaDeEntradas[i].clave,entradasACargar[j]);
     	archivoFullPath = string_new();
     	string_append_with_format(&archivoFullPath, "%s/%s", configuracion.puntoDeMontaje, entradasACargar[j]);
 
-    	// ToDo verificar qué pasa acá si el archivono existe!!!
+    	if (stat (archivoFullPath, &infoArchivo) == 0) {
+    		log_info(logger, "Leyendo archivo: %s", archivoFullPath);
+			if (!(infoArchivo.st_size == 0)) {
+				tablaDeEntradas[i].tamanio = (size_t) infoArchivo.st_size;
+				fdArchivoLeido = open (archivoFullPath, O_RDONLY);
+				archivoMapeado = (char *) mmap(NULL, tablaDeEntradas[i].tamanio, PROT_READ, MAP_SHARED, fdArchivoLeido, 0);
+				memcpy(posicionValor, archivoMapeado, tablaDeEntradas[i].tamanio);
+				munmap(archivoMapeado, tablaDeEntradas[i].tamanio);
+				close(fdArchivoLeido);
+			}
 
-    	stat (archivoFullPath, &infoArchivo);
-    	if (!(infoArchivo.st_size == 0)) {
-    		tablaDeEntradas[i].tamanio = (size_t) infoArchivo.st_size;
-        	fdArchivoLeido = open (archivoFullPath, O_RDONLY);
-    		archivoMapeado = (char *) mmap(NULL, tablaDeEntradas[i].tamanio, PROT_READ, MAP_SHARED, fdArchivoLeido, 0);
-        	memcpy(posicionValor, archivoMapeado, tablaDeEntradas[i].tamanio);
-        	munmap(archivoMapeado, tablaDeEntradas[i].tamanio);
-    		close(fdArchivoLeido);
+			// unstable code: comparo un size_t con unsigned int pero... dale que va
+			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
+				/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
+				int entradasExtraOcupadas;
+				entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada;
+				while (entradasExtraOcupadas) {
+					i++;
+					strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
+					entradasExtraOcupadas--;
+				}
+			}
     	}
-    	free(archivoFullPath);
-
-    	// unstable code: comparo un size_t con unsigned int pero... dale que va
-    	if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
-    		/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
-    		int entradasExtraOcupadas;
-    		entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada;
-    		while (entradasExtraOcupadas) {
-    			i++;
-    			strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
-    			entradasExtraOcupadas--;
-    		}
+    	else {
+    		log_info(logger, "No existe el archivo: %s", archivoFullPath);
     	}
+		free(archivoFullPath);
     	i++;
     	free(entradasACargar[j]);
     	j++;
     }
 
-    log_info(logger,"Se cargaron %d entradas desde %d archivos.", i, j);
+    log_info(logger,"Se cargaron %d entradas desde %d claves.", i, j);
 }
 
 void ejecutarSet(char *clave, char *valor, int posicion) {
@@ -227,13 +230,22 @@ void ejecutarSet(char *clave, char *valor, int posicion) {
 	}
 }
 
+int procesarClavesYCargarEntradas(char * clavesSincronizadas) {
+	/* Le pide la lista de claves al coordinador y las carga en la tabla de entradas */
+
+	if (!string_is_empty(clavesSincronizadas)) {
+		cargarEntradasDesdeArchivos(clavesSincronizadas);
+	}
+
+	free(clavesSincronizadas);
+	return 1;
+}
 
 /* **************************************************************************** */
 /* **************************************************************************** */
 /* **************************************************************************** */
 /* **************************************************************************** */
 void deprecated_cargarEntradasDesdeArchivos() {
-	/* DEPRECATED */
 	/* lee los archivos del punto de montaje y carga las entradas con sus valores */
 
 	unsigned int i = 0;

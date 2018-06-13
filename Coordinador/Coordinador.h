@@ -13,6 +13,7 @@
 #include "../shared/sockets.h"
 #include "../shared/serializar.h"
 #include "../shared/protocolo.h"
+#include "../shared/libgral.h"
 
 #define ALGORITMO_LSU 1
 #define ALGORITMO_EL 2
@@ -84,10 +85,15 @@ void escribirLogDeOperaciones();
 char * recibirRespuestaConsulta(char *);
 void accionarFrenteAConsulta(char *);
 void evaluarEstadoDeClave(char *);
+void enviarOperacionAInstancia(void);
+void recibirOperacionDeInstancia(void);
 
 //instancia
 void instanciaDestroyer(t_instancia *);
-int existeInstancia(char *);
+int existeInstanciaConectadaConMismoNombre(char *);
+int existeInstanciaDesconectadaConMismoNombre(char *);
+int validarDesconexionDeInstancia(int);
 void nuevaInstanciaConectada(char *, int);
+void instanciaReconectada(char *, int);
 
 #endif /* COORDINADOR_H_ */

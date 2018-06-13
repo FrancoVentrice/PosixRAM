@@ -66,12 +66,29 @@ void escucharConexiones() {
 				deserializar(buffer, "%s", nombreInstancia);
 				log_info(logger, "Handshake con instancia %s, socket: %d", nombreInstancia, iSocketComunicacion);
 
-				if (existeInstancia(nombreInstancia)) {
-					pkgHandshake.length = serializar(pkgHandshake.payload, "%d;%d;%s", 0, 0, "Ya existe entrada conectada con el nombre indicado.");
-				} else {
-					pkgHandshake.length = serializar(pkgHandshake.payload, "%d;%d;%s", configuracion->cantidadDeEntradas, configuracion->tamanioDeEntrada, "Instancia aceptada");
-					nuevaInstanciaConectada(nombreInstancia, iSocketComunicacion);
+				if (existeInstanciaConectadaConMismoNombre(nombreInstancia)) {
+					// ya existe una instancia conectada con el mismo nombre --> se rechaza
+					pkgHandshake.length = serializar(pkgHandshake.payload, "%d%d%s%s", 0, 0, "Ya existe instancia conectada con el nombre indicado.", "");
 				}
+				else {
+					// instancia aceptada
+					if (existeInstanciaDesconectadaConMismoNombre(nombreInstancia)) {
+						// es la misma instancia que se está reconectndo --> se acepta y se envía la lista de claves
+						// TODO buscar la lista de claves y pasarle
+						pkgHandshake.length = serializar(pkgHandshake.payload, "%d%d%s%s", configuracion->cantidadDeEntradas, configuracion->tamanioDeEntrada,
+								"Instancia reconectada. Bienvenida nuevamente!",
+								"clave_nueva;clave_uno;clave_mas_de_100;Nuevo_archivo_con_Clave_de_Cuarenta_byte;clave1;");
+						instanciaReconectada(nombreInstancia, iSocketComunicacion);
+					}
+					else {
+						// instancia nueva
+						pkgHandshake.length = serializar(pkgHandshake.payload, "%d%d%s%s", configuracion->cantidadDeEntradas, configuracion->tamanioDeEntrada, "Instancia nueva aceptada. Bienvenida!", "");
+						nuevaInstanciaConectada(nombreInstancia, iSocketComunicacion);
+					}
+				}
+				break;
+			default:
+				// por acá entran todos los tipos de mensajes que nos están faltando, para que no tire warnings
 				break;
 			}
 
@@ -81,12 +98,13 @@ void escucharConexiones() {
 			free(respuestaHS->mensaje);
 			free(respuestaHS);
 			free(buffer);
+			// TODO ¿dónde se guarda el nuevo socket del proceso que se conectó?
 		}
 	}
 }
 
 void cicloPrincipal() {
-	operacion->clave=malloc(41);
+	operacion->clave=malloc(MAX_LONG_CLAVE);
 	operacion->valor=malloc(100);
 	char *respuestaConsulta = malloc(10);
 	char *sPayloadRespuesta = malloc(100);
@@ -94,7 +112,7 @@ void cicloPrincipal() {
 	while (1) {
 		tMensaje tipoMensaje;
 		fd_set temp;
-		log_info(logger, "Escuchando");
+		//log_info(logger, "Escuchando");
 		int iSocketComunicacion = multiplexarTimed(&setSockets, &temp, &maxSock, &tipoMensaje, &sPayloadRespuesta, logger, 1, 0);
 
 		if (iSocketComunicacion != -1) {
@@ -148,12 +166,17 @@ void cicloPrincipal() {
 
 			case P_ESTADO_CLAVE:
 				log_info(logger,"Consulta estado de clave");
-				char *claveConsultada = malloc(41);
+				char *claveConsultada = malloc(MAX_LONG_CLAVE);
 				deserializar(sPayloadRespuesta, "%s", claveConsultada);
 				evaluarEstadoDeClave(claveConsultada);
 				break;
 
 			case DESCONEXION:
+				validarDesconexionDeInstancia(iSocketComunicacion);
+
+				break;
+			default:
+				// por acá entran todos los mensajes que nos estén faltando, para que no tire warnings
 				break;
 
 			}
@@ -492,17 +515,59 @@ void nuevaInstanciaConectada(char * nombreInstancia, int socketInst) {
 	t_instancia *instancia = malloc(sizeof(t_instancia));
 
 	instancia->nombre = nombreInstancia;
-	instancia->cantidadDeEntradasDisponibles = configuracion->cantidadDeEntradas;
 	instancia->socket = socketInst;
+	instancia->cantidadDeEntradasDisponibles = configuracion->cantidadDeEntradas;
 	list_add(instancias, instancia);
 }
 
-int existeInstancia(char *nombreInstancia) {
-	/* revisar uso de list_any_satisfy() */
+int existeInstanciaConectadaConMismoNombre(char *nombreInstancia) {
+	/* verifica si ya existe una instancia conectada con el mismo nombre */
+	// TODO revisar uso de list_any_satisfy()
+	int i;
+	for (i = 0; i < list_size(instancias); i++) {
+		t_instancia *instancia = list_get(instancias, i);
+		if (string_equals_ignore_case(instancia->nombre, nombreInstancia) && (instancia->socket > 0)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void instanciaReconectada(char *nombreInstancia, int socketInst) {
+	/* verifica si existe una instancia desconectada con el mismo nombre */
+
 	int i;
 	for (i = 0; i < list_size(instancias); i++) {
 		t_instancia *instancia = list_get(instancias, i);
 		if (string_equals_ignore_case(instancia->nombre, nombreInstancia)) {
+			instancia->socket = socketInst;
+		}
+	}
+
+}
+
+int existeInstanciaDesconectadaConMismoNombre(char *nombreInstancia) {
+	/* verifica si existe una instancia desconectada con el mismo nombre */
+
+	int i;
+	for (i = 0; i < list_size(instancias); i++) {
+		t_instancia *instancia = list_get(instancias, i);
+		if (string_equals_ignore_case(instancia->nombre, nombreInstancia) && (instancia->socket < 0)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int validarDesconexionDeInstancia(int socketInst) {
+	/* chequea si la desconexión fue de una instancia, y en ese caso actualiza su estado */
+	int i;
+	log_info(logger, "Verificando si se desconectó alguna Instancia....");
+	for (i = 0; i < list_size(instancias); i++) {
+		t_instancia *instancia = list_get(instancias, i);
+		if (instancia->socket == socketInst) {
+			log_info(logger, "Instancia %s desconectada (%d entradas disponibles).", instancia->nombre, instancia->cantidadDeEntradasDisponibles);
+			instancia->socket = -1; // le desasigno el socket pero la dejo en la lista, para permitir reconexión
 			return 1;
 		}
 	}

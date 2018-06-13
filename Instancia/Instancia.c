@@ -8,6 +8,7 @@
 int main(int argc, char *argv[]) {
 	int iFdmax = 0;
 	int iBytesLeidos;
+	char * clavesSincronizadas;
 	fd_set master;
 	fd_set read_fds;
 	char letra = 45;
@@ -34,7 +35,8 @@ int main(int argc, char *argv[]) {
 		finalizar(EXIT_FAILURE);
 	mostrarConfiguracion();
 
-	if (!conectarACoordinador())
+	clavesSincronizadas = string_new();
+	if (!conectarACoordinador(&clavesSincronizadas))
 		finalizar(EXIT_FAILURE);
 	/* se agrega el socket del coordinador */
 	FD_SET(configuracion.fdSocketCoordinador,&master);
@@ -45,10 +47,9 @@ int main(int argc, char *argv[]) {
 	prepararTablaDeEntradas();
 	if (!inicializarPuntoDeMontaje())
 		finalizar(EXIT_FAILURE);
-	mostrarEstadoTablaDeEntradas();
-
 	// un mundo feliz: estoy asumiendo que no hay errores en la siguiente función
-	//sincronizarClavesYCargarEntradas();
+	procesarClavesYCargarEntradas(clavesSincronizadas);
+	mostrarEstadoTablaDeEntradas();
 
 	/* iniciamos el timeout para el vuelco seteando un timer */
 	iniciarDumpTimeout();
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
 					mostrarConfiguracion();
 					mostrarConexionCoordinador();
 					mostrarEstadoTablaDeEntradas();
+					mostrarMenu();
 				break;
 				case 'Q': // Quit (salir)
 					sigue = 0;

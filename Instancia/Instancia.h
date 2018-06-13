@@ -27,8 +27,6 @@
 #define ALGORITMO_LRU 2
 #define ALGORITMO_BSU 3
 
-#define MAX_LONG_CLAVE 40+1
-
 /* estructura para los valores de la línea de comandos */
 typedef struct {
 	char *archivoConf;
@@ -86,12 +84,12 @@ void limpiarConfiguraion(void);
 
 // procesamiento
 void capturaSenial(int);
-int sincronizarClavesYCargarEntradas(void);
+int deprecated_sincronizarClavesYCargarEntradas(void);
 
 // conexiones [ComunicacionesInstancia.c]
-int conectarACoordinador(void);
-char * sincronizarClavesConCoordinador(void);
+int conectarACoordinador(char **);
 void enviarMensajeOK(void);
+char * deprecated_sincronizarClavesConCoordinador(void); //
 
 // manejo de entrads [EntradasInstancia.c]
 void prepararTablaDeEntradas(void);
@@ -103,6 +101,7 @@ int inicializarPuntoDeMontaje(void);
 void cargarEntradasDesdeArchivos(char *);
 char * valorDeEntradaPorIndice(unsigned int);
 char * valorDeEntradaPorClave(char *);
+int procesarClavesYCargarEntradas(char *);
 
 void ejecutarSet(char *, char *, int);
 void deprecated_cargarEntradasDesdeArchivos(void);

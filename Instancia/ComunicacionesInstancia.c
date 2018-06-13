@@ -5,10 +5,11 @@
 
 #include "Instancia.h"
 
-int conectarACoordinador() {
+int conectarACoordinador(char ** clavesSincronizadas) {
 	/* Conecta con el coordinador y hace el handshake. No sale de la función hasta que recibe la respuesta, por lo que se podría quedar acá. */
 
 	int bytesEnviados;
+	int bytesLeidos;
 
 	log_info(logger,"Conectando con el Coordinador (IP: %s Puerto: %d)...", configuracion.ipCoordinador,configuracion.puertoCoordinador);
 	configuracion.fdSocketCoordinador = connectToServer(configuracion.ipCoordinador,configuracion.puertoCoordinador, logger);
@@ -25,15 +26,22 @@ int conectarACoordinador() {
 	pkgHandshake.type = I_HANDSHAKE;
 	pkgHandshake.length = serializar(pkgHandshake.payload, "%s",configuracion.nombreDeInstancia);
 	bytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgHandshake, logger,"Enviando Handshake...");
-	log_debug(logger,"Se enviaron &d bytes", bytesEnviados);
+	log_debug(logger,"Se enviaron %d bytes", bytesEnviados);
 
-	char * sPayloadRespuesta = (char *)malloc(50);
-	char * mensajeRespuesta = (char *)malloc(50);
+	char * sPayloadRespuesta = (char *)malloc(MAX_BUFFER);
+	memset(sPayloadRespuesta,0,MAX_BUFFER);
+
 	tMensaje tipoMensaje;
-	recibirPaquete(configuracion.fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo respuesta de coordinador...");
+	bytesLeidos = recibirPaquete(configuracion.fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo respuesta de coordinador...");
 	//  El tipoMensaje es anecdótico en este punto, porque sabemos que va a ser C_HANDSHAKE
-	log_debug(logger,"Mensaje recibido del coordinador tipo %d (Handshake = %d)",tipoMensaje,C_HANDSHAKE);
-	deserializar(sPayloadRespuesta, "%d;%d;%s", &(configuracion.cantidadEntradas), &(configuracion.tamanioEntrada), mensajeRespuesta);
+	log_debug(logger,"Mensaje recibido del coordinador tipo %d (Handshake = %d) de %d bytes.",tipoMensaje,C_HANDSHAKE, bytesLeidos);
+
+	char * mensajeRespuesta = (char *)malloc(60);
+	memset(mensajeRespuesta,0,60);
+	*clavesSincronizadas = realloc(*clavesSincronizadas, bytesLeidos);
+	memset(*clavesSincronizadas,0,bytesLeidos);
+
+	deserializar(sPayloadRespuesta, "%d%d%s%s", &(configuracion.cantidadEntradas), &(configuracion.tamanioEntrada), mensajeRespuesta, *clavesSincronizadas);
 	free(sPayloadRespuesta);
 
 	if (!(configuracion.cantidadEntradas * configuracion.tamanioEntrada)) {
@@ -41,6 +49,7 @@ int conectarACoordinador() {
 		mostrarTexto("ERROR: Handshake no completado con el Coordinador");
 		mostrarTexto(mensajeRespuesta);
 		free(mensajeRespuesta);
+		free(*clavesSincronizadas);
 		return 0;
 	}
 	log_info(logger,"Handshake exitoso con el Coordinador: %s", mensajeRespuesta);
@@ -49,7 +58,30 @@ int conectarACoordinador() {
 	return 1;
 }
 
-char * sincronizarClavesConCoordinador() {
+void enviarMensajeOK() {
+	// TODO revisar esta función y dejarla linda
+
+	tPaquete pkgSetOk;
+	int bytesEnviados;
+	char* lineaOk = malloc(5);
+	strcpy(lineaOk, "OK");
+
+	pkgSetOk.type = I_RESULTADO_SET;
+	pkgSetOk.length = serializar(pkgSetOk.payload, "%s", lineaOk);
+
+	log_debug(logger, "Se envia %s al Planificador", lineaOk);
+	bytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgSetOk, logger, "Se envia OK al Planificador");
+	log_debug(logger, "Se envian %d bytes", bytesEnviados);
+	free(lineaOk);
+}
+
+
+/* **************************************************************************** */
+/* **************************************************************************** */
+/* **************************************************************************** */
+/* **************************************************************************** */
+
+char * deprecated_sincronizarClavesConCoordinador() {
 	/* Le pide al coordinador la lista de claves, por si se está reconectando.
 	 * No sale de la función hasta que recibe la respuesta, por lo que se podría quedar acá. */
 
@@ -62,7 +94,7 @@ char * sincronizarClavesConCoordinador() {
 	pkgSincronizar.length = serializar(pkgSincronizar.payload, "", NULL);
 
 	bytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgSincronizar, logger,"Enviando pedido de sincronizar claves...");
-	log_debug(logger,"Se enviaron &d bytes", bytesEnviados);
+	log_debug(logger,"Se enviaron %d bytes", bytesEnviados);
 
 	char * sPayloadRespuesta = (char *)malloc(configuracion.cantidadEntradas * MAX_LONG_CLAVE);
 	memset(sPayloadRespuesta,0,configuracion.cantidadEntradas * MAX_LONG_CLAVE);
@@ -82,21 +114,4 @@ char * sincronizarClavesConCoordinador() {
 		log_info(logger,"Listado de entradas recibido: %s", mensajeRespuesta);
 
 	return mensajeRespuesta;
-}
-
-void enviarMensajeOK() {
-	// TODO revisar esta función y dejarla linda
-
-	tPaquete pkgSetOk;
-	int bytesEnviados;
-	char* lineaOk = malloc(5);
-	strcpy(lineaOk, "OK");
-
-	pkgSetOk.type = I_RESULTADO_SET;
-	pkgSetOk.length = serializar(pkgSetOk.payload, "%s", lineaOk);
-
-	log_debug(logger, "Se envia %s al Planificador", lineaOk);
-	bytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgSetOk, logger, "Se envia OK al Planificador");
-	log_debug(logger, "Se envian %d bytes", bytesEnviados);
-	free(lineaOk);
 }

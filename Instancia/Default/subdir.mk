@@ -9,8 +9,7 @@ C_SRCS += \
 ../CoreInstancia.c \
 ../EntradasInstancia.c \
 ../Instancia.c \
-../PantallaInstancia.c \
-../algoritmosReemplazo.c 
+../PantallaInstancia.c 
 
 OBJS += \
 ./ComunicacionesInstancia.o \
@@ -18,8 +17,7 @@ OBJS += \
 ./CoreInstancia.o \
 ./EntradasInstancia.o \
 ./Instancia.o \
-./PantallaInstancia.o \
-./algoritmosReemplazo.o 
+./PantallaInstancia.o 
 
 C_DEPS += \
 ./ComunicacionesInstancia.d \
@@ -27,8 +25,7 @@ C_DEPS += \
 ./CoreInstancia.d \
 ./EntradasInstancia.d \
 ./Instancia.d \
-./PantallaInstancia.d \
-./algoritmosReemplazo.d 
+./PantallaInstancia.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

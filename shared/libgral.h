@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 
 #define STDIN 0
+#define MAX_LONG_CLAVE 40+1
 
 void retardoSegundos(int);
 void retardoMilisegundos(int);
