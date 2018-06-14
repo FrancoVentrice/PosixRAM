@@ -87,6 +87,7 @@ void accionarFrenteAConsulta(char *);
 void evaluarEstadoDeClave(char *);
 void enviarOperacionAInstancia(void);
 void recibirOperacionDeInstancia(void);
+char *buscarClavesPorInstancia(char *nombreInstancia);
 
 //instancia
 void instanciaDestroyer(t_instancia *);

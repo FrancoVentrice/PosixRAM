@@ -92,6 +92,7 @@ bool vivo; //se usa para repetir el ciclo de trabajo y eventualmente finalizar e
 bool aptoEjecucion; //esta en true siempre y cuando haya algun ESI apto de ejecucion
 bool planificacionNecesaria; //se usa para saber si un evento gatillo una necesidad de planificar
 pthread_mutex_t mutexColaDeListos;
+pthread_mutex_t mutexEspera;
 tConsultaCoordinador* consultaCoordinador;
 int nId;
 
@@ -104,6 +105,7 @@ t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada.
 
 void cicloPrincipal();
 void cicloDeSentencia();
+void evaluarNecesidadDeEspera();
 void enviarOrdenDeEjecucion();
 int cargarConfiguracion();
 int configValida(t_config *);

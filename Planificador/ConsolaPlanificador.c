@@ -109,19 +109,23 @@ void exitPlanificador() {
 }
 
 void instruccionDestroyer(t_instruccion_consola *instruccion) {
-	free(instruccion->primerParametro);
-	free(instruccion->segundoParametro);
-	free(instruccion);
+	if (instruccion->primerParametro != NULL) {
+		free(instruccion->primerParametro);
+	}
+	if (instruccion->segundoParametro != NULL) {
+		free(instruccion->segundoParametro);
+	}
+	if (instruccion != NULL) {
+		free(instruccion);
+	}
 }
 
 void newInstruccion(int instruccion, char *primerParametro, char *segundoParametro) {
 	t_instruccion_consola *instruccionConsola = malloc(sizeof(t_instruccion_consola));
 	instruccionConsola->instruccion = instruccion;
-	if (primerParametro) {
-		instruccionConsola->primerParametro = primerParametro;
-	}
-	if (segundoParametro) {
-		instruccionConsola->segundoParametro = segundoParametro;
-	}
+	instruccionConsola->primerParametro = primerParametro;
+	instruccionConsola->segundoParametro = segundoParametro;
 	list_add(bufferConsola, instruccionConsola);
+	pthread_mutex_unlock(&mutexEspera);
+	log_info(logger, "mutex unlock en new instruccion");
 }

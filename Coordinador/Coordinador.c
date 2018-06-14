@@ -74,10 +74,9 @@ void escucharConexiones() {
 					// instancia aceptada
 					if (existeInstanciaDesconectadaConMismoNombre(nombreInstancia)) {
 						// es la misma instancia que se está reconectndo --> se acepta y se envía la lista de claves
-						// TODO buscar la lista de claves y pasarle
+						char *clavesSincro = buscarClavesPorInstancia(nombreInstancia);
 						pkgHandshake.length = serializar(pkgHandshake.payload, "%d%d%s%s", configuracion->cantidadDeEntradas, configuracion->tamanioDeEntrada,
-								"Instancia reconectada. Bienvenida nuevamente!",
-								"clave_nueva;clave_uno;clave_mas_de_100;Nuevo_archivo_con_Clave_de_Cuarenta_byte;clave1;");
+								"Instancia reconectada. Bienvenida nuevamente!", clavesSincro);
 						instanciaReconectada(nombreInstancia, iSocketComunicacion);
 					}
 					else {
@@ -587,4 +586,15 @@ void evaluarEstadoDeClave(char *claveConsultada) {
 	log_info(logger,"Se envia estado de clave %s, valor %s, instancia %s", claveConsultada, valor, nombreInstancia);
 	int bytesEnviados = enviarPaquete(socketPlanificador, &pkgEstadoClave, logger, "Se envia estado de clave");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+}
+
+char *buscarClavesPorInstancia(char *nombreInstancia) {
+	char *cadena = string_new();
+	void agregarClaveDeInstancia(char *clave, t_instancia *instancia) {
+		if (strcmp(nombreInstancia, instancia->nombre) == 0) {
+			string_append_with_format(&cadena, "%s;", clave);
+		}
+	}
+	dictionary_iterator(diccionarioClaves, buscarClavesPorInstancia);
+	return cadena;
 }

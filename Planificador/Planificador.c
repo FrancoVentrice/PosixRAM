@@ -33,6 +33,8 @@ void atenderESI(int iSocketComunicacion) {
 
 	log_info(logger,"Se agrega ESI a cola de listos: %s con socket: %d", esiNuevo->id, esiNuevo->socket);
 	agregarEsiAColaDeListos(esiNuevo);
+	pthread_mutex_unlock(&mutexEspera);
+	log_info(logger, "mutex unlock en agregar ESI a cola de listos");
 }
 
 int main(int argn, char *argv[]) {
@@ -62,6 +64,8 @@ void test() {
 //representa un ciclo en el cual atiende los comandos de consola, planifica (si es necesario) y avisa al ESI que ejecute
 void cicloPrincipal() {
 	while(vivo) {
+		pthread_mutex_lock(&mutexEspera);
+		log_info(logger, "mutex lock en principio de iteracion de ciclo");
 		ejecutarComandosConsola();
 		if (ejecutando && aptoEjecucion) {
 			if (planificacionNecesaria) {
@@ -69,6 +73,7 @@ void cicloPrincipal() {
 			}
 			cicloDeSentencia();
 		}
+		evaluarNecesidadDeEspera();
 	}
 }
 
@@ -113,6 +118,17 @@ void cicloDeSentencia() {
 		} else  {
 			log_info(logger, "multiplexar devolvio negativo");
 		}
+	}
+}
+
+void evaluarNecesidadDeEspera() {
+	log_info(logger, "A punto de evaluar la necesidad de espera");
+	bool parado = (esiEnEjecucion == NULL || esiEnEjecucion->bloqueado)
+			&& (colaDeListos->elements_count == 0 || list_all_satisfy(colaDeListos, evaluarBloqueoDeEsi));
+	log_info(logger, "parado? %d", parado);
+	if (!parado) {
+		pthread_mutex_unlock(&mutexEspera);
+		log_info(logger, "mutex unlock en evaluar necesidad de espera");
 	}
 }
 
@@ -590,6 +606,7 @@ t_esi *esiNew(int socket) {
 	esi->clavesTomadas = list_create();
 	esi->estimacion = configuracion->estimacionInicial;
 	esi->socket = socket;
+	esi->bloqueado = false;
 	return esi;
 }
 
