@@ -261,46 +261,34 @@ void accionarFrenteAConsulta(char * respuesta) {
 }
 
 void enviarOperacionAInstancia() {
-	//aca se envia la operacion a ejecutar a la instancia elegida
-	//datos utiles:
-	//
-	//instanciaElegida->socket para enviar el mensaje
-	//
-	//operacion->operacion, operacion->clave y operacion->valor
-
 	tPaquete pkgOperacion;
-
 	int bytesEnviados;
-	pkgOperacion.type = I_RESULTADO_SET;
+	if (operacion->operacion == OPERACION_SET) {
+		pkgOperacion.type = C_EJECUTAR_SET;
+		pkgOperacion.length = serializar(pkgOperacion.payload, "%s%s", operacion->clave,operacion->valor);
+	} else if (operacion->operacion == OPERACION_STORE) {
+		pkgOperacion.type = C_EJECUTAR_STORE;
+		pkgOperacion.length = serializar(pkgOperacion.payload, "%s", operacion->clave);
+	}
 
-	pkgOperacion.length = serializar(pkgOperacion.payload, "%s%s", operacion->clave,operacion->valor);
-
-	bytesEnviados = enviarPaquete(instanciaElegida->socket, &pkgOperacion,
-			logger, "Se envia OK al Planificador");
-	log_info(logger, "Se envian %d bytes", bytesEnviados);
-
+	bytesEnviados = enviarPaquete(instanciaElegida->socket, &pkgOperacion, logger, "Se operacion a instancia");
+	log_info(logger, "Se envian %d bytes a instancia con socket %d", bytesEnviados, instanciaElegida->socket);
 }
 
 void recibirOperacionDeInstancia() {
-	//aca se recibe el resultado de la operacion
-	//
-	//
 	//tiene que contener tambien la cantidad de entradas disponibles que le quedan a la instancia
 	//instanciaElegida->cantidadDeEntradasDisponibles = algo como "respuesta->entradasDisponibles"
-
-	//if (OK) informarResultadoOperacionOk();
 	char* resultadoOkSet=malloc(5);
 	char* respuesta=malloc(5);
 	tMensaje tipoMensajeEsi;
-
-
-	int bytesRecibidos = recibirPaquete(socketPlanificador,
-			&tipoMensajeEsi, &resultadoOkSet, logger, "Respuesta Consulta");
+	int bytesRecibidos = recibirPaquete(instanciaElegida->socket, &tipoMensajeEsi, &resultadoOkSet, logger, "Respuesta instancia");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-
 	deserializar(resultadoOkSet, "%s", respuesta);
-	log_info(logger, "Respuesta Consulta Planificador: %s", respuesta);
+	log_info(logger, "Respuesta instancia: %s", respuesta);
 
+	if (strcmp(respuesta, "OK") == 0) {
+		informarResultadoOperacionOk(operacion->remitente);
+	}
 }
 
 void escribirLogDeOperaciones() {
@@ -320,7 +308,7 @@ void escribirLogDeOperaciones() {
 	free(stringOperacion);
 }
 
-void informarResultadoOperacionOk(int socketEsi){
+void informarResultadoOperacionOk(int socketEsi) {
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));

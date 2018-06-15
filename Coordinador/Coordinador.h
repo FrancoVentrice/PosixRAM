@@ -82,6 +82,7 @@ t_instancia * elegirInstanciaLSU();
 t_instancia * elegirInstanciaEL(bool consulta);
 t_instancia * elegirInstanciaKE();
 void escribirLogDeOperaciones();
+void informarResultadoOperacionOk(int);
 char * recibirRespuestaConsulta(char *);
 void accionarFrenteAConsulta(char *);
 void evaluarEstadoDeClave(char *);
