@@ -54,8 +54,6 @@ void iniciarConexiones() {
 	tRespuestaPlanificador *respuestaPlanificador = malloc(
 			sizeof(tRespuestaPlanificador));
 
-	char* respuestaOperacion = malloc(10);
-
 	//COnexion al Coordinador
 	configuracion->socketCoordinador = connectToServer(
 			configuracion->ipCoordinador, configuracion->puertoCoordinador,
@@ -208,25 +206,17 @@ int leerLinea() {
 			switch (lineaParseada.keyword) {
 			case GET:
 				operacion->operacion = OPERACION_GET;
-				operacion->clave = malloc(
-						string_length(lineaParseada.argumentos.GET.clave) + 1);
-				strcpy(operacion->clave, lineaParseada.argumentos.GET.clave);
+				operacion->clave = strdup(lineaParseada.argumentos.GET.clave);
 				break;
 			case SET:
 				operacion->operacion = OPERACION_SET;
-				operacion->clave = malloc(
-						string_length(lineaParseada.argumentos.SET.clave) + 1);
-				strcpy(operacion->clave, lineaParseada.argumentos.SET.clave);
-				operacion->valor = malloc(
-						string_length(lineaParseada.argumentos.SET.valor) + 1);
-				strcpy(operacion->valor, lineaParseada.argumentos.SET.valor);
+				operacion->clave = strdup(lineaParseada.argumentos.SET.clave);
+				operacion->valor = strdup(lineaParseada.argumentos.SET.valor);
 
 				break;
 			case STORE:
 				operacion->operacion = OPERACION_STORE;
-				operacion->clave = malloc(
-						string_length(lineaParseada.argumentos.STORE.clave) + 1);
-				strcpy(operacion->clave, lineaParseada.argumentos.STORE.clave);
+				operacion->clave = strdup(lineaParseada.argumentos.STORE.clave);
 
 				break;
 			default:
@@ -284,7 +274,7 @@ void enviarOperacion() {
 		log_info(logger, "Se envian %d bytes", bytesEnviados);
 
 	} else if (operacion->operacion == OPERACION_SET) {
-		pkgSentencia.type = E_SENTENCIA_SET;  //
+		pkgSentencia.type = E_SENTENCIA_SET;
 
 		pkgSentencia.length = serializar(pkgSentencia.payload, "%s%s",
 				operacion->clave, operacion->valor);
