@@ -223,8 +223,6 @@ void consultarPlanificador() {
 		log_info(logger, "Se envian %d bytes\n", enviados);
 		break;
 	}
-
-
 }
 
 char * recibirRespuestaConsulta(char *respuesta) {
@@ -592,4 +590,32 @@ char *buscarClavesPorInstancia(char *nombreInstancia) {
 	}
 	dictionary_iterator(diccionarioClaves, buscarClavesPorInstancia);
 	return cadena;
+}
+
+void ejecutarCompactacion() {
+	//armo el set con los sockets de las instancias que tienen que compactar
+	int socketMaximo = 0;
+	fd_set setInstanciasCompactadoras;
+	t_list *listaDeSockets = list_create();
+	FD_ZERO(&setInstanciasCompactadoras);
+	void armarSetDeSockets(t_instancia *instancia) {
+		//Para las instancias que no pertenezcan al ciclo de la operacion
+		if (instancia->socket != operacion->remitente && instancia->socket != -1) {
+			FD_SET(instancia->socket, &setInstanciasCompactadoras);
+			list_add(listaDeSockets, instancia->socket);
+			if (instancia->socket > socketMaximo) {
+				socketMaximo = instancia->socket;
+			}
+		}
+	}
+	list_iterate(instancias, armarSetDeSockets);
+
+	//siguiente paso: enviar orden de compactacion a las instancias
+	//preparo el paquete de orden de compactacion
+	char *ordenCompactacion = strdup("COMPACTAR");
+	tPaquete pkgCompactacion;
+	pkgCompactacion.type = C_EJECUTAR_COMPACTACION;
+	pkgCompactacion.length = serializar(pkgCompactacion.payload, "%s", ordenCompactacion);
+
+	//siguiente paso: multiplexar set de sockets
 }

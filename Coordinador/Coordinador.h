@@ -73,6 +73,7 @@ void inicializarSockets();
 void levantarHiloEscucha();
 void escucharConexiones();
 void cicloPrincipal();
+void consultarPlanificador();
 void limpiarConfiguracion();
 void finalizar(int);
 int configValida(t_config *);
@@ -90,7 +91,7 @@ void accionarFrenteAConsulta(char *);
 void evaluarEstadoDeClave(char *);
 void enviarOperacionAInstancia(void);
 void recibirOperacionDeInstancia(void);
-char *buscarClavesPorInstancia(char *nombreInstancia);
+char * buscarClavesPorInstancia(char *nombreInstancia);
 
 //instancia
 void instanciaDestroyer(t_instancia *);
