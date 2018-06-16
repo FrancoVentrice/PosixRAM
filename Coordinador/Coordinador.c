@@ -250,12 +250,12 @@ void accionarFrenteAConsulta(char * respuesta) {
 			recibirOperacionDeInstancia();
 		} else {
 			registrarClaveAgregadaAInstancia();
-			informarResultadoOperacionOk(operacion->remitente);
+			informarResultadoOperacionOk();
 		}
 	} else if (strcmp(respuesta, "BLOQUEADO") == 0) {
-		informarResultadoOperacionBloqueado(operacion->remitente);
+		informarResultadoOperacionBloqueado();
 	} else if (strcmp(respuesta, "ERROR") == 0) {
-		informarResultadoOperacionError(operacion->remitente);
+		informarResultadoOperacionError();
 	}
 	free(respuesta);
 }
@@ -278,12 +278,19 @@ void enviarOperacionAInstancia() {
 void recibirOperacionDeInstancia() {
 	//tiene que contener tambien la cantidad de entradas disponibles que le quedan a la instancia
 	//instanciaElegida->cantidadDeEntradasDisponibles = algo como "respuesta->entradasDisponibles"
-	char* resultadoOkSet=malloc(5);
-	char* respuesta=malloc(5);
+	char* resultadoOkSet=malloc(50);
+	char* respuesta=malloc(50);
 	tMensaje tipoMensajeEsi;
 	int bytesRecibidos = recibirPaquete(instanciaElegida->socket, &tipoMensajeEsi, &resultadoOkSet, logger, "Respuesta instancia");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 	deserializar(resultadoOkSet, "%s", respuesta);
+	//####### Futura implementacion #######
+	//int entradasLibres = 0;
+	//char* clave = malloc(41);
+	//char charCompactacion;
+	//deserializar(resultadoOkSet, "%d%s%c", entradasLibres, clave, compactacion);
+	//int compactacion = atoi(charCompactacion);
+	//#####################################
 	log_info(logger, "Respuesta instancia: %s", respuesta);
 
 	if (strcmp(respuesta, "OK") == 0) {
@@ -308,7 +315,7 @@ void escribirLogDeOperaciones() {
 	free(stringOperacion);
 }
 
-void informarResultadoOperacionOk(int socketEsi) {
+void informarResultadoOperacionOk() {
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
@@ -320,7 +327,7 @@ void informarResultadoOperacionOk(int socketEsi) {
 	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
 
 	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(socketEsi, &pkgHandshake2, logger,
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger,
 			"Se envia respuesta al ESI");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
@@ -333,7 +340,7 @@ void informarResultadoOperacionOk(int socketEsi) {
 
 }
 
-void informarResultadoOperacionBloqueado(int socketEsi){
+void informarResultadoOperacionBloqueado() {
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
@@ -345,7 +352,7 @@ void informarResultadoOperacionBloqueado(int socketEsi){
 	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
 
 	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(socketEsi, &pkgHandshake2, logger,
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger,
 			"Se envia respuesta al ESI");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
@@ -358,7 +365,7 @@ void informarResultadoOperacionBloqueado(int socketEsi){
 
 }
 
-void informarResultadoOperacionError(int socketEsi){
+void informarResultadoOperacionError() {
 	//ENVIO RESPUESTA AL ESI
 	int bytesEnviados;
 	tSolicitudESI * resultadoOperacion = malloc(sizeof(tSolicitudESI));
@@ -370,7 +377,7 @@ void informarResultadoOperacionError(int socketEsi){
 	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
 
 	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(socketEsi, &pkgHandshake2, logger,
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger,
 			"Se envia respuesta al ESI");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 

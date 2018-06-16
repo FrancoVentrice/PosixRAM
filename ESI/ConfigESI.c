@@ -45,7 +45,6 @@ int cargarConfiguracion() {
 void limpiarConfiguracion() {
 	fclose(archivo);
 	free(lineptr);
-	free(n);
 	free(operacion);
 	free(configuracion);
 	config_destroy(fd_configuracion);

@@ -112,11 +112,8 @@ void cicloDeSentencia() {
 				esiDesconectado(socketMultiplexado);
 				if (!esiEnEjecucion) {
 					sentenciaActiva = false;
-					log_info(logger, "sentencia activa? %d", sentenciaActiva);
 				}
 			}
-		} else  {
-			log_info(logger, "multiplexar devolvio negativo");
 		}
 	}
 }
@@ -361,9 +358,7 @@ void evaluarConsultaDeOperacion() {
 			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
 				enviarOperacionValida();
 			} else {
-				enviarOperacionInvalidaBloqueo();
-				bloquearESIConClave(esiEnEjecucion, clave);
-				planificacionNecesaria = true;
+				enviarOperacionInvalidaError();
 			}
 		} else {
 			enviarOperacionInvalidaError();
@@ -376,9 +371,7 @@ void evaluarConsultaDeOperacion() {
 				enviarOperacionValida();
 				liberarClave(clave);
 			} else {
-				enviarOperacionInvalidaBloqueo();
-				bloquearESIConClave(esiEnEjecucion, clave);
-				planificacionNecesaria = true;
+				enviarOperacionInvalidaError();
 			}
 		} else {
 			enviarOperacionInvalidaError();
