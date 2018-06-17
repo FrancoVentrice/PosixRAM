@@ -269,7 +269,7 @@ void enviarOperacionAInstancia() {
 		pkgOperacion.length = serializar(pkgOperacion.payload, "%s", operacion->clave);
 	}
 
-	bytesEnviados = enviarPaquete(instanciaElegida->socket, &pkgOperacion, logger, "Se operacion a instancia");
+	bytesEnviados = enviarPaquete(instanciaElegida->socket, &pkgOperacion, logger, "Se envia operacion a instancia");
 	log_info(logger, "Se envian %d bytes a instancia con socket %d", bytesEnviados, instanciaElegida->socket);
 }
 
@@ -314,78 +314,75 @@ void escribirLogDeOperaciones() {
 }
 
 void informarResultadoOperacionOk() {
-	//ENVIO RESPUESTA AL ESI
+	//aplico retardo!
+	retardoMilisegundos(configuracion->retardo);
+
+	//preparo paquete
 	int bytesEnviados;
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
 	resultadoOperacion->mensaje = malloc(100);
 	strcpy(resultadoOperacion->mensaje, "OK");
 	tPaquete pkgHandshake2;
 	pkgHandshake2.type = C_RESULTADO_OPERACION;
-
 	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
 
+	//envio respuesta al ESI
 	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger,
-			"Se envia respuesta al ESI");
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger, "Se envia respuesta al ESI");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
-	//ENVIO RESPUESTA AL PLANIFICADOR
-
+	//envio respuesta al planificador
 	log_info(logger,"Se envia respuesta al Planificador");
-	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger,
-			"Se envia respuesta al Planificador");
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger, "Se envia respuesta al Planificador");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
-
 }
 
 void informarResultadoOperacionBloqueado() {
-	//ENVIO RESPUESTA AL ESI
+	//aplico retardo!
+	retardoMilisegundos(configuracion->retardo);
+
+	//preparo paquete
 	int bytesEnviados;
 	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
 	resultadoOperacion->mensaje = malloc(100);
 	strcpy(resultadoOperacion->mensaje, "BLOQUEADO");
 	tPaquete pkgHandshake2;
 	pkgHandshake2.type = C_RESULTADO_OPERACION;
-
 	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
 
+	//envio respuesta al ESI
 	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger,
-			"Se envia respuesta al ESI");
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger, "Se envia respuesta al ESI");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
-	//ENVIO RESPUESTA AL PLANIFICADOR
-
+	//envio respuesta al planificador
 	log_info(logger,"Se envia respuesta al Planificador");
-	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger,
-			"Se envia respuesta al Planificador");
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger, "Se envia respuesta al Planificador");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
-
 }
 
 void informarResultadoOperacionError() {
-	//ENVIO RESPUESTA AL ESI
+	//aplico retardo!
+	retardoMilisegundos(configuracion->retardo);
+
+	//preparo paquete
 	int bytesEnviados;
 	tSolicitudESI * resultadoOperacion = malloc(sizeof(tSolicitudESI));
 	resultadoOperacion->mensaje = malloc(100);
 	strcpy(resultadoOperacion->mensaje, "ERROR");
 	tPaquete pkgHandshake2;
 	pkgHandshake2.type = C_RESULTADO_OPERACION;
-
 	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
 
+	//envio respuesta al ESI
 	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger,
-			"Se envia respuesta al ESI");
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger, "Se envia respuesta al ESI");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
 
-	//ENVIO RESPUESTA AL PLANIFICADOR
-
+	//envio respuesta al planificador
 	log_info(logger,"Se envia respuesta al Planificador");
-	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger,
-			"Se envia respuesta al Planificador");
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger, "Se envia respuesta al Planificador");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
-
 }
 
 //se usa para elegir la instancia en la cual ejecutar la operacion
@@ -596,13 +593,13 @@ void ejecutarCompactacion() {
 	//armo el set con los sockets de las instancias que tienen que compactar
 	int socketMaximo = 0;
 	fd_set setInstanciasCompactadoras;
-	t_list *listaDeSockets = list_create();
+	t_list *instanciasACompactar = list_create();
 	FD_ZERO(&setInstanciasCompactadoras);
 	void armarSetDeSockets(t_instancia *instancia) {
 		//Para las instancias que no pertenezcan al ciclo de la operacion
-		if (instancia->socket != operacion->remitente && instancia->socket != -1) {
+		if (instancia->socket != instanciaElegida->socket && instancia->socket != -1) {
 			FD_SET(instancia->socket, &setInstanciasCompactadoras);
-			list_add(listaDeSockets, instancia->socket);
+			list_add(instanciasACompactar, instancia);
 			if (instancia->socket > socketMaximo) {
 				socketMaximo = instancia->socket;
 			}
@@ -610,12 +607,49 @@ void ejecutarCompactacion() {
 	}
 	list_iterate(instancias, armarSetDeSockets);
 
-	//siguiente paso: enviar orden de compactacion a las instancias
 	//preparo el paquete de orden de compactacion
 	char *ordenCompactacion = strdup("COMPACTAR");
 	tPaquete pkgCompactacion;
 	pkgCompactacion.type = C_EJECUTAR_COMPACTACION;
 	pkgCompactacion.length = serializar(pkgCompactacion.payload, "%s", ordenCompactacion);
 
-	//siguiente paso: multiplexar set de sockets
+	//envio el paquete a las instancias involucradas
+	int i;
+	for (i = 0; i < instanciasACompactar->elements_count; i++) {
+		t_instancia *instanciaReceptora = list_get(instanciasACompactar, i);
+		enviarPaquete(instanciaReceptora->socket, &pkgCompactacion, logger, "Se envia orden de compactacion a instancia");
+		log_info(logger, "Se envia a la instancia %s una orden de compactacion", instanciaReceptora->nombre);
+	}
+	free(ordenCompactacion);
+
+	//funcion utilitaria
+	void dejarDeEsperarInstancia(int socketInstancia) {
+		int j;
+		for (j = 0; j < instanciasACompactar->elements_count; j++) {
+			t_instancia *instanciaARemover = list_get(instanciasACompactar, j);
+			if (instanciaARemover->socket == socketInstancia) {
+				list_remove(instanciasACompactar, j);
+				return;
+			}
+		}
+	}
+
+	//espero respuestas
+	fd_set temp;
+	tMensaje tipoMensaje;
+	char *buffer = malloc(100);
+	while (instanciasACompactar->elements_count > 0) {
+		int socketMultiplexado = multiplexar(&setInstanciasCompactadoras, &temp, &socketMaximo, &tipoMensaje, &buffer, logger);
+		if (socketMultiplexado >= 0) {
+			switch (tipoMensaje) {
+			case I_COMPACTACION_TERMINADA:
+				dejarDeEsperarInstancia(socketMultiplexado);
+				break;
+			case DESCONEXION:
+				validarDesconexionDeInstancia(socketMultiplexado);
+				dejarDeEsperarInstancia(socketMultiplexado);
+				break;
+			}
+		}
+	}
 }
