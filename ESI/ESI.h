@@ -46,6 +46,8 @@ typedef struct{
 	char* valor;
 } t_operacionESI;
 /* ******************************************** */
+/* ******************************************** */
+
 
 t_configuracion * configuracion;
 t_config * fd_configuracion;
@@ -59,33 +61,19 @@ bool lecturaRechazada; //cuando una operacion es rechazada (ej: un get de un rec
 bool ejecucion;
 char* idESI;
 
-/* estructura para los valores de la línea de comandos */
-typedef struct {
-	char *archivoConf;
-	int debugMode; // 1 = ON . 0 = OFF (default)
-	int logPantalla; // 1 = ON . 0 = OFF (default)
-} t_commandLineParameters;
-
-//Conexiones
-void iniciarConexiones();
-void finalizar(int);
-void esperarOrdenDeEjecucion();
-tRespuestaCoordinador *recibirResultadoOperacion();
-
-//Configuración
 int cargarConfiguracion();
 void limpiarConfiguracion();
-void cargarArchivo(char *);
 void cicloPrincipal();
+void finalizar(int);
 int configValida(t_config *);
-int procesarComandos(char **);
-t_commandLineParameters parametrosEntrada;
-
-//Proceso de Parseo
+void iniciarConexiones();
+void cargarArchivo(char *);
 void ordenRecibida();
 int leerLinea();
-void enviarLineaOK();
 void enviarOperacion();
 void enviarEsiFinalizado();
+void esperarOrdenDeEjecucion();
+void enviarLineaOK();
+tRespuestaCoordinador * recibirResultadoOperacion();
 
 #endif /* ESI_H_ */

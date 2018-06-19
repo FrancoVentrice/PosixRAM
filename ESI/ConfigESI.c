@@ -1,4 +1,4 @@
-#include "ESI.h"
+#include"ESI.h"
 
 int configValida(t_config* fd_configuracion) {
 	return (config_has_property(fd_configuracion, "IP_COORDINADOR")
@@ -49,19 +49,4 @@ void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
 	log_destroy(logger);
-}
-
-int procesarComandos (char *argv[]) {
-	/* Procesa los parámetros de línea de comandos */
-
-	parametrosEntrada.debugMode = 0;
-	parametrosEntrada.logPantalla = 0;
-
-	parametrosEntrada.archivoConf = (char *)malloc(15);
-	memset(parametrosEntrada.archivoConf, 0, 15);
-	strcpy(parametrosEntrada.archivoConf,"ESI.conf");
-
-	//Verificar posibles casos al procesar por linea de comando el archivo configuración
-
-	return 1;
 }
