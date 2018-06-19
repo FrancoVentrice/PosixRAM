@@ -54,7 +54,7 @@ void iniciarConexiones() {
 	tRespuestaPlanificador *respuestaPlanificador = malloc(
 			sizeof(tRespuestaPlanificador));
 
-	//COnexion al Coordinador
+	//Conexion al Coordinador
 	configuracion->socketCoordinador = connectToServer(
 			configuracion->ipCoordinador, configuracion->puertoCoordinador,
 			logger);
@@ -161,11 +161,16 @@ tRespuestaCoordinador * recibirResultadoOperacion() {
 }
 
 void cargarArchivo(char *path) {
+
 	archivo = fopen(path, "r");
+
 	if (archivo == NULL) {
+
 		log_error(logger, "Error al abrir el archivo: %s", path);
 		finalizar(EXIT_FAILURE);
 	}
+//Establecer comportamiento cuando el archivo es legible por el ESI
+
 }
 
 //este metodo se ejecuta cuando se recibe la orden de lectura del planificador
