@@ -103,6 +103,8 @@ t_list * colaDeFinalizados; //lista de t_esi. es la cola de esis finalizados
 t_dictionary * diccionarioBloqueados; //diccionario de listas de esis. key: clave, value: cola de bloqueados por clave
 t_dictionary * diccionarioClavesTomadas; //diccionario de esis por clave tomada. key: clave, value: esi que la tomo
 
+void inicializarSockets();
+void levantarHiloEscuchaESIs();
 void cicloPrincipal();
 void cicloDeSentencia();
 void evaluarNecesidadDeEspera();
@@ -116,6 +118,11 @@ void consola();
 void realizarHandshakeCoordinador();
 void escucharConexionesESIs();
 void agregarEsiAColaDeListos(t_esi *);
+void recibirResultadoOperacion(char *);
+void enviarOperacionValida();
+void enviarOperacionInvalidaBloqueo();
+void enviarOperacionInvalidaError();
+void evaluarConsultaDeOperacion();
 void planificar();
 void bloquearESIConClave(t_esi *, char *);
 void esiTomaClave(t_esi *, char *);
@@ -129,6 +136,7 @@ t_esi * encontrarEsiPorId(t_list *, char *);
 int getIndexDeEsi(t_list *, t_esi *);
 void analizarDeadlock();
 void recibirConsultaOperacion(tMensaje, char *);
+void listarEsisPorRecurso(char *);
 void statusDeClave(char *);
 
 //metodos de ESI

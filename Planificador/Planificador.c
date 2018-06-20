@@ -680,6 +680,9 @@ void ejecutarComandosConsola() {
 			break;
 		case INSTRUCCION_DESBLOQUEAR:
 			liberarPrimerProcesoBloqueado(instruccion->primerParametro);
+			if (!dictionary_has_key(diccionarioBloqueados, instruccion->primerParametro)) {
+				liberarClave(instruccion->primerParametro);
+			}
 			break;
 		case INSTRUCCION_TERMINAR:
 			abortarEsiPorId(instruccion->primerParametro);
@@ -707,18 +710,18 @@ void bloquearEsiPorConsola(char *clave, char *id) {
 
 void abortarEsiPorId(char *id) {
 	log_info(logger, "Abortando ESI %s", id);
-	t_esi *esi;
+	t_esi *esi = NULL;
 	if (id == esiEnEjecucion->id) {
 		liberarClavesDeEsi(esiEnEjecucion);
 		esiDestroyer(esiEnEjecucion);
 		planificacionNecesaria = true;
 		esiEnEjecucion = NULL;
-	} else if (esi = encontrarEsiPorId(colaDeListos, id)) {
+	} else if ((esi = encontrarEsiPorId(colaDeListos, id)) != NULL) {
 		liberarClavesDeEsi(esi);
 		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
 	} else {
 	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
-		if (esi = encontrarEsiPorId(bloqueados, id)) {
+		if ((esi = encontrarEsiPorId(bloqueados, id)) != NULL) {
 			liberarClavesDeEsi(esi);
 			list_remove_and_destroy_element(bloqueados, getIndexDeEsi(bloqueados, esi), esiDestroyer);
 		}
@@ -759,19 +762,19 @@ t_esi * encontrarEsiPorSocket(t_list *lista, int socket) {
 
 void esiDesconectado(int socket) {
 	log_info(logger, "Abortando ESI de socket %d", socket);
-	t_esi *esi;
+	t_esi *esi = NULL;
 	if (socket == esiEnEjecucion->socket) {
 		log_info(logger, "Encontrado, esi en ejecucion va a ser abortado");
 		liberarClavesDeEsi(esiEnEjecucion);
 		esiDestroyer(esiEnEjecucion);
 		planificacionNecesaria = true;
 		esiEnEjecucion = NULL;
-	} else if (esi = encontrarEsiPorSocket(colaDeListos, socket)) {
+	} else if ((esi = encontrarEsiPorSocket(colaDeListos, socket)) != NULL) {
 		liberarClavesDeEsi(esi);
 		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
 	} else {
 	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
-		if (esi = encontrarEsiPorSocket(bloqueados, socket)) {
+		if ((esi = encontrarEsiPorSocket(bloqueados, socket)) != NULL) {
 			liberarClavesDeEsi(esi);
 			list_remove_and_destroy_element(bloqueados, getIndexDeEsi(bloqueados, esi), esiDestroyer);
 		}
