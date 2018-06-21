@@ -60,6 +60,7 @@ typedef struct {
 	char clave[MAX_LONG_CLAVE];
 	size_t tamanio;
 	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas al momento de crearse
+	short int ocupada;
 } t_entrada;
 
 // TODO revisar si es necesario que todas estas sean globales (mala práctica, muy mala)

@@ -1,28 +1,89 @@
 
 #include "Instancia.h"
 
-int esAtomica(t_entrada* entrada){
+void ejecutarReemplazo(int posReemplazo) {
 
-	if(entrada->tamanio<=configuracion->tamanioEntrada){
+	if (memoriaLlena() == 1) {
+		switch(configuracion.algoritmoDeReemplazo){
+
+		case ALGORITMO_CIRC:
+
+			reemplazoCircular(posReemplazo);
+
+		break;
+
+		case ALGORITMO_LRU:
+			posReemplazo=reemplazoLRU();
+
+
+		break;
+
+		case ALGORITMO_BSU:
+			posReemplazo=reemplazoBSU();
+
+
+		break;
+
+		}
+	}
+
+}
+int cantElementosTabla(){
+
+	return sizeof(tablaDeEntradas)/sizeof(tablaDeEntradas[0]);
+}
+
+
+int memoriaLlena(){
+	int i;
+	int cantEntradasOcupadas=0;
+	int cantEntradas = cantElementosTabla;
+
+
+	for(i=0;i<=cantEntradas;i++){
+		if((tablaDeEntradas[i].ocupada)==1){
+			cantEntradasOcupadas++;
+		}
+	}
+	if(cantEntradasOcupadas==cantEntradas){
 		return 1;
 	}else return 0;
+
 }
 
-int cantElementosTabla(t_entrada* tablaEntradas){
+int reemplazoCircular(int posReemplazoActual){
+	int posReemplazoNueva=0;
+	int cantEntradas = cantElementosTabla();
 
-	return sizeof(tablaEntradas)/sizeof(tablaEntradas[0]);
+	if (posReemplazoActual<=cantEntradas-1){
+		posReemplazoNueva=posReemplazoActual;
+		posReemplazoActual++;
+	}else {
+		posReemplazoActual=0;
+		posReemplazoNueva=posReemplazoActual;
+		posReemplazoActual++;
+	}
+return posReemplazoNueva;
 }
-S
+
+
 int reemplazoLRU() {
 
 	int i;
 	int posReemplazo = 0;
-	int cantEntradas = cantElementosTabla(tablaDeEntradas);
-	t_entrada* entradaReemplazo = tablaDeEntradas[0];
+	int cantEntradas = cantElementosTabla();
+	t_entrada* entradaReemplazo = malloc(sizeof(t_entrada));
+	strcpy(entradaReemplazo->clave,tablaDeEntradas[0].clave);
+	entradaReemplazo->tamanio=tablaDeEntradas[0].tamanio;
+	entradaReemplazo->ultimaInstruccion=tablaDeEntradas[0].ultimaInstruccion;
 
-	for (i = 0; i < cantEntradas; i++) {
+	for (i = 0; i < cantEntradas-1; i++) {
+		t_entrada* entradaActual = malloc(sizeof(t_entrada));
 
-		t_entrada* entradaActual = tablaDeEntradas[i];
+		strcpy(entradaActual->clave,tablaDeEntradas[i].clave);
+		entradaActual->tamanio=tablaDeEntradas[i].tamanio;
+		entradaActual->ultimaInstruccion=tablaDeEntradas[i].ultimaInstruccion;
+
 		if(entradaActual->ultimaInstruccion>=entradaReemplazo->ultimaInstruccion){
 			entradaReemplazo=entradaActual;
 			posReemplazo=i;
@@ -34,15 +95,17 @@ int reemplazoLRU() {
 
 }
 
-int reemplazoBSU(t_list* entradas){
+int reemplazoBSU(){
 	int i;
 	int posReemplazo = 0;
-	int cantEntradas = cantElementosTabla;
-	t_entrada* entradaReemplazo = tablaDeEntradas[0];
-
-	for (i = 0; i < cantEntradas; i++) {
-		if(esAtomica(tablaDeEntradas[i])){
-			if(tablaDeEntradas[i].tamanio>=entradaReemplazo->tamanio){
+	int cantEntradas = cantElementosTabla();
+	t_entrada* entradaReemplazo =malloc(sizeof(t_entrada));
+	strcpy(entradaReemplazo->clave,tablaDeEntradas[0].clave);
+	entradaReemplazo->tamanio=tablaDeEntradas[0].tamanio;
+	entradaReemplazo->ultimaInstruccion=tablaDeEntradas[0].ultimaInstruccion;
+	for (i = 0; i < cantEntradas-1; i++) {
+		if((tablaDeEntradas[i].tamanio)<= (configuracion.tamanioEntrada)){
+			if(tablaDeEntradas[i].ultimaInstruccion>=entradaReemplazo->ultimaInstruccion){
 				posReemplazo=i;
 			}
 
