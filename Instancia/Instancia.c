@@ -7,7 +7,6 @@
 
 int main(int argc, char *argv[]) {
 	int iFdmax = 0;
-	int iBytesLeidos;
 	char * clavesSincronizadas;
 	fd_set master;
 	fd_set read_fds;
@@ -71,17 +70,19 @@ int main(int argc, char *argv[]) {
 		/* si hay algo en el socket de coordinador */
 		if(FD_ISSET(configuracion.fdSocketCoordinador, &read_fds)) {
 			tMensaje tipoMensaje;
+			int iBytesLeidos = 0;
+			int iBytesEnviados;
 			char * claveRecibida;
 			char * valorRecibido;
 
-			char * sPayloadRespuesta = (char *)malloc(configuracion.cantidadEntradas * MAX_LONG_CLAVE);
-			memset(sPayloadRespuesta,0,configuracion.cantidadEntradas * MAX_LONG_CLAVE);
+			char * sPayloadRespuesta = (char *)calloc(configuracion.cantidadEntradas, configuracion.tamanioEntrada);
 
 			iBytesLeidos = recibirPaquete(configuracion.fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo mensaje desde Coordinador.");
 
 			if (iBytesLeidos == 0) { // coordinador caído
 				FD_CLR(configuracion.fdSocketCoordinador, &master);
 				sigue = 0;
+				free(sPayloadRespuesta);
 				fflush(stdin);
 				fflush(stdout);
 				log_warning(logger,"El coordinador dejó de responder.");
@@ -97,18 +98,85 @@ int main(int argc, char *argv[]) {
 
 					//ToDo: ejecutar una funcion que obtenga la posicion para guardar el valor
 					//y cambiarla por el 0 en el llamado de ejecutarSet
-					ejecutarSet(claveRecibida, valorRecibido, 0);
+					//  deprecated_ejecutarSet(claveRecibida, valorRecibido, 0);
+					// deprecated_enviarMensajeOK();
+					// *************************************************************************
+					// ToDo: lo que sigue es la respuesta
+					// *************************************************************************
+					tPaquete pkgResultadoSet;
+					t_respuestaSet respuestaSet;
+
+					strcpy(respuestaSet.claveReemplazada,claveRecibida);
+					respuestaSet.compactacionRequerida = 0;
+
+					pkgResultadoSet.type = I_RESULTADO_SET;
+					pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%ud%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
+
+					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoSet, logger, "Se envia OK al Planificador");
+					// *************************************************************************
+					// *************************************************************************
+
 					free(claveRecibida);
 					free(valorRecibido);
-					enviarMensajeOK();
 					break;
 				case C_EJECUTAR_STORE:
+					claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
+
+					deserializar(sPayloadRespuesta, "%s", claveRecibida);
+					free(sPayloadRespuesta);
+
+					// *************************************************************************
+					// ToDo: lo que sigue es la respuesta
+					// *************************************************************************
+					tPaquete pkgResultadoStore;
+
+					pkgResultadoStore.type = I_RESULTADO_STORE;
+					pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "", NULL);
+
+					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoStore, logger, "Se envia OK al Planificador");
+					// *************************************************************************
+					// *************************************************************************
+
+					free(claveRecibida);
 					break;
 				case C_EJECUTAR_COMPACTACION:
+					log_debug(logger, "esta línea evita el <a label can only be part of a statement and a declaration is not a statement>");
+					// *************************************************************************
+					// ToDo: lo que sigue es la respuesta
+					// *************************************************************************
+					tPaquete pkgResultadoCompactacion;
+
+					pkgResultadoCompactacion.type = I_COMPACTACION_TERMINADA;
+					pkgResultadoCompactacion.length = serializar(pkgResultadoCompactacion.payload, "", NULL);
+
+					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoCompactacion, logger, "Se envia OK al Planificador");
+					// *************************************************************************
+					// *************************************************************************
+					break;
+				case C_ESTADO_CLAVE:
+					claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
+
+					deserializar(sPayloadRespuesta, "%s", claveRecibida);
+					free(sPayloadRespuesta);
+					// *************************************************************************
+					// ToDo: lo que sigue es la respuesta
+					// *************************************************************************
+					tPaquete pkgResultadoEstadoClave;
+
+					pkgResultadoEstadoClave.type = I_ESTADO_CLAVE;
+					pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "%s", "valor hardcodeado :D");
+
+					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoEstadoClave, logger, "Se envia OK al Planificador");
+					// *************************************************************************
+					// *************************************************************************
+
+					free(claveRecibida);
 					break;
 				default:
+					log_warning(logger,"Se recibió tipo de mensaje inválido: %d",tipoMensaje);
 					break;
 			}
+			log_debug(logger, "Se enviaron %d bytes", iBytesEnviados);
 		}
 
 		/* si hay algo en el teclado */
@@ -125,9 +193,6 @@ int main(int argc, char *argv[]) {
 				break;
 				case 'E': // listar Entradas
 					listarEntradas();
-				break;
-				case 'L':
-					// últimas 10 líneas del Log
 				break;
 				case 'R': // Refresh status
 					pantallaInicio();
@@ -148,7 +213,7 @@ int main(int argc, char *argv[]) {
 		/* si se activó el timeout del vuelco */
 		if (FD_ISSET(configuracion.fdTimerDump,&read_fds)) {
 			size_t sBuf = 0;
-			iBytesLeidos = read(configuracion.fdTimerDump, &sBuf, sizeof(sBuf));
+			read(configuracion.fdTimerDump, &sBuf, sizeof(sBuf));
 			volcarEntradas();
 		}
 		letra = '-';

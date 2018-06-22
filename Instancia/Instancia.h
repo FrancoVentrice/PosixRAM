@@ -1,5 +1,5 @@
-#ifndef INSTANCIA_H_
-#define INSTANCIA_H_
+#ifndef INSTANCIA_H_TMP_
+#define INSTANCIA_H_TMP_
 
 #include <stdlib.h>
 #include <string.h>
@@ -60,8 +60,13 @@ typedef struct {
 	char clave[MAX_LONG_CLAVE];
 	size_t tamanio;
 	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas al momento de crearse
-	short int ocupada;
 } t_entrada;
+
+/* estructura para ir almacenando el resultado del SET */
+typedef struct {
+	char claveReemplazada[MAX_LONG_CLAVE];
+	char compactacionRequerida;
+} t_respuestaSet;
 
 // TODO revisar si es necesario que todas estas sean globales (mala práctica, muy mala)
 t_commandLineParameters parametrosEntrada;
@@ -85,12 +90,9 @@ void limpiarConfiguraion(void);
 
 // procesamiento
 void capturaSenial(int);
-int deprecated_sincronizarClavesYCargarEntradas(void);
 
 // conexiones [ComunicacionesInstancia.c]
 int conectarACoordinador(char **);
-void enviarMensajeOK(void);
-char * deprecated_sincronizarClavesConCoordinador(void); //
 
 // manejo de entrads [EntradasInstancia.c]
 void prepararTablaDeEntradas(void);
@@ -104,9 +106,6 @@ char * valorDeEntradaPorIndice(unsigned int);
 char * valorDeEntradaPorClave(char *);
 int procesarClavesYCargarEntradas(char *);
 
-void ejecutarSet(char *, char *, int);
-void deprecated_cargarEntradasDesdeArchivos(void);
-
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
 void mostrarConfiguracion(void);
@@ -117,4 +116,12 @@ void pantallaFin(void);
 void mostrarTexto(char *);
 void mostrarMenu(void);
 
-#endif /* INSTANCIA_H_ */
+
+// deprecated
+void deprecated_cargarEntradasDesdeArchivos(void);
+char * deprecated_sincronizarClavesConCoordinador(void);
+int deprecated_sincronizarClavesYCargarEntradas(void);
+void deprecated_ejecutarSet(char *, char *, int);
+void deprecated_enviarMensajeOK(void);
+
+#endif /* INSTANCIA_H_TMP_ */

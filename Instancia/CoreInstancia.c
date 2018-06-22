@@ -107,24 +107,3 @@ void finalizar(int codigo) {
 
 	exit(codigo);
 }
-
-
-/* **************************************************************************** */
-/* **************************************************************************** */
-/* **************************************************************************** */
-/* **************************************************************************** */
-
-int deprecated_sincronizarClavesYCargarEntradas() {
-	/* Le pide la lista de claves al coordinador y las carga en la tabla de entradas */
-
-	char * clavesSincronizadas;
-
-	clavesSincronizadas = deprecated_sincronizarClavesConCoordinador();
-	if (string_is_empty(clavesSincronizadas)) // clavesSincronizadas == NULL  // strlen(text) == 0
-		return 1;
-
-	cargarEntradasDesdeArchivos(clavesSincronizadas);
-	free(clavesSincronizadas);
-
-	return 1;
-}

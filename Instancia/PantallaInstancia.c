@@ -3,8 +3,9 @@
  * TP-1C-2018-ReDistinto
  * (c) PosixRAM */
 
-#include "Instancia.h"
 #include "../shared/pantalla.h"
+
+#include "Instancia.h"
 
 void pantallaInicio() {
 	limpiarPantalla();
@@ -81,7 +82,6 @@ void mostrarMenu() {
 	printf("\n" BOLD "(C) " RESET "Forzar " UNDERLINE "C" RESET "ompactación - "
 			BOLD "(D) " RESET "Forzar " UNDERLINE "D" RESET "ump - "
 			BOLD "(E) " RESET "Listar " UNDERLINE "E" RESET "ntradas\n"
-			BOLD "(L) " RESET "Últimas 10 líneas del " UNDERLINE "L" RESET "og - "
 			BOLD "(R) " RESET UNDERLINE "R" RESET "efresh Status - "
 			BOLD "(Q) " RESET UNDERLINE "Q" RESET "uit (salir)\n");
 	fflush(stdout);
