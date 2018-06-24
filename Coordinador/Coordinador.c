@@ -580,7 +580,7 @@ int validarDesconexionDeInstancia(int socketInst) {
 
 void evaluarEstadoDeClave(char *claveConsultada) {
 	t_instancia *instancia = elegirInstancia(true);
-	char *valor = strdup("Clave no existente");
+	char *valor;
 
 	//Consulto con instancia el valor de la clave
 	//(en caso de existir)
@@ -602,7 +602,6 @@ void evaluarEstadoDeClave(char *claveConsultada) {
 		log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 
 		if(tipoMensajeConsulta == I_ESTADO_CLAVE) {
-			free(valor);
 			valor = malloc(300);
 			deserializar(respuestaConsulta, "%s", valor);
 			log_info(logger, "Respuesta Consulta Instancia: %s", valor);
@@ -611,6 +610,8 @@ void evaluarEstadoDeClave(char *claveConsultada) {
 		}
 
 		free(respuestaConsulta);
+	} else {
+		valor = strdup("Clave no existente");
 	}
 
 	//Respondo lo averiguado
