@@ -580,10 +580,40 @@ int validarDesconexionDeInstancia(int socketInst) {
 
 void evaluarEstadoDeClave(char *claveConsultada) {
 	t_instancia *instancia = elegirInstancia(true);
+	char *valor = strdup("Clave no existente");
+
+	//Consulto con instancia el valor de la clave
+	//(en caso de existir)
+	if (dictionary_has_key(diccionarioClaves, claveConsultada)) {
+		//preparo paquete
+		tPaquete pkgEstadoClaveInstancia;
+		pkgEstadoClaveInstancia.type = C_ESTADO_CLAVE;
+		pkgEstadoClaveInstancia.length = serializar(pkgEstadoClaveInstancia.payload, "%s", claveConsultada);
+
+		//envio consulta a Instancia
+		log_info(logger,"Se envia consulta a Instancia");
+		int bytesEnviados = enviarPaquete(instancia->socket, &pkgEstadoClaveInstancia, logger, "Se envia consulta a Instancia");
+		log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+
+		//recibo respuesta de Instancia
+		tMensaje tipoMensajeConsulta;
+		char *respuestaConsulta = malloc(300);
+		int bytesRecibidos = recibirPaquete(instancia->socket, &tipoMensajeConsulta, &respuestaConsulta, logger, "Respuesta consulta");
+		log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
+
+		if(tipoMensajeConsulta == I_ESTADO_CLAVE) {
+			free(valor);
+			valor = malloc(300);
+			deserializar(respuestaConsulta, "%s", valor);
+			log_info(logger, "Respuesta Consulta Instancia: %s", valor);
+		} else if (tipoMensajeConsulta == DESCONEXION) {
+			validarDesconexionDeInstancia(instancia->socket);
+		}
+
+		free(respuestaConsulta);
+	}
 
 	//Respondo lo averiguado
-	//ToDo: hacer consulta con la instancia para saber el valor de la clave
-	char *valor = strdup("VALOR MOCKEADO");
 	char *nombreInstancia = instancia->nombre;
 	tPaquete pkgEstadoClave;
 	pkgEstadoClave.type = C_ESTADO_CLAVE;
@@ -591,6 +621,7 @@ void evaluarEstadoDeClave(char *claveConsultada) {
 	log_info(logger,"Se envia estado de clave %s, valor %s, instancia %s", claveConsultada, valor, nombreInstancia);
 	int bytesEnviados = enviarPaquete(socketPlanificador, &pkgEstadoClave, logger, "Se envia estado de clave");
 	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	free(valor);
 }
 
 char *buscarClavesPorInstancia(char *nombreInstancia) {

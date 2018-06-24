@@ -92,6 +92,7 @@ void evaluarEstadoDeClave(char *);
 void enviarOperacionAInstancia(void);
 void recibirOperacionDeInstancia(void);
 char * buscarClavesPorInstancia(char *nombreInstancia);
+void ejecutarCompactacion();
 
 //instancia
 void instanciaDestroyer(t_instancia *);
