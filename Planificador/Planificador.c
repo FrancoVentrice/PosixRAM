@@ -344,7 +344,6 @@ void evaluarConsultaDeOperacion() {
 				enviarOperacionInvalidaBloqueo();
 				bloquearESIConClave(esiEnEjecucion, clave);
 				log_info(logger, "El ESI %s esta siendo bloqueado por hacer un GET de la clave %s tomada", esiEnEjecucion->id, clave);
-
 				planificacionNecesaria = true;
 			}
 		} else {
@@ -461,7 +460,6 @@ void esiFinalizado() {
 }
 
 int planificarHRRN() {
-	t_esi* esiHRRNMayor;
 	float RRMayor = 0;
 	int indexHRRNMayor = 0;
 

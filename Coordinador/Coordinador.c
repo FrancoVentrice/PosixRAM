@@ -172,7 +172,6 @@ void cicloPrincipal() {
 
 			case DESCONEXION:
 				validarDesconexionDeInstancia(iSocketComunicacion);
-
 				break;
 			default:
 				// por acá entran todos los mensajes que nos estén faltando, para que no tire warnings
@@ -274,25 +273,41 @@ void enviarOperacionAInstancia() {
 }
 
 void recibirOperacionDeInstancia() {
-	//tiene que contener tambien la cantidad de entradas disponibles que le quedan a la instancia
-	//instanciaElegida->cantidadDeEntradasDisponibles = algo como "respuesta->entradasDisponibles"
-	char* resultadoOkSet=malloc(50);
-	char* respuesta=malloc(50);
-	tMensaje tipoMensajeEsi;
-	int bytesRecibidos = recibirPaquete(instanciaElegida->socket, &tipoMensajeEsi, &resultadoOkSet, logger, "Respuesta instancia");
+	char* resultadoInstancia = malloc(60);
+	tMensaje tipoMensaje;
+	log_info(logger, "esperando respuesta de socket %d", instanciaElegida->socket);
+	int bytesRecibidos = recibirPaquete(instanciaElegida->socket, &tipoMensaje, &resultadoInstancia, logger, "Respuesta instancia");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-	deserializar(resultadoOkSet, "%s", respuesta);
-	//####### Futura implementacion #######
-	//int entradasLibres = 0;
-	//char* clave = malloc(41);
-	//char charCompactacion;
-	//deserializar(resultadoOkSet, "%d%s%c", entradasLibres, clave, compactacion);
-	//int compactacion = atoi(charCompactacion);
-	//#####################################
-	log_info(logger, "Respuesta instancia: %s", respuesta);
 
-	if (strcmp(respuesta, "OK") == 0) {
+	if (tipoMensaje == I_RESULTADO_SET) {
+		unsigned int entradasLibres = 0;
+		char* clave = malloc(41);
+		char charCompactacion;
+		deserializar(resultadoInstancia, "%ud%s%c", entradasLibres, clave, charCompactacion);
+		instanciaElegida->cantidadDeEntradasDisponibles = (int) entradasLibres;
+
+		log_info(logger, "entradas libres: %d \nclave: %s \ncompactacion: %d", entradasLibres, clave, charCompactacion);
+
+		//Si la clave recibida es distinta a la clave de la operacion, es porque fue reemplazada.
+		//Por lo tanto, elimino la clave reemplazada del diccionario
+		if (strcmp(clave, operacion->clave) != 0 && dictionary_has_key(diccionarioClaves, clave)) {
+			dictionary_remove(diccionarioClaves, clave);
+		}
+
+		//Si la instancia tuvo que compactar para ejecutar la operacion,
+		//aviso y ordeno a las demas instancias lo mismo
+		if (charCompactacion) {
+			ejecutarCompactacion();
+		}
+
 		informarResultadoOperacionOk(operacion->remitente);
+	} else if (tipoMensaje == I_RESULTADO_STORE) {
+		informarResultadoOperacionOk(operacion->remitente);
+	} else if (tipoMensaje == DESCONEXION) {
+		validarDesconexionDeInstancia(instanciaElegida->socket);
+		informarResultadoOperacionError(operacion->remitente);
+	} else if (tipoMensaje == I_RESULTADO_ERROR) {
+		informarResultadoOperacionError(operacion->remitente);
 	}
 }
 
@@ -591,6 +606,7 @@ char *buscarClavesPorInstancia(char *nombreInstancia) {
 
 void ejecutarCompactacion() {
 	//armo el set con los sockets de las instancias que tienen que compactar
+	log_info(logger, "Se ejecuta compactacion");
 	int socketMaximo = 0;
 	fd_set setInstanciasCompactadoras;
 	t_list *instanciasACompactar = list_create();
@@ -647,6 +663,9 @@ void ejecutarCompactacion() {
 				break;
 			case DESCONEXION:
 				validarDesconexionDeInstancia(socketMultiplexado);
+				dejarDeEsperarInstancia(socketMultiplexado);
+				break;
+			case I_RESULTADO_ERROR:
 				dejarDeEsperarInstancia(socketMultiplexado);
 				break;
 			}
