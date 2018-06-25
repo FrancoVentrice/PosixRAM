@@ -96,6 +96,8 @@ int main(int argc, char *argv[]) {
 					deserializar(sPayloadRespuesta, "%s%s", claveRecibida, valorRecibido);
 					free(sPayloadRespuesta);
 
+					configuracion.instruccionesProcesadas++;
+
 					//ToDo: ejecutar una funcion que obtenga la posicion para guardar el valor
 					//y cambiarla por el 0 en el llamado de ejecutarSet
 					//  deprecated_ejecutarSet(claveRecibida, valorRecibido, 0);
@@ -110,7 +112,7 @@ int main(int argc, char *argv[]) {
 					respuestaSet.compactacionRequerida = 0;
 
 					pkgResultadoSet.type = I_RESULTADO_SET;
-					pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%ud%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
+					pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
 
 					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoSet, logger, "Se envia OK al Planificador");
 					// *************************************************************************

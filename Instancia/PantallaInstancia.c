@@ -42,10 +42,12 @@ void mostrarEstadoTablaDeEntradas(void) {
 	if(parametrosEntrada.logPantalla)
 		return;
 
-	printf("Preparado espacio de almacenamiento para " BOLD "%d" RESET " entradas de " BOLD "%d bytes" RESET ". Entradas disponibles: " BOLD "%d" RESET ".\n"
+	printf("Preparado espacio de almacenamiento para " BOLD "%d" RESET " entradas de " BOLD "%d bytes" RESET
+			".\nEntradas disponibles: " BOLD "%d" RESET ". Instrucciones SET ejecutadas: " BOLD "%d" RESET ".\n"
 				,configuracion.cantidadEntradas
 				,configuracion.tamanioEntrada
-				,entradasDisponibles());
+				,entradasDisponibles(),
+				configuracion.instruccionesProcesadas);
 	fflush(stdout);
 }
 

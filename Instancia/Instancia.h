@@ -1,5 +1,5 @@
-#ifndef INSTANCIA_H_TMP_
-#define INSTANCIA_H_TMP_
+#ifndef INSTANCIA_H_
+#define INSTANCIA_H_
 
 #include <stdlib.h>
 #include <string.h>
@@ -124,4 +124,4 @@ int deprecated_sincronizarClavesYCargarEntradas(void);
 void deprecated_ejecutarSet(char *, char *, int);
 void deprecated_enviarMensajeOK(void);
 
-#endif /* INSTANCIA_H_TMP_ */
+#endif /* INSTANCIA_H_ */
