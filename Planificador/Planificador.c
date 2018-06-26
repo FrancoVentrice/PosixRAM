@@ -336,8 +336,8 @@ void evaluarConsultaDeOperacion() {
 	case OPERACION_GET:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
-			log_info(logger, "El ESI %s quiere hacer un GET de la clave %s tomada por el ESI %s", esiEnEjecucion->id, clave, esi->id);
-			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
+			if (esi != NULL && strcmp(esiEnEjecucion->id, esi->id) == 0) {
+				log_info(logger, "El ESI %s quiere hacer un GET de la clave %s tomada por el ESI %s", esiEnEjecucion->id, clave, esi->id);
 				enviarOperacionValida();
 				esiTomaClave(esiEnEjecucion, clave);
 			} else {
@@ -354,7 +354,7 @@ void evaluarConsultaDeOperacion() {
 	case OPERACION_SET:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
-			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
+			if (esi != NULL && strcmp(esiEnEjecucion->id, esi->id) == 0) {
 				enviarOperacionValida();
 			} else {
 				enviarOperacionInvalidaError();
@@ -366,7 +366,7 @@ void evaluarConsultaDeOperacion() {
 	case OPERACION_STORE:
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
-			if (strcmp(esiEnEjecucion->id, esi->id) == 0) {
+			if (esi != NULL && strcmp(esiEnEjecucion->id, esi->id) == 0) {
 				enviarOperacionValida();
 				liberarClave(clave);
 			} else {

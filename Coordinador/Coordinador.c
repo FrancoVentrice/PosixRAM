@@ -280,13 +280,13 @@ void recibirOperacionDeInstancia() {
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 
 	if (tipoMensaje == I_RESULTADO_SET) {
-		unsigned int entradasLibres = 0;
+		int entradasLibres = 0;
 		char* clave = malloc(41);
-		char charCompactacion;
-		deserializar(resultadoInstancia, "%ud%s%c", entradasLibres, clave, charCompactacion);
-		instanciaElegida->cantidadDeEntradasDisponibles = (int) entradasLibres;
+		char charCompactacion = 0;
+		deserializar(resultadoInstancia, "%d%s%c", &entradasLibres, clave, &charCompactacion);
+		instanciaElegida->cantidadDeEntradasDisponibles = entradasLibres;
 
-		log_info(logger, "entradas libres: %d \nclave: %s \ncompactacion: %d", entradasLibres, clave, charCompactacion);
+		log_info(logger, "\nentradas libres: %d \nclave: %s \ncompactacion: %d", entradasLibres, clave, charCompactacion);
 
 		//Si la clave recibida es distinta a la clave de la operacion, es porque fue reemplazada.
 		//Por lo tanto, elimino la clave reemplazada del diccionario

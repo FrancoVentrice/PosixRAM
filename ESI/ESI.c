@@ -306,17 +306,10 @@ void enviarEsiFinalizado() {
 	//y el ESI finalizo su ejecucion
 	tPaquete pkgSentencia;
 	int bytesEnviados;
-	char* mensajeOk=malloc(5);
-	strcpy(mensajeOk,"ESI FINALIZADO");
-
-	pkgSentencia.type = E_ESI_FINALIZADO;  //
-
-	pkgSentencia.length = serializar(pkgSentencia.payload, "%s",
-			mensajeOk);
-
+	char* mensajeFinalizado =  strdup("FINALIZADO");
+	pkgSentencia.type = E_ESI_FINALIZADO;
+	pkgSentencia.length = serializar(pkgSentencia.payload, "%s", mensajeFinalizado);
 	log_info(logger, "Se envia respuesta Finalizado");
-	bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
-			&pkgSentencia, logger,
-			"Se envia respuesta Finalizado");
+	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgSentencia, logger, "Se envia respuesta Finalizado");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
 }
