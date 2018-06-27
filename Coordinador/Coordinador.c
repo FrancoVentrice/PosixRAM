@@ -43,21 +43,17 @@ void escucharConexiones() {
 			//Se procede segun el proceso que se conecto
 			tPaquete pkgHandshake;
 			pkgHandshake.type = C_HANDSHAKE;
-			tRespuesta* respuestaHS = malloc(sizeof(tRespuesta));
-			respuestaHS->mensaje = malloc(15);
 			switch (tipoMensajeHandshake) {
 
 			case P_HANDSHAKE:
 				socketPlanificador = iSocketComunicacion;
 				log_info(logger, "Handshake con Planificador, socket: %d", socketPlanificador);
-				strcpy(respuestaHS->mensaje, "Handshake OK");
 				pkgHandshake.length = serializar(pkgHandshake.payload, "", NULL);
 				break;
 
 			case E_HANDSHAKE:
 				log_info(logger, "Handshake con ESI, socket: %d", iSocketComunicacion);
-				strcpy(respuestaHS->mensaje, "Handshake OK");
-				pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s", pkgHandshake.type, respuestaHS->mensaje);
+				pkgHandshake.length = serializar(pkgHandshake.payload, "", NULL);
 				break;
 
 			case I_HANDSHAKE:
@@ -94,8 +90,6 @@ void escucharConexiones() {
 			//Se envia respuesta de handshake
 			int bytesEnviados = enviarPaquete(iSocketComunicacion, &pkgHandshake, logger, "Se envia respuesta de handshake");
 			log_info(logger, "Se envia respuesta de handshake de %d bytes\n", bytesEnviados);
-			free(respuestaHS->mensaje);
-			free(respuestaHS);
 			free(buffer);
 			// TODO ¿dónde se guarda el nuevo socket del proceso que se conectó?
 		}

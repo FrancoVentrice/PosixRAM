@@ -46,75 +46,36 @@ void finalizar(int codigo) {
 }
 
 void iniciarConexiones() {
-	int bytesEnviados;
-	int bytesRecibidos;
-	tSolicitudESI* solicitud = malloc(sizeof(tSolicitudESI));
-	tRespuestaCoordinador *respuestaCoordinador = malloc(
-			sizeof(tRespuestaCoordinador));
-	tRespuestaPlanificador *respuestaPlanificador = malloc(
-			sizeof(tRespuestaPlanificador));
+	//Armo el paquete de handshake
+	tPaquete pkgHandshakeESI;
+	pkgHandshakeESI.type = E_HANDSHAKE;
+	pkgHandshakeESI.length = serializar(pkgHandshakeESI.payload, "", NULL);
 
-	//COnexion al Coordinador
-	configuracion->socketCoordinador = connectToServer(
-			configuracion->ipCoordinador, configuracion->puertoCoordinador,
-			logger);
+	//Conexion al Coordinador
+	configuracion->socketCoordinador = connectToServer(configuracion->ipCoordinador, configuracion->puertoCoordinador, logger);
+	int bytesEnviadosACoordinador = enviarPaquete(configuracion->socketCoordinador, &pkgHandshakeESI, logger, "Se envia solicitud de ejecucion");
+	log_info(logger, "Enviado handshake a Coordinador: %d bytes", bytesEnviadosACoordinador);
 
-	solicitud->mensaje = malloc(100);
-	strcpy(solicitud->mensaje, "HOLA SOY ESI!!!");
-	tPaquete pkgHandshake2;
-	pkgHandshake2.type = E_HANDSHAKE;
-
-	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%c%s",
-			pkgHandshake2.type, solicitud->mensaje);
-
-	log_info(logger, "Se envia solicitud de ejecucion al Coordinador");
-	bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
-			&pkgHandshake2, logger, "Se envia solicitud de ejecucion");
-	log_info(logger, "Se envian %d bytes", bytesEnviados);
-
-//
-
-//RECIBIR RESPUESTA DEL COORDINADOR
+	//Recibo respuesta de Coordinador
 	tMensaje tipoMensajeCoordinador;
-	char * sPayloadRespuestaHandC = malloc(100);
+	char *bufferHSCoordinador = malloc(20);
+	int bytesRecibidosDeCoordinador = recibirPaquete(configuracion->socketCoordinador, &tipoMensajeCoordinador, &bufferHSCoordinador, logger, "HS Respuesta Coordinador");
+	log_info(logger, "Recibido handshake de Coordinador: %d bytes", bytesRecibidosDeCoordinador);
+	if (tipoMensajeCoordinador == C_HANDSHAKE) {
+		log_info(logger, "Hanshake con Coordinador OK");
+	}
+	free(bufferHSCoordinador);
 
-	bytesRecibidos = recibirPaquete(configuracion->socketCoordinador,
-			&tipoMensajeCoordinador, &sPayloadRespuestaHandC, logger,
-			"Hand Respuesta Coordinador");
-	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-	respuestaCoordinador->mensaje = malloc(100);
-	char encabezadoMensaje;
-
-	deserializar(sPayloadRespuestaHandC, "%c%s", &encabezadoMensaje,
-			respuestaCoordinador->mensaje);
-
-	log_info(logger, "RESPUESTA COORDINADOR: %s",
-			respuestaCoordinador->mensaje);
-
-	//CONEXION AL PLANIFICADOR
-	configuracion->socketPlanificador = connectToServer(
-			configuracion->ipPlanificador, configuracion->puertoPlanificador,
-			logger);
-
-	tRespuestaPlanificador *respuesta = malloc(sizeof(tRespuestaPlanificador));
-	char * sPayloadRespuestaHand = malloc(100);
-
-	tMensaje tipoMensaje;
-
-	bytesRecibidos = recibirPaquete(configuracion->socketPlanificador,
-			&tipoMensaje, &sPayloadRespuestaHand, logger, "Hand Respuesta");
-	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-
-	respuesta->mensaje = malloc(100);
-	char encabezado_mensaje;
-
-	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
-			respuesta->mensaje);
-	log_info(logger, "RESPUESTA: %s", respuesta->mensaje);
-
-	free(solicitud);
-	free(respuestaCoordinador);
-	free(respuestaPlanificador);
+	//Conexion al Planificador
+	configuracion->socketPlanificador = connectToServer(configuracion->ipPlanificador, configuracion->puertoPlanificador, logger);
+	tMensaje tipoMensajePlanificador;
+	char *bufferHSPlanificador = malloc(20);
+	int bytesRecibidosDePlanificador = recibirPaquete(configuracion->socketPlanificador, &tipoMensajePlanificador, &bufferHSPlanificador, logger, "HS Respuesta Planificador");
+	log_info(logger, "Recibido handshake de Planificador: %d bytes", bytesRecibidosDePlanificador);
+	if (tipoMensajePlanificador == P_HANDSHAKE) {
+		log_info(logger, "Hanshake con Planificador OK");
+	}
+	free(bufferHSPlanificador);
 }
 
 void esperarOrdenDeEjecucion() {

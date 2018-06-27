@@ -12,23 +12,11 @@ void atenderESI(int iSocketComunicacion) {
 	t_esi* esiNuevo = esiNew(iSocketComunicacion);
 
 	//lo agrego a listos y le aviso Ok de Handshake
-
-	tRespuesta* respuestaEjecucion = malloc(sizeof(tRespuesta));
-	respuestaEjecucion->mensaje = malloc(100);
-	strcpy(respuestaEjecucion->mensaje, "OK HANDSHAKE");
 	tPaquete pkgHandshakeRespuesta;
 	pkgHandshakeRespuesta.type = P_HANDSHAKE;
-
-	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
-			"%c%s", pkgHandshakeRespuesta.type, respuestaEjecucion->mensaje);
-
-	log_info(logger, "Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
-			pkgHandshakeRespuesta.length);
-
-	log_info(logger, "Se envia respuesta");
-	bytesEnviados = enviarPaquete(esiNuevo->socket, &pkgHandshakeRespuesta,
-			logger, "Se envia respuesta a ESI");
-
+	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload, "", NULL);
+	log_info(logger, "Se envia respuesta de handshake a ESI");
+	bytesEnviados = enviarPaquete(esiNuevo->socket, &pkgHandshakeRespuesta, logger, "Se envia respuesta de handshake a ESI");
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
 	log_info(logger,"Se agrega ESI a cola de listos: %s con socket: %d", esiNuevo->id, esiNuevo->socket);
@@ -241,8 +229,7 @@ void escucharConexionesESIs() {
 void recibirResultadoOperacion(char *bufferResultado) {
 	tRespuestaCoordinador* respuestaCoordinador = malloc(sizeof(tRespuestaCoordinador));
 	respuestaCoordinador->mensaje = malloc(100);
-	deserializar(bufferResultado, "%s",
-			respuestaCoordinador->mensaje);
+	deserializar(bufferResultado, "%s", respuestaCoordinador->mensaje);
 
 	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
 			respuestaCoordinador->mensaje);
