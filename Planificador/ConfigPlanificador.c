@@ -91,13 +91,17 @@ int cargarConfiguracion() {
 void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
+	if (esiEnEjecucion != NULL && !esiEnEjecucion->bloqueado) {
+		free(esiEnEjecucion);
+	}
 	dictionary_destroy_and_destroy_elements(diccionarioBloqueados, esiListDestroyer);
 	dictionary_destroy_and_destroy_elements(diccionarioClavesTomadas, esiDestroyer);
 	list_destroy_and_destroy_elements(colaDeListos, esiDestroyer);
 	list_destroy_and_destroy_elements(colaDeFinalizados, esiDestroyer);
 	list_destroy_and_destroy_elements(bufferConsola, instruccionDestroyer);
-	free(esiEnEjecucion);
-	free(consultaCoordinador->clave);
-	free(consultaCoordinador);
+	if (consultaCoordinador != NULL) {
+		free(consultaCoordinador->clave);
+		free(consultaCoordinador);
+	}
 	log_destroy(logger);
 }

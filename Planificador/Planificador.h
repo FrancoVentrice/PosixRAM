@@ -138,6 +138,7 @@ void analizarDeadlock();
 void recibirConsultaOperacion(tMensaje, char *);
 void listarEsisPorRecurso(char *);
 void statusDeClave(char *);
+void evaluarAptoEjecucion();
 
 //metodos de ESI
 void liberarClavesDeEsi(t_esi *);

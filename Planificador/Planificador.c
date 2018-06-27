@@ -109,8 +109,8 @@ void cicloDeSentencia() {
 void evaluarNecesidadDeEspera() {
 	log_info(logger, "A punto de evaluar la necesidad de espera");
 	bool parado = false;
-	parado = (esiEnEjecucion == NULL || esiEnEjecucion->bloqueado)
-			&& (colaDeListos->elements_count == 0 || list_all_satisfy(colaDeListos, evaluarBloqueoDeEsi));
+	evaluarAptoEjecucion();
+	parado = !aptoEjecucion;
 	log_info(logger, "parado? %d", parado);
 	if (!parado) {
 		pthread_mutex_unlock(&mutexEspera);
@@ -310,7 +310,6 @@ void evaluarConsultaDeOperacion() {
 			if (esi != NULL && strcmp(esiEnEjecucion->id, esi->id) == 0) {
 				log_info(logger, "El ESI %s quiere hacer un GET de la clave %s tomada por el ESI %s", esiEnEjecucion->id, clave, esi->id);
 				enviarOperacionValida();
-				esiTomaClave(esiEnEjecucion, clave);
 			} else {
 				enviarOperacionInvalidaBloqueo();
 				bloquearESIConClave(esiEnEjecucion, clave);
@@ -638,7 +637,7 @@ void finalizarEsiEnEjecucion() {
 	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	esiEnEjecucion = NULL;
-	aptoEjecucion = colaDeListos->elements_count > 0;
+	evaluarAptoEjecucion();
 }
 
 void ejecutarComandosConsola() {
@@ -699,10 +698,7 @@ void abortarEsiPorId(char *id) {
 
 	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
 	}
-
-	if (!esiEnEjecucion && colaDeListos->elements_count <= 0) {
-		aptoEjecucion = false;
-	}
+	evaluarAptoEjecucion();
 }
 
 t_esi * encontrarEsiPorId(t_list *lista, char *id) {
@@ -751,10 +747,7 @@ void esiDesconectado(int socket) {
 	}
 	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
 	}
-
-	if (!esiEnEjecucion && colaDeListos->elements_count <= 0) {
-		aptoEjecucion = false;
-	}
+	evaluarAptoEjecucion();
 }
 
 void analizarDeadlock() {
@@ -852,4 +845,11 @@ void statusDeClave(char *clave) {
 	free(clave);
 	free(valor);
 	free(instanciaActual);
+}
+
+void evaluarAptoEjecucion() {
+	aptoEjecucion = !((esiEnEjecucion == NULL
+			|| esiEnEjecucion->bloqueado)
+	&& (colaDeListos->elements_count == 0
+			|| list_all_satisfy(colaDeListos, evaluarBloqueoDeEsi)));
 }
