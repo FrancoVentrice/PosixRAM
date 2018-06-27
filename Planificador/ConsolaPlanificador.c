@@ -1,6 +1,17 @@
 #include "Planificador.h"
 
 void consola() {
+	printf("\n\n\nBienvenido al Planificador PosixRAM para ReDistinto\n\n\n");
+	printf("Comandos disponibles:\n");
+	printf("-  pause  (pausa ejecucion, respeta atomicidad de las operaciones)\n");
+	printf("-  play  (reanuda ejecucion)\n");
+	printf("-  lock <clave> <esi>  (bloquea al ESI <esi> en la cola del recurso <clave>)\n");
+	printf("-  unlock <clave>  (libera al primer ESI de la cola del recurso <clave>. Si la cola queda vacia, la clave es liberada)\n");
+	printf("-  list <clave>  (lista los ESIs encolados esperando al recurso <clave>)\n");
+	printf("-  kill <esi>  (aborta al ESI <esi>, respetando atomicidad y liberando las claves que tenga tomadas)\n");
+	printf("-  status <clave>  (lista el valor, instancia que lo aloja, y ESIs encolados esperando al recurso <clave>)\n");
+	printf("-  deadlock  (lista ESIs implicados en un deadlock)\n");
+	printf("-  exit  (terminacion del proceso Planificador)\n\n\n");
 	while (1) {
 		char *comando = readline("Ingrese un comando: ");
 		if (strcmp(comando, "pause") == 0) {
@@ -106,6 +117,8 @@ void deadlock() {
 
 void exitPlanificador() {
 	vivo = false;
+	pthread_mutex_unlock(&mutexEspera);
+	log_info(logger, "mutex unlock en exit");
 }
 
 void instruccionDestroyer(t_instruccion_consola *instruccion) {
