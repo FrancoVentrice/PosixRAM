@@ -29,7 +29,7 @@ int cargarConfiguracion() {
 	vivo = true;
 	aptoEjecucion = false;
 	planificacionNecesaria = false;
-	logger = log_create("LogPlanificador", "Planificador", true, LOG_LEVEL_INFO);
+	logger = log_create("LogPlanificador", "Planificador", false, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
 	bufferConsola = list_create();
 	colaDeListos = list_create();
@@ -38,6 +38,7 @@ int cargarConfiguracion() {
 	diccionarioClavesTomadas = dictionary_create();
 	consultaCoordinador = malloc(sizeof(tConsultaCoordinador));
 	consultaCoordinador->clave = malloc(40);
+	tiempoTotalEjecucion = 0;
 
 	//en eclipse cambia el path desde donde se corre, asi que probamos desde /Debug y desde /Planificador
 	fd_configuracion = config_create("../Planificador.conf");

@@ -42,7 +42,7 @@ int main(int argn, char *argv[]) {
 	realizarHandshakeCoordinador();
 	inicializarSockets();
 	levantarHiloEscuchaESIs();
-	//levantarConsola();
+	levantarConsola();
 	cicloPrincipal();
 	finalizar(EXIT_SUCCESS);
 }
@@ -120,7 +120,8 @@ void cicloDeSentencia() {
 
 void evaluarNecesidadDeEspera() {
 	log_info(logger, "A punto de evaluar la necesidad de espera");
-	bool parado = (esiEnEjecucion == NULL || esiEnEjecucion->bloqueado)
+	bool parado = false;
+	parado = (esiEnEjecucion == NULL || esiEnEjecucion->bloqueado)
 			&& (colaDeListos->elements_count == 0 || list_all_satisfy(colaDeListos, evaluarBloqueoDeEsi));
 	log_info(logger, "parado? %d", parado);
 	if (!parado) {
@@ -194,39 +195,23 @@ void levantarConsola() {
 
 void realizarHandshakeCoordinador() {
 	//Conexion al Coordinador
-	socketCoordinador = connectToServer(configuracion->ipCoordinador, configuracion->puertoCoordinador,
-			logger);
-	tSolicitudPlanificador* solicitudPlanificador = malloc(
-			sizeof(tSolicitudPlanificador));
-	solicitudPlanificador->mensaje = malloc(100);
-	strcpy(solicitudPlanificador->mensaje, "SOY PLANIFIFCADOR");
+	socketCoordinador = connectToServer(configuracion->ipCoordinador, configuracion->puertoCoordinador, logger);
 	tPaquete pkgHandshakeCoordinador;
 	pkgHandshakeCoordinador.type = P_HANDSHAKE;
-	int tamanioTotal = 0;
-	tRespuesta *respuesta = malloc(sizeof(tRespuesta));
+	pkgHandshakeCoordinador.length = serializar(pkgHandshakeCoordinador.payload, "", NULL);
+	log_info(logger, "Se envia solicitud de handshake con coordinador");
+	int bytesEnviados = enviarPaquete(socketCoordinador, &pkgHandshakeCoordinador, logger, "Se envia solicitud de handshake con coordinador");
+	log_info(logger, "Se envian %d bytes", bytesEnviados);
 
-	pkgHandshakeCoordinador.length = serializar(pkgHandshakeCoordinador.payload,
-			"%c%s", pkgHandshakeCoordinador.type,
-			solicitudPlanificador->mensaje);
-
-	log_info(logger,"Se envia solicitud de handshake con coordinador");
-	tamanioTotal = enviarPaquete(socketCoordinador, &pkgHandshakeCoordinador,
-			logger, "Se envia solicitud de handshake con coordinador");
-	log_info("Se envian %d bytes\n", tamanioTotal);
-
-	//RESPUESTA DEL COORDINADOR
+	//Respuesta del Coordinador
 	tMensaje tipoMensaje;
-	char * sPayloadRespuestaHand = malloc(100);
-
-	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje,
-			&sPayloadRespuestaHand, logger, "Hand Respuesta");
-	log_info(logger,"RECIBIDOS:%d", bytesRecibidos);
-	respuesta->mensaje = malloc(10);
-	char encabezado_mensaje;
-
-	deserializar(sPayloadRespuestaHand, "%c%s", &encabezado_mensaje,
-			respuesta->mensaje);
-	log_info(logger,"RESPUESTA: %s", respuesta->mensaje);
+	char *payloadRespuestaHand = malloc(20);
+	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje, &payloadRespuestaHand, logger, "Hand Respuesta");
+	log_info(logger,"RECIBIDOS: %d", bytesRecibidos);
+	if (tipoMensaje == C_HANDSHAKE) {
+		log_info(logger, "Handshake con Coordinador exitoso\n");
+	}
+	free(payloadRespuestaHand);
 }
 
 void inicializarSockets() {
@@ -256,7 +241,6 @@ void escucharConexionesESIs() {
 void recibirResultadoOperacion(char *bufferResultado) {
 	tRespuestaCoordinador* respuestaCoordinador = malloc(sizeof(tRespuestaCoordinador));
 	respuestaCoordinador->mensaje = malloc(100);
-
 	deserializar(bufferResultado, "%s",
 			respuestaCoordinador->mensaje);
 
@@ -467,8 +451,7 @@ int planificarHRRN() {
 	for (i = 0; i < colaDeListos->elements_count; i++) {
 		t_esi* esiActual = list_get(colaDeListos, i);
 		int tiempoEspera = calcularTiempoEspera(esiActual);
-		float responseRatio = ((float) tiempoEspera
-				+ (float) esiActual->estimacion)
+		float responseRatio = ((float) tiempoEspera + (float) esiActual->estimacion)
 							/ (float) esiActual->estimacion;
 
 		if (responseRatio > RRMayor) {
@@ -562,7 +545,9 @@ void liberarClave(char *clave) {
 	liberarPrimerProcesoBloqueado(clave);
 	if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
 		t_esi *esi = dictionary_remove(diccionarioClavesTomadas, clave);
-		esiRemoverClaveTomada(esi, clave);
+		if (esi != NULL) {
+			esiRemoverClaveTomada(esi, clave);
+		}
 	}
 	free(clave);
 }

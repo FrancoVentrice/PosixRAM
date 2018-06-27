@@ -51,7 +51,7 @@ void escucharConexiones() {
 				socketPlanificador = iSocketComunicacion;
 				log_info(logger, "Handshake con Planificador, socket: %d", socketPlanificador);
 				strcpy(respuestaHS->mensaje, "Handshake OK");
-				pkgHandshake.length = serializar(pkgHandshake.payload, "%c%s", pkgHandshake.type, respuestaHS->mensaje);
+				pkgHandshake.length = serializar(pkgHandshake.payload, "", NULL);
 				break;
 
 			case E_HANDSHAKE:
