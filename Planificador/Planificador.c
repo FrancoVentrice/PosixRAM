@@ -110,7 +110,7 @@ void evaluarNecesidadDeEspera() {
 	log_info(logger, "A punto de evaluar la necesidad de espera");
 	bool parado = false;
 	evaluarAptoEjecucion();
-	parado = !aptoEjecucion;
+	parado = !(ejecutando && aptoEjecucion);
 	log_info(logger, "parado? %d", parado);
 	if (!parado) {
 		pthread_mutex_unlock(&mutexEspera);

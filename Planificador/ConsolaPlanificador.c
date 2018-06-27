@@ -65,6 +65,7 @@ void pause() {
 
 void play() {
 	ejecutando = true;
+	pthread_mutex_unlock(&mutexEspera);
 }
 
 void lock(char *comando) {
