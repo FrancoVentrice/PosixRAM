@@ -58,3 +58,66 @@ int conectarACoordinador(char ** clavesSincronizadas) {
 
 	return 1;
 }
+
+int atenderEstadoClave(char * sPayloadRespuesta) {
+	/* Procesa el pedido de Estado Clave devolviendo el valor de la misma */
+
+	char * claveRecibida;
+	int iBytesEnviados;
+	claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
+
+	deserializar(sPayloadRespuesta, "%s", claveRecibida);
+
+	// ToDo estoy asumiendo siempre que la clave va a existir
+	log_info(logger,"Buscando valor para la clave: %s",claveRecibida);
+
+	tPaquete pkgResultadoEstadoClave;
+
+	pkgResultadoEstadoClave.type = I_ESTADO_CLAVE;
+	pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "%s", valorDeEntradaPorClave(claveRecibida));
+
+	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoEstadoClave, logger, "Se envía el valor al Coordinador.");
+
+	free(claveRecibida);
+
+	return iBytesEnviados;
+}
+
+int atenderStoreClave(char * sPayloadRespuesta) {
+	/* Realiza el store a disco de la clave con su valor, y envía la respuesta */
+
+	char * claveRecibida;
+	int iBytesEnviados;
+	claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
+
+	deserializar(sPayloadRespuesta, "%s", claveRecibida);
+
+	// ToDo estoy asumiendo siempre que la clave va a existir
+	log_info(logger,"Realizando store de la clave: %s",claveRecibida);
+
+	tPaquete pkgResultadoStore;
+
+	pkgResultadoStore.type = I_RESULTADO_STORE;
+	pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "", NULL);
+
+	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoStore, logger, "Se envía resultado del store al Coordinador");
+
+	free(claveRecibida);
+
+	return iBytesEnviados;
+}
+
+int atenderEjecutarCompactacion() {
+	/* Ejecuta la compactación de la instancia y responde al coordinador cuando finaliza */
+
+	log_info(logger,"Iniciando proceso de compactación de la Instancia.");
+
+	// ToDo acá va todo el proceso (en una función adecuada)
+
+	tPaquete pkgResultadoCompactacion;
+
+	pkgResultadoCompactacion.type = I_COMPACTACION_TERMINADA;
+	pkgResultadoCompactacion.length = serializar(pkgResultadoCompactacion.payload, "", NULL);
+
+	return enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoCompactacion, logger, "Se envía fin de compactación al Coordinador");
+}
