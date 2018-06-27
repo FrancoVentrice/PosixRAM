@@ -82,19 +82,18 @@ int main(int argc, char *argv[]) {
 			if (iBytesLeidos == 0) { // coordinador caído
 				FD_CLR(configuracion.fdSocketCoordinador, &master);
 				sigue = 0;
-				free(sPayloadRespuesta);
 				fflush(stdin);
 				fflush(stdout);
 				log_warning(logger,"El coordinador dejó de responder.");
 			}
 			switch (tipoMensaje) {
 				case C_EJECUTAR_SET:
+					log_info(logger,"Recibido mensaje del Coordinador C_EJECUTAR_SET (%d).",C_EJECUTAR_SET);
 					claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
 					valorRecibido = (char *)malloc(iBytesLeidos);
 					memset(valorRecibido,0,iBytesLeidos);
 
 					deserializar(sPayloadRespuesta, "%s%s", claveRecibida, valorRecibido);
-					free(sPayloadRespuesta);
 
 					configuracion.instruccionesProcesadas++;
 
@@ -121,63 +120,27 @@ int main(int argc, char *argv[]) {
 					free(claveRecibida);
 					free(valorRecibido);
 					break;
+
 				case C_EJECUTAR_STORE:
-					claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
-
-					deserializar(sPayloadRespuesta, "%s", claveRecibida);
-					free(sPayloadRespuesta);
-
-					// *************************************************************************
-					// ToDo: lo que sigue es la respuesta
-					// *************************************************************************
-					tPaquete pkgResultadoStore;
-
-					pkgResultadoStore.type = I_RESULTADO_STORE;
-					pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "", NULL);
-
-					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoStore, logger, "Se envia OK al Planificador");
-					// *************************************************************************
-					// *************************************************************************
-
-					free(claveRecibida);
+					log_info(logger,"Recibido mensaje del Coordinador C_EJECUTAR_STORE (%d).",C_EJECUTAR_STORE);
+					iBytesEnviados = atenderStoreClave(sPayloadRespuesta);
 					break;
+
 				case C_EJECUTAR_COMPACTACION:
-					log_debug(logger, "esta línea evita el <a label can only be part of a statement and a declaration is not a statement>");
-					// *************************************************************************
-					// ToDo: lo que sigue es la respuesta
-					// *************************************************************************
-					tPaquete pkgResultadoCompactacion;
-
-					pkgResultadoCompactacion.type = I_COMPACTACION_TERMINADA;
-					pkgResultadoCompactacion.length = serializar(pkgResultadoCompactacion.payload, "", NULL);
-
-					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoCompactacion, logger, "Se envia OK al Planificador");
-					// *************************************************************************
-					// *************************************************************************
+					log_info(logger,"Recibido mensaje del Coordinador C_EJECUTAR_COMPACTACION (%d).",C_EJECUTAR_COMPACTACION);
+					iBytesEnviados = atenderEjecutarCompactacion();
 					break;
+
 				case C_ESTADO_CLAVE:
-					claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
-
-					deserializar(sPayloadRespuesta, "%s", claveRecibida);
-					free(sPayloadRespuesta);
-					// *************************************************************************
-					// ToDo: lo que sigue es la respuesta
-					// *************************************************************************
-					tPaquete pkgResultadoEstadoClave;
-
-					pkgResultadoEstadoClave.type = I_ESTADO_CLAVE;
-					pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "%s", "valor hardcodeado :D");
-
-					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoEstadoClave, logger, "Se envia OK al Planificador");
-					// *************************************************************************
-					// *************************************************************************
-
-					free(claveRecibida);
+					log_info(logger,"Recibido mensaje del Coordinador C_ESTADO_CLAVE (%d).",C_ESTADO_CLAVE);
+					iBytesEnviados = atenderEstadoClave(sPayloadRespuesta);
 					break;
+
 				default:
 					log_warning(logger,"Se recibió tipo de mensaje inválido: %d",tipoMensaje);
 					break;
 			}
+			free(sPayloadRespuesta);
 			log_debug(logger, "Se enviaron %d bytes", iBytesEnviados);
 		}
 
@@ -190,8 +153,8 @@ int main(int argc, char *argv[]) {
 				case 'C':
 					// forzar Compactación
 				break;
-				case 'D':
-					// forzar Dump
+				case 'D': // forzar Dump
+					volcarEntradas();
 				break;
 				case 'E': // listar Entradas
 					listarEntradas();

@@ -88,11 +88,11 @@ int cargarConfiguracion(void);
 int configValida(t_config *);
 void limpiarConfiguraion(void);
 
-// procesamiento
-void capturaSenial(int);
-
 // conexiones [ComunicacionesInstancia.c]
 int conectarACoordinador(char **);
+int atenderEstadoClave(char *);
+int atenderStoreClave(char *);
+int atenderEjecutarCompactacion(void);
 
 // manejo de entrads [EntradasInstancia.c]
 void prepararTablaDeEntradas(void);
