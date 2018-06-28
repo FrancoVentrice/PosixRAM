@@ -121,26 +121,21 @@ void evaluarNecesidadDeEspera() {
 //representa un ciclo de ejecucion
 //(avisar al ESI a ejecutar, esperar consulta, evaluar, y esperar fin de ejecucion de operacion)
 void enviarOrdenDeEjecucion() {
-	tRespuesta* autorizarEjecucion = malloc(sizeof(tRespuesta));
-	autorizarEjecucion->mensaje = malloc(30);
-	strcpy(autorizarEjecucion->mensaje, "OK PARA EJECUTAR LINEA");
-	tPaquete pkgHandshakeRespuesta;
-	pkgHandshakeRespuesta.type = P_HANDSHAKE;
-
-	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload,
-			"%c%s", pkgHandshakeRespuesta.type,
-			autorizarEjecucion->mensaje);
-
-	log_info(logger, "Tipo: %d, largo: %d \n", pkgHandshakeRespuesta.type,
-			pkgHandshakeRespuesta.length);
-
-	log_info(logger, "Se envia orden para ejecutar");
-	int bytesEnviados = enviarPaquete(esiEnEjecucion->socket,
-			&pkgHandshakeRespuesta, logger, "Se envia orden para ejecutar");
-
+	tPaquete pkgEjecutarLinea;
+	pkgEjecutarLinea.type = P_EJECUTAR_LINEA;
+	pkgEjecutarLinea.length = serializar(pkgEjecutarLinea.payload, "", NULL);
+	log_info(logger, "Se envia orden para ejecutar al ESI: %s", esiEnEjecucion->id);
+	int bytesEnviados = enviarPaquete(esiEnEjecucion->socket, &pkgEjecutarLinea, logger, "Se envia orden para ejecutar");
 	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
-	free(autorizarEjecucion->mensaje);
-	free(autorizarEjecucion);
+}
+
+void enviarOrdenDeAborcion(int socket) {
+	tPaquete pkgAbortar;
+	pkgAbortar.type = P_ABORTAR;
+	pkgAbortar.length = serializar(pkgAbortar.payload, "", NULL);
+	log_info(logger, "Se envia orden para abortar al ESI");
+	int bytesEnviados = enviarPaquete(socket, &pkgAbortar, logger, "Se envia orden para abortar");
+	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 }
 
 void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
@@ -700,6 +695,7 @@ void abortarEsiPorId(char *id) {
 	}
 	int index = getIndexDeEsi(esisExistentes, esi);
 	if (index != -1) {
+		enviarOrdenDeAborcion(esi->socket);
 		list_remove_and_destroy_element(esisExistentes, index, esiDestroyer);
 	}
 	evaluarAptoEjecucion();

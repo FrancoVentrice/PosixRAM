@@ -31,6 +31,8 @@ typedef enum {
 	P_HANDSHAKE,
 	P_RESPUESTA_CONSULTA,
 	P_ESTADO_CLAVE,
+	P_EJECUTAR_LINEA,
+	P_ABORTAR,
 
 	/* Mensajes de Coordinador */
 	C_HANDSHAKE,

@@ -25,7 +25,7 @@ void cicloPrincipal() {
 	while (ejecucion) {
 		esperarOrdenDeEjecucion();
 		ordenRecibida();
-		tRespuestaCoordinador * resultadoDeEjecucion = recibirResultadoOperacion();
+		tRespuestaCoordinador *resultadoDeEjecucion = recibirResultadoOperacion();
 
 		if (strcmp(resultadoDeEjecucion->mensaje, "OK") == 0) {
 			log_info(logger, "lectura aprobada!");
@@ -79,26 +79,18 @@ void iniciarConexiones() {
 }
 
 void esperarOrdenDeEjecucion() {
-	int bytesRecibidos;
-	tRespuestaPlanificador *respuestaPlanificador = malloc(
-			sizeof(tRespuestaPlanificador));
-	//Recibir respuesta por parte del Planificador para ejecutar el script
+	//Recibir orden por parte del Planificador para ejecutar el script
 	tMensaje tipoMensajePlanificador;
-	char * sPayloadRespuestaPlanificador = malloc(100);
-
+	char *buffer = malloc(20);
 	log_info(logger, "Esperando orden de ejecucion...");
-	bytesRecibidos = recibirPaquete(configuracion->socketPlanificador,
-			&tipoMensajePlanificador, &sPayloadRespuestaPlanificador, logger,
-			"Respuesta a la ejecucion");
-	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-	respuestaPlanificador->mensaje = malloc(100);
-	char encabezadoMensajePlanificador;
-
-	deserializar(sPayloadRespuestaPlanificador, "%c%s",
-			&encabezadoMensajePlanificador, respuestaPlanificador->mensaje);
-
-	log_info(logger, "RESPUESTA PLANIFICADOR: %s",
-			respuestaPlanificador->mensaje);
+	int bytesRecibidos = recibirPaquete(configuracion->socketPlanificador, &tipoMensajePlanificador, &buffer, logger, "Orden de ejecucion");
+	free(buffer);
+	if (tipoMensajePlanificador == P_EJECUTAR_LINEA) {
+		log_info(logger, "Orden de lectura recibida en %d bytes", bytesRecibidos);
+	} else if (tipoMensajePlanificador == P_ABORTAR) {
+		log_info(logger, "Orden de abortar recibida en %d bytes", bytesRecibidos);
+		finalizar(EXIT_FAILURE);
+	}
 }
 
 tRespuestaCoordinador * recibirResultadoOperacion() {

@@ -110,6 +110,7 @@ void cicloPrincipal();
 void cicloDeSentencia();
 void evaluarNecesidadDeEspera();
 void enviarOrdenDeEjecucion();
+void enviarOrdenDeAborcion(int);
 int cargarConfiguracion();
 int configValida(t_config *);
 void limpiarConfiguracion();

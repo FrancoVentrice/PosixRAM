@@ -92,7 +92,7 @@ int cargarConfiguracion() {
 void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
-	dictionary_destroy(diccionarioBloqueados);
+	dictionary_destroy_and_destroy_elements(diccionarioBloqueados, list_destroy);
 	dictionary_destroy(diccionarioClavesTomadas);
 	list_destroy(colaDeListos);
 	list_destroy(colaDeFinalizados);
