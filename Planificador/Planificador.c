@@ -564,11 +564,12 @@ t_esi *esiNew(int socket) {
 	nId++;
 	t_esi *esi = malloc(sizeof(t_esi));
 	esi->id=string_new();
-	string_append_with_format(&(esi->id),"%s %d","ESI",nId);
+	string_append_with_format(&(esi->id),"%s%d","ESI",nId);
 	esi->clavesTomadas = list_create();
 	esi->estimacion = configuracion->estimacionInicial;
 	esi->socket = socket;
 	esi->bloqueado = false;
+	list_add(esisExistentes, esi);
 	return esi;
 }
 
@@ -680,23 +681,26 @@ void bloquearEsiPorConsola(char *clave, char *id) {
 void abortarEsiPorId(char *id) {
 	log_info(logger, "Abortando ESI %s", id);
 	t_esi *esi = NULL;
-	if (id == esiEnEjecucion->id) {
+	if (strcmp(id, esiEnEjecucion->id) == 0) {
+		esi = esiEnEjecucion;
 		liberarClavesDeEsi(esiEnEjecucion);
-		esiDestroyer(esiEnEjecucion);
 		planificacionNecesaria = true;
 		esiEnEjecucion = NULL;
 	} else if ((esi = encontrarEsiPorId(colaDeListos, id)) != NULL) {
 		liberarClavesDeEsi(esi);
-		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
+		list_remove(colaDeListos, getIndexDeEsi(colaDeListos, esi));
 	} else {
-	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
-		if ((esi = encontrarEsiPorId(bloqueados, id)) != NULL) {
-			liberarClavesDeEsi(esi);
-			list_remove_and_destroy_element(bloqueados, getIndexDeEsi(bloqueados, esi), esiDestroyer);
+		void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
+			if ((esi = encontrarEsiPorId(bloqueados, id)) != NULL) {
+				liberarClavesDeEsi(esi);
+				list_remove(bloqueados, getIndexDeEsi(bloqueados, esi));
+			}
 		}
+		dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
 	}
-
-	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
+	int index = getIndexDeEsi(esisExistentes, esi);
+	if (index != -1) {
+		list_remove_and_destroy_element(esisExistentes, index, esiDestroyer);
 	}
 	evaluarAptoEjecucion();
 }
@@ -730,22 +734,26 @@ void esiDesconectado(int socket) {
 	log_info(logger, "Abortando ESI de socket %d", socket);
 	t_esi *esi = NULL;
 	if (socket == esiEnEjecucion->socket) {
+		esi = esiEnEjecucion;
 		log_info(logger, "Encontrado, esi en ejecucion va a ser abortado");
 		liberarClavesDeEsi(esiEnEjecucion);
-		esiDestroyer(esiEnEjecucion);
 		planificacionNecesaria = true;
 		esiEnEjecucion = NULL;
 	} else if ((esi = encontrarEsiPorSocket(colaDeListos, socket)) != NULL) {
 		liberarClavesDeEsi(esi);
-		list_remove_and_destroy_element(colaDeListos, getIndexDeEsi(colaDeListos, esi), esiDestroyer);
+		list_remove(colaDeListos, getIndexDeEsi(colaDeListos, esi));
 	} else {
 	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
 		if ((esi = encontrarEsiPorSocket(bloqueados, socket)) != NULL) {
 			liberarClavesDeEsi(esi);
-			list_remove_and_destroy_element(bloqueados, getIndexDeEsi(bloqueados, esi), esiDestroyer);
+			list_remove(bloqueados, getIndexDeEsi(bloqueados, esi));
 		}
 	}
 	dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
+	}
+	int index = getIndexDeEsi(esisExistentes, esi);
+	if (index != -1) {
+		list_remove_and_destroy_element(esisExistentes, getIndexDeEsi(esisExistentes, esi), esiDestroyer);
 	}
 	evaluarAptoEjecucion();
 }

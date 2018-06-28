@@ -31,6 +31,7 @@ int cargarConfiguracion() {
 	planificacionNecesaria = false;
 	logger = log_create("LogPlanificador", "Planificador", false, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
+	esisExistentes = list_create();
 	bufferConsola = list_create();
 	colaDeListos = list_create();
 	colaDeFinalizados = list_create();
@@ -91,13 +92,11 @@ int cargarConfiguracion() {
 void limpiarConfiguracion() {
 	free(configuracion);
 	config_destroy(fd_configuracion);
-	if (esiEnEjecucion != NULL && !esiEnEjecucion->bloqueado) {
-		free(esiEnEjecucion);
-	}
-	dictionary_destroy_and_destroy_elements(diccionarioBloqueados, esiListDestroyer);
-	dictionary_destroy_and_destroy_elements(diccionarioClavesTomadas, esiDestroyer);
-	list_destroy_and_destroy_elements(colaDeListos, esiDestroyer);
-	list_destroy_and_destroy_elements(colaDeFinalizados, esiDestroyer);
+	dictionary_destroy(diccionarioBloqueados);
+	dictionary_destroy(diccionarioClavesTomadas);
+	list_destroy(colaDeListos);
+	list_destroy(colaDeFinalizados);
+	list_destroy_and_destroy_elements(esisExistentes, esiDestroyer);
 	list_destroy_and_destroy_elements(bufferConsola, instruccionDestroyer);
 	if (consultaCoordinador != NULL) {
 		free(consultaCoordinador->clave);
