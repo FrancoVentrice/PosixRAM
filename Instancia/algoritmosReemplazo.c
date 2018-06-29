@@ -44,10 +44,10 @@ void realizarReemplazo(int posReemplazo, t_entrada* entrada){
 int memoriaLlena(){
 	int i;
 	int cantEntradasOcupadas=0;
-	int cantEntradas = cantElementosTabla();
+	int cantEntradas = configuracion.cantidadEntradas;
 
 
-	for(i=0;i<=cantEntradas;i++){
+	for(i=0;i<=cantEntradas-1;i++){
 		if((tablaDeEntradas[i].ocupada)==1){
 			cantEntradasOcupadas++;
 		}
