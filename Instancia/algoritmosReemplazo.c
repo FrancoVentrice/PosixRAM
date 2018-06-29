@@ -33,18 +33,13 @@ void ejecutarReemplazo(int *posReemplazo, int *posActualCircular, t_entrada* ent
 
 void realizarReemplazo(int posReemplazo, t_entrada* entrada){
 
-	tablaDeEntradas[posReemplazo].clave=entrada->clave;
+	strcpy(tablaDeEntradas[posReemplazo].clave,entrada->clave);
 	tablaDeEntradas[posReemplazo].ocupada=1;
 	tablaDeEntradas[posReemplazo].tamanio=entrada->tamanio;
 	tablaDeEntradas[posReemplazo].ultimaInstruccion=entrada->ultimaInstruccion;
 
 }
 
-int cantElementosTabla(){
-
-	return sizeof(tablaDeEntradas)-1;
-
-}
 
 int memoriaLlena(){
 	int i;
@@ -65,7 +60,7 @@ int memoriaLlena(){
 
 int reemplazoCircular(int *posActual){
 	int posReemplazoNueva=0;
-	int cantEntradas = cantElementosTabla();
+	int cantEntradas = configuracion.cantidadEntradas;
 
 	if (*posActual<=cantEntradas-1){
 		posReemplazoNueva=*posActual;
@@ -85,7 +80,7 @@ int reemplazoLRU() {
 
 	int i;
 	int posReemplazo = 0;
-	int cantEntradas = cantElementosTabla();
+	int cantEntradas = configuracion.cantidadEntradas;
 	t_entrada* entradaReemplazo = malloc(sizeof(t_entrada));
 	strcpy(entradaReemplazo->clave,tablaDeEntradas[0].clave);
 	entradaReemplazo->tamanio=tablaDeEntradas[0].tamanio;
@@ -112,7 +107,7 @@ int reemplazoLRU() {
 int reemplazoBSU(){
 	int i;
 	int posReemplazo = 0;
-	int cantEntradas = cantElementosTabla();
+	int cantEntradas = configuracion.cantidadEntradas;
 	t_entrada* entradaReemplazo =malloc(sizeof(t_entrada));
 	strcpy(entradaReemplazo->clave,tablaDeEntradas[0].clave);
 	entradaReemplazo->tamanio=tablaDeEntradas[0].tamanio;
