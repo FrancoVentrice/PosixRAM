@@ -5,28 +5,18 @@ void ejecutarReemplazo(int *posReemplazo, int *posActualCircular, t_entrada* ent
 
 	if (memoriaLlena() == 1) {
 		switch(configuracion.algoritmoDeReemplazo){
-
 		case ALGORITMO_CIRC:
-
 			*posReemplazo=reemplazoCircular(posActualCircular);
-
 		break;
-
 		case ALGORITMO_LRU:
 			*posReemplazo=reemplazoLRU();
-
-
 		break;
 
 		case ALGORITMO_BSU:
 			*posReemplazo=reemplazoBSU();
-
-
 		break;
-
 		}
 		realizarReemplazo(*posReemplazo,entrada);
-
 	}
 
 }

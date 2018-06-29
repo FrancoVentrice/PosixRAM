@@ -63,7 +63,6 @@ typedef struct {
 	int ocupada;
 } t_entrada;
 
-
 /* estructura para ir almacenando el resultado del SET */
 typedef struct {
 	char claveReemplazada[MAX_LONG_CLAVE];
