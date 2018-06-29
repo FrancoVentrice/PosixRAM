@@ -37,7 +37,7 @@ void escucharConexiones() {
 		if (iSocketComunicacion > 0) {
 			//Se recibe el mensaje de handshake
 			tMensaje tipoMensajeHandshake;
-			char *buffer = malloc(50);
+			char *buffer;
 			int bytesRecibidos = recibirPaquete(iSocketComunicacion, &tipoMensajeHandshake, &buffer, logger, "Se recibe handshake");
 
 			//Se procede segun el proceso que se conecto
@@ -90,7 +90,6 @@ void escucharConexiones() {
 			//Se envia respuesta de handshake
 			int bytesEnviados = enviarPaquete(iSocketComunicacion, &pkgHandshake, logger, "Se envia respuesta de handshake");
 			log_info(logger, "Se envia respuesta de handshake de %d bytes\n", bytesEnviados);
-			free(buffer);
 			// TODO ¿dónde se guarda el nuevo socket del proceso que se conectó?
 		}
 	}
@@ -219,7 +218,7 @@ char * recibirRespuestaConsulta() {
 	char *buffer;
 	int bytesRecibidos = recibirPaquete(socketPlanificador, &tipoMensajeEsi, &buffer, logger, "Respuesta Consulta");
 	log_info(logger, "Recibida respuesta consulta en %d bytes", bytesRecibidos);
-	char *respuesta = malloc(bytesRecibidos + 1);
+	char *respuesta = malloc(bytesRecibidos);
 	deserializar(buffer, "%s", respuesta);
 	log_info(logger, "Respuesta Consulta Planificador: %s", respuesta);
 	return respuesta;
@@ -322,22 +321,19 @@ void informarResultadoOperacionOk() {
 
 	//preparo paquete
 	int bytesEnviados;
-	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
-	resultadoOperacion->mensaje = malloc(100);
-	strcpy(resultadoOperacion->mensaje, "OK");
-	tPaquete pkgHandshake2;
-	pkgHandshake2.type = C_RESULTADO_OPERACION;
-	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
+	char *mensaje = strdup("OK");
+	tPaquete pkgResultadoOperacion;
+	pkgResultadoOperacion.type = C_RESULTADO_OPERACION;
+	pkgResultadoOperacion.length = serializar(pkgResultadoOperacion.payload, "%s", mensaje);
 
 	//envio respuesta al ESI
-	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger, "Se envia respuesta al ESI");
-	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgResultadoOperacion, logger, "Se envia respuesta al ESI");
+	log_info(logger,"Se envia operacion OK al ESI en %d bytes", bytesEnviados);
 
 	//envio respuesta al planificador
-	log_info(logger,"Se envia respuesta al Planificador");
-	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger, "Se envia respuesta al Planificador");
-	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgResultadoOperacion, logger, "Se envia respuesta al Planificador");
+	log_info(logger,"Se envia operacion OK al Planificador en %d bytes\n", bytesEnviados);
+	free(mensaje);
 }
 
 void informarResultadoOperacionBloqueado() {
@@ -346,22 +342,19 @@ void informarResultadoOperacionBloqueado() {
 
 	//preparo paquete
 	int bytesEnviados;
-	tSolicitudESI* resultadoOperacion = malloc(sizeof(tSolicitudESI));
-	resultadoOperacion->mensaje = malloc(100);
-	strcpy(resultadoOperacion->mensaje, "BLOQUEADO");
-	tPaquete pkgHandshake2;
-	pkgHandshake2.type = C_RESULTADO_OPERACION;
-	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
+	char *mensaje = strdup("BLOQUEADO");
+	tPaquete pkgResultadoOperacion;
+	pkgResultadoOperacion.type = C_RESULTADO_OPERACION;
+	pkgResultadoOperacion.length = serializar(pkgResultadoOperacion.payload, "%s", mensaje);
 
 	//envio respuesta al ESI
-	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger, "Se envia respuesta al ESI");
-	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgResultadoOperacion, logger, "Se envia respuesta al ESI");
+	log_info(logger,"Se envia operacion BLOQUEADO al ESI en %d bytes", bytesEnviados);
 
 	//envio respuesta al planificador
-	log_info(logger,"Se envia respuesta al Planificador");
-	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger, "Se envia respuesta al Planificador");
-	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgResultadoOperacion, logger, "Se envia respuesta al Planificador");
+	log_info(logger,"Se envia operacion BLOQUEADO al Planificador en %d bytes\n", bytesEnviados);
+	free(mensaje);
 }
 
 void informarResultadoOperacionError() {
@@ -370,22 +363,19 @@ void informarResultadoOperacionError() {
 
 	//preparo paquete
 	int bytesEnviados;
-	tSolicitudESI * resultadoOperacion = malloc(sizeof(tSolicitudESI));
-	resultadoOperacion->mensaje = malloc(100);
-	strcpy(resultadoOperacion->mensaje, "ERROR");
-	tPaquete pkgHandshake2;
-	pkgHandshake2.type = C_RESULTADO_OPERACION;
-	pkgHandshake2.length = serializar(pkgHandshake2.payload, "%s", resultadoOperacion->mensaje);
+	char *mensaje = strdup("ERROR");
+	tPaquete pkgResultadoOperacion;
+	pkgResultadoOperacion.type = C_RESULTADO_OPERACION;
+	pkgResultadoOperacion.length = serializar(pkgResultadoOperacion.payload, "%s", mensaje);
 
 	//envio respuesta al ESI
-	log_info(logger,"Se envia respuesta al ESI");
-	bytesEnviados = enviarPaquete(operacion->remitente, &pkgHandshake2, logger, "Se envia respuesta al ESI");
-	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	bytesEnviados = enviarPaquete(operacion->remitente, &pkgResultadoOperacion, logger, "Se envia respuesta al ESI");
+	log_info(logger,"Se envia operacion ERROR al ESI en %d bytes", bytesEnviados);
 
 	//envio respuesta al planificador
-	log_info(logger,"Se envia respuesta al Planificador");
-	bytesEnviados = enviarPaquete(socketPlanificador, &pkgHandshake2, logger, "Se envia respuesta al Planificador");
-	log_info(logger,"Se envian %d bytes\n", bytesEnviados);
+	bytesEnviados = enviarPaquete(socketPlanificador, &pkgResultadoOperacion, logger, "Se envia respuesta al Planificador");
+	log_info(logger,"Se envia operacion ERROR al Planificador en %d bytes\n", bytesEnviados);
+	free(mensaje);
 }
 
 //se usa para elegir la instancia en la cual ejecutar la operacion
@@ -585,19 +575,18 @@ void evaluarEstadoDeClave(char *claveConsultada) {
 
 		//recibo respuesta de Instancia
 		tMensaje tipoMensajeConsulta;
-		char *respuestaConsulta = malloc(300);
+		char *respuestaConsulta;
 		int bytesRecibidos = recibirPaquete(instancia->socket, &tipoMensajeConsulta, &respuestaConsulta, logger, "Respuesta consulta");
 		log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
 
 		if(tipoMensajeConsulta == I_ESTADO_CLAVE) {
-			valor = malloc(300);
+			valor = malloc(bytesRecibidos);
 			deserializar(respuestaConsulta, "%s", valor);
 			log_info(logger, "Respuesta Consulta Instancia: %s", valor);
 		} else if (tipoMensajeConsulta == DESCONEXION) {
 			validarDesconexionDeInstancia(instancia->socket);
+			valor = strdup("Hubo un problema al buscar la clave");
 		}
-
-		free(respuestaConsulta);
 	} else {
 		valor = strdup("Clave no existente");
 	}
@@ -620,7 +609,7 @@ char *buscarClavesPorInstancia(char *nombreInstancia) {
 			string_append_with_format(&cadena, "%s;", clave);
 		}
 	}
-	dictionary_iterator(diccionarioClaves, buscarClavesPorInstancia);
+	dictionary_iterator(diccionarioClaves, agregarClaveDeInstancia);
 	return cadena;
 }
 
