@@ -72,7 +72,7 @@ void cicloDeSentencia() {
 		log_info(logger, "iteracion de sentenciaActiva");
 		fd_set temp;
 		tMensaje tipoMensaje;
-		char *buffer = malloc(100);
+		char *buffer;
 		int socketMultiplexado = multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger);
 		if (socketMultiplexado >= 0) {
 			log_info(logger, "tipo de mensaje %d del socket %d", tipoMensaje, socketMultiplexado);
@@ -188,13 +188,12 @@ void realizarHandshakeCoordinador() {
 
 	//Respuesta del Coordinador
 	tMensaje tipoMensaje;
-	char *payloadRespuestaHand = malloc(20);
+	char *payloadRespuestaHand;
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje, &payloadRespuestaHand, logger, "Hand Respuesta");
 	log_info(logger,"RECIBIDOS: %d", bytesRecibidos);
 	if (tipoMensaje == C_HANDSHAKE) {
 		log_info(logger, "Handshake con Coordinador exitoso\n");
 	}
-	free(payloadRespuestaHand);
 }
 
 void inicializarSockets() {
@@ -530,13 +529,13 @@ void liberarClave(char *clave) {
 			esiRemoverClaveTomada(esi, clave);
 		}
 	}
-	free(clave);
 }
 
 void liberarClavesDeEsi(t_esi *esi) {
 	while (esi->clavesTomadas->elements_count > 0) {
 		char *clave = list_get(esi->clavesTomadas, 0);
 		liberarClave(clave);
+		free(clave);
 	}
 }
 
@@ -558,8 +557,8 @@ void liberarPrimerProcesoBloqueado(char *clave) {
 t_esi *esiNew(int socket) {
 	nId++;
 	t_esi *esi = malloc(sizeof(t_esi));
-	esi->id=string_new();
-	string_append_with_format(&(esi->id),"%s%d","ESI",nId);
+	esi->id = string_new();
+	string_append_with_format(&(esi->id), "%s%d", "ESI", nId);
 	esi->clavesTomadas = list_create();
 	esi->estimacion = configuracion->estimacionInicial;
 	esi->socket = socket;
@@ -823,22 +822,19 @@ void statusDeClave(char *clave) {
 
 	//Se envia consulta de estado de clave al coordinador
 	tPaquete pkgConsultaClave;
-	int enviados;
-	char *consulta = strdup(clave);
 	pkgConsultaClave.type = P_ESTADO_CLAVE;
-	pkgConsultaClave.length = serializar(pkgConsultaClave.payload, "%s", consulta);
+	pkgConsultaClave.length = serializar(pkgConsultaClave.payload, "%s", clave);
 	log_info(logger, "Se envia consulta de clave %s al coordinador", clave);
-	enviados = enviarPaquete(socketCoordinador, &pkgConsultaClave, logger, "Se envia consulta de clave al coordinador");
+	int enviados = enviarPaquete(socketCoordinador, &pkgConsultaClave, logger, "Se envia consulta de clave al coordinador");
 	log_info(logger, "Se envian %d bytes\n", enviados);
-	free(consulta);
 
 	//Se recibe respuesta de consulta del coordinador
 	tMensaje tipoMensaje;
-	char * sPayloadRespuestaPlanificador = malloc(100);
+	char *sPayloadRespuestaPlanificador;
 	log_info(logger, "Esperando respuesta de consulta por clave %s", clave);
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje, &sPayloadRespuestaPlanificador, logger, "Esperando respuesta de consulta");
 	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-	char *valor = malloc(200);
+	char *valor = malloc(bytesRecibidos);
 	char *instanciaActual = malloc(40);
 	deserializar(sPayloadRespuestaPlanificador, "%s%s", valor, instanciaActual);
 	log_info(logger, "\nESTADO DE CLAVE\nclave: %s\nvalor: %s\ninstancia actual/probable: %s", clave, valor, instanciaActual);
@@ -846,7 +842,6 @@ void statusDeClave(char *clave) {
 
 	//Liberamos la memoria asignada
 	free(sPayloadRespuestaPlanificador);
-	free(clave);
 	free(valor);
 	free(instanciaActual);
 }
