@@ -60,6 +60,7 @@ typedef struct {
 	char clave[MAX_LONG_CLAVE];
 	size_t tamanio;
 	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas al momento de crearse
+	int ocupada;
 } t_entrada;
 
 /* estructura para ir almacenando el resultado del SET */
