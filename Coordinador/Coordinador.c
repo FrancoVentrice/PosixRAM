@@ -99,8 +99,7 @@ void escucharConexiones() {
 void cicloPrincipal() {
 	operacion->clave=malloc(MAX_LONG_CLAVE);
 	operacion->valor=malloc(100);
-	char *respuestaConsulta = malloc(10);
-	char *sPayloadRespuesta = malloc(100);
+	char *sPayloadRespuesta;
 
 	while (1) {
 		tMensaje tipoMensaje;
@@ -119,8 +118,7 @@ void cicloPrincipal() {
 				operacion->remitente = iSocketComunicacion;
 				escribirLogDeOperaciones();
 				consultarPlanificador();
-				char *respuestaConsultaGet = recibirRespuestaConsulta(respuestaConsulta);
-				accionarFrenteAConsulta(respuestaConsultaGet);
+				accionarFrenteAConsulta(recibirRespuestaConsulta());
 				tipoMensaje = DESCONEXION;
 				break;
 
@@ -132,8 +130,7 @@ void cicloPrincipal() {
 				operacion->remitente = iSocketComunicacion;
 				escribirLogDeOperaciones();
 				consultarPlanificador();
-				char *respuestaConsultaSet = recibirRespuestaConsulta(respuestaConsulta);
-				accionarFrenteAConsulta(respuestaConsultaSet);
+				accionarFrenteAConsulta(recibirRespuestaConsulta());
 				tipoMensaje = DESCONEXION;
 				break;
 
@@ -145,8 +142,7 @@ void cicloPrincipal() {
 				operacion->remitente = iSocketComunicacion;
 				escribirLogDeOperaciones();
 				consultarPlanificador();
-				char *respuestaConsultaStore = recibirRespuestaConsulta(respuestaConsulta);
-				accionarFrenteAConsulta(respuestaConsultaStore);
+				accionarFrenteAConsulta(recibirRespuestaConsulta());
 				tipoMensaje = DESCONEXION;
 				break;
 
@@ -218,20 +214,18 @@ void consultarPlanificador() {
 	}
 }
 
-char * recibirRespuestaConsulta(char *respuesta) {
+char * recibirRespuestaConsulta() {
 	tMensaje tipoMensajeEsi;
-	char *respuestaConsulta = malloc(100);
-
-	int bytesRecibidos = recibirPaquete(socketPlanificador,
-			&tipoMensajeEsi, &respuestaConsulta, logger, "Respuesta Consulta");
-	log_info(logger, "RECIBIDOS:%d", bytesRecibidos);
-
-	deserializar(respuestaConsulta, "%s", respuesta);
+	char *buffer;
+	int bytesRecibidos = recibirPaquete(socketPlanificador, &tipoMensajeEsi, &buffer, logger, "Respuesta Consulta");
+	log_info(logger, "Recibida respuesta consulta en %d bytes", bytesRecibidos);
+	char *respuesta = malloc(bytesRecibidos + 1);
+	deserializar(buffer, "%s", respuesta);
 	log_info(logger, "Respuesta Consulta Planificador: %s", respuesta);
 	return respuesta;
 }
 
-void accionarFrenteAConsulta(char * respuesta) {
+void accionarFrenteAConsulta(char *respuesta) {
 	if (strcmp(respuesta, "OK") == 0) {
 		if (operacion->operacion != OPERACION_GET) {
 			log_info(logger, "eligiendo instancia");
@@ -267,7 +261,7 @@ void enviarOperacionAInstancia() {
 }
 
 void recibirOperacionDeInstancia() {
-	char* resultadoInstancia = malloc(60);
+	char* resultadoInstancia;
 	tMensaje tipoMensaje;
 	log_info(logger, "esperando respuesta de socket %d", instanciaElegida->socket);
 	int bytesRecibidos = recibirPaquete(instanciaElegida->socket, &tipoMensaje, &resultadoInstancia, logger, "Respuesta instancia");

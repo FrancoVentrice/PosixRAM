@@ -86,7 +86,7 @@ void escribirLogDeOperaciones();
 void informarResultadoOperacionOk();
 void informarResultadoOperacionBloqueado();
 void informarResultadoOperacionError();
-char * recibirRespuestaConsulta(char *);
+char * recibirRespuestaConsulta();
 void accionarFrenteAConsulta(char *);
 void evaluarEstadoDeClave(char *);
 void enviarOperacionAInstancia(void);
