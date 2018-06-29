@@ -26,6 +26,7 @@ void ejecutarReemplazo(int *posReemplazo, int *posActualCircular, t_entrada* ent
 
 		}
 		realizarReemplazo(*posReemplazo,entrada);
+
 	}
 
 }
