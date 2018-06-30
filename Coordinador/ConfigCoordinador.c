@@ -41,6 +41,7 @@ int cargarConfiguracion() {
 	configuracion->tamanioDeEntrada = config_get_int_value(fd_configuracion, "TAMANIO_ENTRADA");
 	configuracion->retardo = config_get_int_value(fd_configuracion, "RETARDO");
 
+	log_info(logDeOperaciones, "\n\n-----------------Comienzo de sesion-----------------\n\n");
 	log_info(logger,
 		"\nPUERTO_ESCUCHA: %d\n"
 		"ALGORITMO_DISTRIBUCION: %d\n"

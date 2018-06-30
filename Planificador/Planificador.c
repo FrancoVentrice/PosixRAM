@@ -631,6 +631,8 @@ void finalizarEsiEnEjecucion() {
 	log_info(logger, "finalizando esi en ejecucion: %s", esiEnEjecucion->id);
 	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
+	FD_CLR(esiEnEjecucion->socket, &setSockets);
+	esiEnEjecucion->socket = -1;
 	esiEnEjecucion = NULL;
 	evaluarAptoEjecucion();
 }

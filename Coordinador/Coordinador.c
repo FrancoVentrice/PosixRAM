@@ -299,19 +299,19 @@ void recibirOperacionDeInstancia() {
 }
 
 void escribirLogDeOperaciones() {
-	char *stringOperacion = malloc(100);
+	char *stringOperacion;
 	switch (operacion->operacion) {
 	case OPERACION_GET:
-		strcpy(stringOperacion, string_from_format("GET %s", operacion->clave));
+		stringOperacion = strdup(string_from_format("GET %s", operacion->clave));
 		break;
 	case OPERACION_SET:
-		strcpy(stringOperacion, string_from_format("SET %s %s", operacion->clave, operacion->valor));
+		stringOperacion = strdup(string_from_format("	SET %s %s", operacion->clave, operacion->valor));
 		break;
 	case OPERACION_STORE:
-		strcpy(stringOperacion, string_from_format("STORE %s", operacion->clave));
+		stringOperacion = strdup(string_from_format("		STORE %s", operacion->clave));
 		break;
 	}
-	log_info(logDeOperaciones, "Proceso de operacion: %s", stringOperacion);
+	log_info(logDeOperaciones, "%s", stringOperacion);
 	free(stringOperacion);
 }
 
