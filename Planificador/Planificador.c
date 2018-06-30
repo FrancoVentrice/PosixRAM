@@ -22,7 +22,7 @@ void atenderESI(int iSocketComunicacion) {
 	log_info(logger,"Se agrega ESI a cola de listos: %s con socket: %d", esiNuevo->id, esiNuevo->socket);
 	agregarEsiAColaDeListos(esiNuevo);
 	pthread_mutex_unlock(&mutexEspera);
-	log_info(logger, "mutex unlock en agregar ESI a cola de listos");
+	log_info(logger, "mutex unlock en agregar ESI %s a cola de listos", esiNuevo->id);
 }
 
 int main(int argn, char *argv[]) {
@@ -683,21 +683,29 @@ void abortarEsiPorId(char *id) {
 		planificacionNecesaria = true;
 		esiEnEjecucion = NULL;
 	} else if ((esi = encontrarEsiPorId(colaDeListos, id)) != NULL) {
+		log_info(logger, "Esi %s a abortar encontrado en cola de listos", id);
 		liberarClavesDeEsi(esi);
 		list_remove(colaDeListos, getIndexDeEsi(colaDeListos, esi));
 	} else {
 		void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
-			if ((esi = encontrarEsiPorId(bloqueados, id)) != NULL) {
+			t_esi *iesi = encontrarEsiPorId(bloqueados, id);
+			if (iesi != NULL) {
+				log_info(logger, "Esi %s a abortar encontrado en cola de bloqueados de clave %s", id, clave);
+				esi = iesi;
 				liberarClavesDeEsi(esi);
 				list_remove(bloqueados, getIndexDeEsi(bloqueados, esi));
 			}
 		}
 		dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
 	}
-	int index = getIndexDeEsi(esisExistentes, esi);
-	if (index != -1) {
-		enviarOrdenDeAborcion(esi->socket);
-		list_remove_and_destroy_element(esisExistentes, index, esiDestroyer);
+	if (esi != NULL) {
+		FD_CLR(esi->socket, &setSockets);
+		esi->socket = -1;
+		int index = getIndexDeEsi(esisExistentes, esi);
+		if (index != -1) {
+			enviarOrdenDeAborcion(esi->socket);
+			list_remove_and_destroy_element(esisExistentes, index, esiDestroyer);
+		}
 	}
 	evaluarAptoEjecucion();
 }
@@ -711,8 +719,12 @@ t_esi * encontrarEsiPorId(t_list *lista, char *id) {
 
 int getIndexDeEsi(t_list *lista, t_esi *esi) {
 	int i;
+	log_info(logger, "elements_count = %d", lista->elements_count); //test
 	for (i = 0; i < lista->elements_count; i++) {
+		log_info(logger, "i = %d", i); //test
 		t_esi *iesi = list_get(lista, i);
+		log_info(logger, "esi = %s", esi->id); //test
+		log_info(logger, "iesi = %s", iesi->id); //test
 		if (strcmp(esi->id, iesi->id) == 0) {
 			return i;
 		}
@@ -741,7 +753,10 @@ void esiDesconectado(int socket) {
 		list_remove(colaDeListos, getIndexDeEsi(colaDeListos, esi));
 	} else {
 	void abortarEsiEnDiccionarioBloqueados(char *clave, t_list *bloqueados) {
-		if ((esi = encontrarEsiPorSocket(bloqueados, socket)) != NULL) {
+		t_esi *iesi = encontrarEsiPorSocket(bloqueados, socket);
+		if (iesi != NULL) {
+			log_info(logger, "Esi %s a abortar encontrado en cola de bloqueados de clave %s", iesi->id, clave);
+			esi = iesi;
 			liberarClavesDeEsi(esi);
 			list_remove(bloqueados, getIndexDeEsi(bloqueados, esi));
 		}

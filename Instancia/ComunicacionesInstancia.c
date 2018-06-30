@@ -86,7 +86,7 @@ int atenderEstadoClave(char * sPayloadRespuesta) {
 		log_error(logger,"La clave solicitada no está en la tabla de entradas.");
 
 		pkgResultadoEstadoClave.type = I_RESULTADO_ERROR;
-		pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "No existe la clave solicitada");
+		pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "%s", "No existe la clave solicitada");
 	}
 
 	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoEstadoClave, logger, "Se envía la respuesta al Coordinador.");
@@ -117,7 +117,7 @@ int atenderStoreClave(char * sPayloadRespuesta) {
 		log_error(logger,"La clave solicitada no está en la tabla de entradas.");
 
 		pkgResultadoStore.type = I_RESULTADO_ERROR;
-		pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "No existe la clave solicitada");
+		pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "%s", "No existe la clave solicitada");
 	}
 
 	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoStore, logger, "Se envía resultado del store al Coordinador");
