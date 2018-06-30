@@ -33,8 +33,7 @@ void cicloPrincipal() {
 			log_info(logger, "me bloquearon :(");
 			lecturaRechazada = true;
 		} else if (strcmp(resultadoDeEjecucion->mensaje, "ERROR") == 0) {
-			log_info(logger, "adios mundo crueeel!!");
-			ejecucion = false;
+			log_info(logger, "adios mundo crueeel!! (voy a esperar que el plani me lo confirme)");
 		}
 	}
 	finalizar(EXIT_FAILURE);

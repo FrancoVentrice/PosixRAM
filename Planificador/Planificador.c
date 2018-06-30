@@ -234,8 +234,8 @@ void recibirResultadoOperacion(char *bufferResultado) {
 		log_info(logger, "Sentencia finalizada: BAN HAMMER!!");
 	} else if (strcmp(respuestaCoordinador->mensaje, "ERROR") == 0) {
 		log_info(logger, "Sentencia finalizada: error :(");
+		abortarEsiPorId(esiEnEjecucion->id);
 	}
-	sentenciaEjecutada();
 }
 
 void enviarOperacionValida() {
@@ -297,6 +297,7 @@ void evaluarConsultaDeOperacion() {
 	 * */
 	char *clave = strdup(consultaCoordinador->clave);
 	int operacion = consultaCoordinador->operacion;
+	sentenciaEjecutada();
 	switch (operacion) {
 	case OPERACION_GET:
 		if (evaluarBloqueoDeClave(clave)) {
@@ -307,7 +308,7 @@ void evaluarConsultaDeOperacion() {
 			} else {
 				enviarOperacionInvalidaBloqueo();
 				bloquearESIConClave(esiEnEjecucion, clave);
-				log_info(logger, "El ESI %s esta siendo bloqueado por hacer un GET de la clave %s tomada", esiEnEjecucion->id, clave);
+				log_info(logger, "El ESI en ejecucion esta siendo bloqueado por hacer un GET de la clave %s tomada", clave);
 				planificacionNecesaria = true;
 			}
 		} else {
@@ -404,16 +405,16 @@ void planificar() {
 		list_add(colaDeListos, esiEnEjecucion);
 	}
 
-	esiEnEjecucion = list_get(colaDeListos, indexProximoAEjecutar);
-
+	esiEnEjecucion = list_remove(colaDeListos, indexProximoAEjecutar);
 	log_info(logger,"Proximo ESI a ejecutar: %s con socket: %d", esiEnEjecucion->id, esiEnEjecucion->socket);
-	list_remove(colaDeListos, indexProximoAEjecutar);
 	planificacionNecesaria = false;
 }
 
 void sentenciaEjecutada() {
-	esiEnEjecucion->rafagaAnterior ++;
-	esiEnEjecucion->estimacion--;
+	if (esiEnEjecucion != NULL) {
+		esiEnEjecucion->rafagaAnterior ++;
+		esiEnEjecucion->estimacion--;
+	}
 	tiempoTotalEjecucion ++;
 }
 
@@ -489,7 +490,8 @@ void bloquearESIConClave(t_esi *esi, char *clave) {
 	}
 	t_list *bloqueados = dictionary_get(diccionarioBloqueados, clave);
 	list_add(bloqueados, esi);
-	if (esiEnEjecucion != NULL && strcmp(esi->id, esiEnEjecucion->id)) {
+	if (esiEnEjecucion != NULL && strcmp(esi->id, esiEnEjecucion->id) == 0) {
+		esiEnEjecucion = NULL;
 		planificacionNecesaria = true;
 	}
 }
@@ -699,11 +701,11 @@ void abortarEsiPorId(char *id) {
 		dictionary_iterator(diccionarioBloqueados, abortarEsiEnDiccionarioBloqueados);
 	}
 	if (esi != NULL) {
-		FD_CLR(esi->socket, &setSockets);
-		esi->socket = -1;
 		int index = getIndexDeEsi(esisExistentes, esi);
 		if (index != -1) {
 			enviarOrdenDeAborcion(esi->socket);
+			FD_CLR(esi->socket, &setSockets);
+			esi->socket = -1;
 			list_remove_and_destroy_element(esisExistentes, index, esiDestroyer);
 		}
 	}
@@ -719,12 +721,8 @@ t_esi * encontrarEsiPorId(t_list *lista, char *id) {
 
 int getIndexDeEsi(t_list *lista, t_esi *esi) {
 	int i;
-	log_info(logger, "elements_count = %d", lista->elements_count); //test
 	for (i = 0; i < lista->elements_count; i++) {
-		log_info(logger, "i = %d", i); //test
 		t_esi *iesi = list_get(lista, i);
-		log_info(logger, "esi = %s", esi->id); //test
-		log_info(logger, "iesi = %s", iesi->id); //test
 		if (strcmp(esi->id, iesi->id) == 0) {
 			return i;
 		}
@@ -765,6 +763,8 @@ void esiDesconectado(int socket) {
 	}
 	int index = getIndexDeEsi(esisExistentes, esi);
 	if (index != -1) {
+		FD_CLR(socket, &setSockets);
+		esi->socket = -1;
 		list_remove_and_destroy_element(esisExistentes, getIndexDeEsi(esisExistentes, esi), esiDestroyer);
 	}
 	evaluarAptoEjecucion();
