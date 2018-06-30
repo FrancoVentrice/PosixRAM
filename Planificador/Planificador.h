@@ -69,7 +69,6 @@ typedef struct {
 	float estimacionAnterior;//necesario para SJF
 	int socket; //socket que se esta usando para la comunicacion con el ESI en particular
 	bool bloqueado;
-	int responseRatio;
 	int instanteLlegadaAListos;
 	t_list *clavesTomadas;
 } t_esi;

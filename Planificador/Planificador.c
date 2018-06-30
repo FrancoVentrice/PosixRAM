@@ -425,15 +425,15 @@ void esiFinalizado() {
 }
 
 int planificarHRRN() {
-	float RRMayor = 0;
+	float RRMayor = 0.0f;
 	int indexHRRNMayor = 0;
 
 	int i;
 	for (i = 0; i < colaDeListos->elements_count; i++) {
 		t_esi* esiActual = list_get(colaDeListos, i);
 		int tiempoEspera = calcularTiempoEspera(esiActual);
-		float responseRatio = ((float) tiempoEspera + (float) esiActual->estimacion)
-							/ (float) esiActual->estimacion;
+		float responseRatio = 0.0f;
+		responseRatio = ((float) tiempoEspera + (float) esiActual->estimacion) / (float) esiActual->estimacion;
 
 		if (responseRatio > RRMayor) {
 			RRMayor = responseRatio;
@@ -562,9 +562,11 @@ t_esi *esiNew(int socket) {
 	esi->id = string_new();
 	string_append_with_format(&(esi->id), "%s%d", "ESI", nId);
 	esi->clavesTomadas = list_create();
-	esi->estimacion = configuracion->estimacionInicial;
+	esi->estimacion = (float) configuracion->estimacionInicial;
+	esi->estimacionAnterior = (float) configuracion->estimacionInicial;
 	esi->socket = socket;
 	esi->bloqueado = false;
+	esi->rafagaAnterior = 0;
 	list_add(esisExistentes, esi);
 	return esi;
 }
@@ -679,7 +681,7 @@ void bloquearEsiPorConsola(char *clave, char *id) {
 void abortarEsiPorId(char *id) {
 	log_info(logger, "Abortando ESI %s", id);
 	t_esi *esi = NULL;
-	if (strcmp(id, esiEnEjecucion->id) == 0) {
+	if (esiEnEjecucion != NULL && strcmp(id, esiEnEjecucion->id) == 0) {
 		esi = esiEnEjecucion;
 		liberarClavesDeEsi(esiEnEjecucion);
 		planificacionNecesaria = true;
