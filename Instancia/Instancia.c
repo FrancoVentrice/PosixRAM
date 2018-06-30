@@ -160,12 +160,8 @@ int main(int argc, char *argv[]) {
 				case 'E': // listar Entradas
 					listarEntradas();
 				break;
-				case 'R': // Refresh status
-					pantallaInicio();
-					mostrarConfiguracion();
-					mostrarConexionCoordinador();
-					mostrarEstadoTablaDeEntradas();
-					mostrarMenu();
+				case 'R': // Refresh screen
+					refrescarPantalla();
 				break;
 				case 'Q': // Quit (salir)
 					sigue = 0;
@@ -178,8 +174,10 @@ int main(int argc, char *argv[]) {
 
 		/* si se activó el timeout del vuelco */
 		if (FD_ISSET(configuracion.fdTimerDump,&read_fds)) {
-			size_t sBuf = 0;
-			read(configuracion.fdTimerDump, &sBuf, sizeof(sBuf));
+			uint64_t sBuf = 0;
+			int iBytesLeidos = 0;
+			iBytesLeidos = read(configuracion.fdTimerDump, &sBuf, sizeof(uint64_t));
+			log_debug(logger,"Se leyeron %d bytes del timer",iBytesLeidos);
 			volcarEntradasEnArchivos();
 		}
 		letra = '-';

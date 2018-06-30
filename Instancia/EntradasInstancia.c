@@ -28,7 +28,8 @@ void prepararTablaDeEntradas() {
 }
 
 int entradasDisponibles() {
-	/* determina cuántas entradas quedan por ocupar */
+	/* Determina cuántas entradas quedan por ocupar usando como criterio que una entrada
+	 * está libre si no tiene clave */
 
 	int entradasDisponibles;
 	int i;
@@ -55,14 +56,26 @@ void iniciarDumpTimeout() {
 }
 
 void volcarEntradasEnArchivos() {
-	/* Proceso de dump. Vuelca las entradas con sus valores en el punto de montaje.
-	 * Supuesto: no hay "basura" en el punto de montaje. */
+	/* Proceso de dump. Vuelca las entradas con sus valores en el punto de montaje */
 
-	// TODO completar este proceso
+	int i=0;
+
 	log_info(logger,"Ejecutando proceso de vuelco...");
-	retardoSegundos(2);
+	mostrarTexto(AMARILLO_T "Ejecutando proceso de vuelco...");
+
+	while (i < configuracion.cantidadEntradas) {
+		if (!string_is_empty(tablaDeEntradas[i].clave)) {
+			storeClave(i);
+			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada)
+				i = i + (tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada);
+		}
+		i++;
+	}
+
 	configuracion.ultimoDump = time(NULL);
 	log_info(logger,"Vuelco finalizado.");
+	retardoSegundos(2);
+	refrescarPantalla();
 }
 
 void limpiarTablaDeEntradas() {
@@ -237,7 +250,7 @@ int existeClave(char * claveBuscada) {
 		return 1;
 }
 
-void storeClave(char * unaClave) {
+void storeClave(int indice) {
 	/* Guarda el valor en el punto de montaje en un archivo de nombre clave.
 	 * Si no tiene valor, guarda un archivo vacío.
 	 * Si el archivo existe, lo sobreescribe. */
@@ -245,16 +258,14 @@ void storeClave(char * unaClave) {
     char * archivoFullPath;
 	int fdArchivoDestino;
 	char * archivoMapeado;
-	int indice;
 	char * posicionValor;
 	size_t tamanioValor;
 
-	indice = indiceClave(unaClave);
 	posicionValor = almacenamientoEntradas + (indice * configuracion.tamanioEntrada);
 	tamanioValor = tablaDeEntradas[indice].tamanio;
 
 	archivoFullPath = string_new();
-	string_append_with_format(&archivoFullPath, "%s/%s", configuracion.puntoDeMontaje, unaClave);
+	string_append_with_format(&archivoFullPath, "%s/%s", configuracion.puntoDeMontaje, tablaDeEntradas[indice].clave);
 
 	log_info(logger, "Escribiendo archivo: %s", archivoFullPath);
 

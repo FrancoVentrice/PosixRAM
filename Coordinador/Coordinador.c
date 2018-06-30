@@ -39,6 +39,7 @@ void escucharConexiones() {
 			tMensaje tipoMensajeHandshake;
 			char *buffer;
 			int bytesRecibidos = recibirPaquete(iSocketComunicacion, &tipoMensajeHandshake, &buffer, logger, "Se recibe handshake");
+			log_debug(logger, "Se recibieron %d bytes", bytesRecibidos);
 
 			//Se procede segun el proceso que se conecto
 			tPaquete pkgHandshake;
@@ -57,7 +58,7 @@ void escucharConexiones() {
 				break;
 
 			case I_HANDSHAKE:
-				log_info(logger, "a label can only be part of a statement and a declaration is not a statement. Si, esto sale a produccion");
+				log_debug(logger, "a label can only be part of a statement and a declaration is not a statement. Si, esto sale a produccion");
 				char *nombreInstancia = malloc(50);
 				deserializar(buffer, "%s", nombreInstancia);
 				log_info(logger, "Handshake con instancia %s, socket: %d", nombreInstancia, iSocketComunicacion);
@@ -179,12 +180,10 @@ void consultarPlanificador() {
 
 	case OPERACION_GET:
 		pkgConsulta.type = C_CONSULTA_OPERACION_GET;
-		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
-				operacion->clave);
+		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",operacion->clave);
 
 		log_info(logger,"Se consulta al planificador GET");
-		enviados = enviarPaquete(socketPlanificador, &pkgConsulta,
-				logger, "Se consulta al planificador");
+		enviados = enviarPaquete(socketPlanificador, &pkgConsulta,logger, "Se consulta al planificador");
 		log_info(logger,"Se envian %d bytes\n", enviados);
 		break;
 
@@ -194,20 +193,17 @@ void consultarPlanificador() {
 		pkgConsulta.length = serializar(pkgConsulta.payload, "%s", operacion->clave);
 
 		log_info(logger, "Se consulta al planificador SET");
-		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,
-				"Se consulta al planificador");
+		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
 		break;
 
 	case OPERACION_STORE:
 		pkgConsulta.type = C_CONSULTA_OPERACION_STORE;
 
-		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",
-				operacion->clave);
+		pkgConsulta.length = serializar(pkgConsulta.payload, "%s",operacion->clave);
 
 		log_info(logger, "Se consulta al planificador STORE");
-		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,
-				"Se consulta al planificador");
+		enviados = enviarPaquete(socketPlanificador, &pkgConsulta, logger,"Se consulta al planificador");
 		log_info(logger, "Se envian %d bytes\n", enviados);
 		break;
 	}
@@ -676,6 +672,9 @@ void ejecutarCompactacion() {
 				break;
 			case I_RESULTADO_ERROR:
 				dejarDeEsperarInstancia(socketMultiplexado);
+				break;
+			default:
+				log_debug(logger,"Tipo de mensaje no esperado");
 				break;
 			}
 		}

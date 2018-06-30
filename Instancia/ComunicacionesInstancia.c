@@ -108,7 +108,7 @@ int atenderStoreClave(char * sPayloadRespuesta) {
 	if(existeClave(claveRecibida)) {
 		log_info(logger,"Realizando store de la clave: %s",claveRecibida);
 
-		storeClave(claveRecibida);
+		storeClave(indiceClave(claveRecibida));
 
 		pkgResultadoStore.type = I_RESULTADO_STORE;
 		pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "", NULL);
