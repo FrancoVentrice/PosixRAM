@@ -63,23 +63,34 @@ int atenderEstadoClave(char * sPayloadRespuesta) {
 	/* Procesa el pedido de Estado Clave devolviendo el valor de la misma */
 
 	char * claveRecibida;
+	char * valorDeEntrada;
 	int iBytesEnviados;
 	claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
 
 	deserializar(sPayloadRespuesta, "%s", claveRecibida);
 
-	// ToDo estoy asumiendo siempre que la clave va a existir
 	log_info(logger,"Buscando valor para la clave: %s",claveRecibida);
 
 	tPaquete pkgResultadoEstadoClave;
 
-	pkgResultadoEstadoClave.type = I_ESTADO_CLAVE;
-	pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "%s", valorDeEntradaPorClave(claveRecibida));
+	if(existeClave(claveRecibida)) {
+		valorDeEntrada = valorDeEntradaPorClave(claveRecibida);
+		log_info(logger,"Valor encontrado: %s",valorDeEntrada);
 
-	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoEstadoClave, logger, "Se envía el valor al Coordinador.");
+		pkgResultadoEstadoClave.type = I_ESTADO_CLAVE;
+		pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "%s", valorDeEntrada);
 
+		free(valorDeEntrada);
+	}
+	else {
+		log_error(logger,"La clave solicitada no está en la tabla de entradas.");
+
+		pkgResultadoEstadoClave.type = I_RESULTADO_ERROR;
+		pkgResultadoEstadoClave.length = serializar(pkgResultadoEstadoClave.payload, "No existe la clave solicitada");
+	}
+
+	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoEstadoClave, logger, "Se envía la respuesta al Coordinador.");
 	free(claveRecibida);
-
 	return iBytesEnviados;
 }
 
@@ -92,18 +103,25 @@ int atenderStoreClave(char * sPayloadRespuesta) {
 
 	deserializar(sPayloadRespuesta, "%s", claveRecibida);
 
-	// ToDo estoy asumiendo siempre que la clave va a existir
-	log_info(logger,"Realizando store de la clave: %s",claveRecibida);
-
 	tPaquete pkgResultadoStore;
 
-	pkgResultadoStore.type = I_RESULTADO_STORE;
-	pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "", NULL);
+	if(existeClave(claveRecibida)) {
+		log_info(logger,"Realizando store de la clave: %s",claveRecibida);
+
+		storeClave(claveRecibida);
+
+		pkgResultadoStore.type = I_RESULTADO_STORE;
+		pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "", NULL);
+	}
+	else {
+		log_error(logger,"La clave solicitada no está en la tabla de entradas.");
+
+		pkgResultadoStore.type = I_RESULTADO_ERROR;
+		pkgResultadoStore.length = serializar(pkgResultadoStore.payload, "No existe la clave solicitada");
+	}
 
 	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoStore, logger, "Se envía resultado del store al Coordinador");
-
 	free(claveRecibida);
-
 	return iBytesEnviados;
 }
 

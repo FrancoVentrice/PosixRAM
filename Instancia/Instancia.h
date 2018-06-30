@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <errno.h> // strerror
 #include <time.h> // time
-#include <unistd.h>  // alarm
+#include <unistd.h>  // alarm lseek
 #include <ctype.h> // toupper
 #include <dirent.h>
 #include <sys/mman.h> // mmap
@@ -39,8 +39,8 @@ typedef struct {
 	char czNomProc[20]; // nombre para mostrar en el sistema
 	char *nombreDeInstancia;
 
-	unsigned int cantidadEntradas;
-	unsigned int tamanioEntrada; // bytes
+	int cantidadEntradas;
+	int tamanioEntrada; // bytes
 	char *puntoDeMontaje;
 	int algoritmoDeReemplazo;
 
@@ -49,7 +49,7 @@ typedef struct {
 	time_t ultimoDump;
 
 	char *ipCoordinador;
-	unsigned int puertoCoordinador;
+	int puertoCoordinador;
 	int fdSocketCoordinador;
 
 	unsigned int instruccionesProcesadas;
@@ -59,8 +59,7 @@ typedef struct {
 typedef struct {
 	char clave[MAX_LONG_CLAVE];
 	size_t tamanio;
-	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas al momento de crearse
-	int ocupada;
+	unsigned int ultimaInstruccion; // coincide con instruccionesProcesadas
 } t_entrada;
 
 /* estructura para ir almacenando el resultado del SET */
@@ -98,14 +97,17 @@ int atenderEjecutarCompactacion(void);
 // manejo de entrads [EntradasInstancia.c]
 void prepararTablaDeEntradas(void);
 void iniciarDumpTimeout(void);
-void volcarEntradas(void);
-unsigned int entradasDisponibles(void);
+void volcarEntradasEnArchivos(void);
+void storeClave(char *);
+int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
 int inicializarPuntoDeMontaje(void);
 void cargarEntradasDesdeArchivos(char *);
-char * valorDeEntradaPorIndice(unsigned int);
+char * valorDeEntradaPorIndice(int);
 char * valorDeEntradaPorClave(char *);
 int procesarClavesYCargarEntradas(char *);
+int existeClave(char *);
+int indiceClave(char *);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

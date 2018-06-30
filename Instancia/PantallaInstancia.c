@@ -43,11 +43,13 @@ void mostrarEstadoTablaDeEntradas(void) {
 		return;
 
 	printf("Preparado espacio de almacenamiento para " BOLD "%d" RESET " entradas de " BOLD "%d bytes" RESET
-			".\nEntradas disponibles: " BOLD "%d" RESET ". Instrucciones SET ejecutadas: " BOLD "%d" RESET ".\n"
+			".\nEntradas disponibles: " BOLD "%d" RESET ". Instrucciones SET ejecutadas: " BOLD "%d" RESET
+			". Último dump: \n"
 				,configuracion.cantidadEntradas
 				,configuracion.tamanioEntrada
-				,entradasDisponibles(),
-				configuracion.instruccionesProcesadas);
+				,entradasDisponibles()
+				,configuracion.instruccionesProcesadas);
+				//,ctime(&(configuracion.ultimoDump)));
 	fflush(stdout);
 }
 
@@ -58,7 +60,7 @@ void listarEntradas(void) {
 		return;
 
 	char * valorDeEntrada;
-	unsigned int i;
+	int i;
 
 	printf(BOLD " #  | Tam. | Clave                                    | Valor\n" RESET);
 	for (i=0 ; i < configuracion.cantidadEntradas ; i++) {

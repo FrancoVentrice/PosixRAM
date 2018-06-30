@@ -9,7 +9,7 @@ void prepararTablaDeEntradas() {
 	/* prepara la estructura de la tabla de entradas y asigna el espacio para almacenar los valores */
 
 	unsigned int espacioTotal;
-	unsigned int i;
+	int i;
 
 	espacioTotal = (configuracion.cantidadEntradas) * (configuracion.tamanioEntrada);
 	log_info(logger,"Reservando espacio de almacenamiento para %d bytes.",espacioTotal);
@@ -27,11 +27,11 @@ void prepararTablaDeEntradas() {
 	}
 }
 
-unsigned int entradasDisponibles() {
+int entradasDisponibles() {
 	/* determina cuántas entradas quedan por ocupar */
 
-	unsigned int entradasDisponibles;
-	unsigned int i;
+	int entradasDisponibles;
+	int i;
 
 	log_debug(logger,"Calculando entradas disponibles");
 	entradasDisponibles = 0;
@@ -54,7 +54,7 @@ void iniciarDumpTimeout() {
 	log_info(logger,"Seteada alarma para vuelco en %d segundos.", (int)configuracion.intervaloDump.it_value.tv_sec);
 }
 
-void volcarEntradas() {
+void volcarEntradasEnArchivos() {
 	/* Proceso de dump. Vuelca las entradas con sus valores en el punto de montaje.
 	 * Supuesto: no hay "basura" en el punto de montaje. */
 
@@ -118,40 +118,11 @@ int inicializarPuntoDeMontaje() {
 	return 1;
 }
 
-char * valorDeEntradaPorClave(char * clave) {
-	/* Lee el valor correspondiente a una entrada de clave NNNNN, le agrega el terminador, y lo retorna */
-
-	unsigned int i = 0;
-	int encontrado = 0;
-
-	while (!encontrado && i < configuracion.cantidadEntradas) {
-		if (strcmp(tablaDeEntradas[i].clave, clave) == 0)
-			encontrado = 1;
-		else
-			i++;
-	}
-
-	// ToDo si no la encontró hay que devolver error!
-	return valorDeEntradaPorIndice(i);
-}
-
-char * valorDeEntradaPorIndice(unsigned int indice) {
-	/* Lee el valor correspondiente a una entrada i, le agrega el terminador, y lo retorna */
-
-	char * valor;
-	valor = (char *)malloc((tablaDeEntradas[indice].tamanio)+1);
-	memcpy(valor,almacenamientoEntradas + (indice * configuracion.tamanioEntrada), tablaDeEntradas[indice].tamanio);
-	valor[tablaDeEntradas[indice].tamanio] = '\0';
-
-	// se debe hacer el free del valor devuelvo en el lugar que se utilice
-	return valor;
-}
-
 void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 	/* lee los archivos del punto de montaje y carga las entradas con sus valores.
 	 * recibe un string que es una lista de entradas separadas por ; */
 
-	unsigned int i = 0, j = 0;
+	int i = 0, j = 0;
 	char ** entradasACargar;
     char * archivoFullPath;
 	int fdArchivoLeido;
@@ -182,7 +153,7 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 				close(fdArchivoLeido);
 			}
 
-			// unstable code: comparo un size_t con unsigned int pero... dale que va
+			// unstable code: comparo un size_t con int pero... dale que va
 			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
 				/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
 				int entradasExtraOcupadas;
@@ -215,4 +186,92 @@ int procesarClavesYCargarEntradas(char * clavesSincronizadas) {
 
 	free(clavesSincronizadas);
 	return 1;
+}
+
+char * valorDeEntradaPorClave(char * clave) {
+	/* Lee el valor correspondiente a una entrada de clave NNNNN, le agrega el terminador, y lo retorna */
+
+	int indice;
+	indice = indiceClave(clave);
+
+	if (indice < 0)
+		return strdup("");
+	else
+		return valorDeEntradaPorIndice(indice);
+}
+
+char * valorDeEntradaPorIndice(int indice) {
+	/* Lee el valor correspondiente a una entrada i, le agrega el terminador, y lo retorna */
+
+	char * valor;
+	valor = (char *)malloc((tablaDeEntradas[indice].tamanio)+1);
+	memcpy(valor,almacenamientoEntradas + (indice * configuracion.tamanioEntrada), tablaDeEntradas[indice].tamanio);
+	valor[tablaDeEntradas[indice].tamanio] = '\0';
+
+	// se debe hacer el free del valor devuelvo en el lugar que se utilice
+	return valor;
+}
+
+int indiceClave(char * claveBuscada) {
+	/* Devuelve el índice de la clave en la tabla de entradas, o -1 si no existe */
+
+	int i = 0;
+	int encontrado = -1;
+
+	while (encontrado < 0 && i < configuracion.cantidadEntradas) {
+		if (strcmp(tablaDeEntradas[i].clave, claveBuscada) == 0)
+			encontrado = i;
+		else
+			i++;
+	}
+
+	return encontrado;
+}
+
+int existeClave(char * claveBuscada) {
+	/* Devuelve 1 si existe la clave en la tabla de entradas o 0 si no existe */
+
+	if(indiceClave(claveBuscada) < 0)
+		return 0;
+	else
+		return 1;
+}
+
+void storeClave(char * unaClave) {
+	/* Guarda el valor en el punto de montaje en un archivo de nombre clave.
+	 * Si no tiene valor, guarda un archivo vacío.
+	 * Si el archivo existe, lo sobreescribe. */
+
+    char * archivoFullPath;
+	int fdArchivoDestino;
+	char * archivoMapeado;
+	int indice;
+	char * posicionValor;
+	size_t tamanioValor;
+
+	indice = indiceClave(unaClave);
+	posicionValor = almacenamientoEntradas + (indice * configuracion.tamanioEntrada);
+	tamanioValor = tablaDeEntradas[indice].tamanio;
+
+	archivoFullPath = string_new();
+	string_append_with_format(&archivoFullPath, "%s/%s", configuracion.puntoDeMontaje, unaClave);
+
+	log_info(logger, "Escribiendo archivo: %s", archivoFullPath);
+
+	fdArchivoDestino = open(archivoFullPath, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
+
+	if(tamanioValor > 0) {
+		lseek(fdArchivoDestino, tamanioValor-1, SEEK_SET);
+		write(fdArchivoDestino, "", 1);
+
+		archivoMapeado = (char *) mmap(0, tamanioValor, PROT_READ | PROT_WRITE, MAP_SHARED, fdArchivoDestino, 0);
+
+		memcpy(archivoMapeado, posicionValor, tamanioValor);
+		msync(archivoMapeado, tamanioValor, MS_SYNC);
+		munmap(archivoMapeado, tamanioValor);
+	}
+	close(fdArchivoDestino);
+	free(archivoFullPath);
+
+	tablaDeEntradas[indice].ultimaInstruccion = configuracion.instruccionesProcesadas;
 }

@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
 				fflush(stdout);
 				log_warning(logger,"El coordinador dejó de responder.");
 			}
+			configuracion.instruccionesProcesadas++;
 			switch (tipoMensaje) {
 				case C_EJECUTAR_SET:
 					log_info(logger,"Recibido mensaje del Coordinador C_EJECUTAR_SET (%d).",C_EJECUTAR_SET);
@@ -95,7 +96,6 @@ int main(int argc, char *argv[]) {
 
 					deserializar(sPayloadRespuesta, "%s%s", claveRecibida, valorRecibido);
 
-					configuracion.instruccionesProcesadas++;
 
 					//ToDo: ejecutar una funcion que obtenga la posicion para guardar el valor
 					//y cambiarla por el 0 en el llamado de ejecutarSet
@@ -119,6 +119,7 @@ int main(int argc, char *argv[]) {
 
 					free(claveRecibida);
 					free(valorRecibido);
+					//tablaDeEntradas[indiceClave].ultimaInstruccion = configuracion.instruccionesProcesadas;
 					break;
 
 				case C_EJECUTAR_STORE:
@@ -154,7 +155,7 @@ int main(int argc, char *argv[]) {
 					// forzar Compactación
 				break;
 				case 'D': // forzar Dump
-					volcarEntradas();
+					volcarEntradasEnArchivos();
 				break;
 				case 'E': // listar Entradas
 					listarEntradas();
@@ -179,7 +180,7 @@ int main(int argc, char *argv[]) {
 		if (FD_ISSET(configuracion.fdTimerDump,&read_fds)) {
 			size_t sBuf = 0;
 			read(configuracion.fdTimerDump, &sBuf, sizeof(sBuf));
-			volcarEntradas();
+			volcarEntradasEnArchivos();
 		}
 		letra = '-';
 	}
