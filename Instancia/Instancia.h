@@ -98,7 +98,7 @@ int atenderEjecutarCompactacion(void);
 void prepararTablaDeEntradas(void);
 void iniciarDumpTimeout(void);
 void volcarEntradasEnArchivos(void);
-void storeClave(char *);
+void storeClave(int);
 int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
 int inicializarPuntoDeMontaje(void);
@@ -118,6 +118,7 @@ void listarEntradas(void);
 void pantallaFin(void);
 void mostrarTexto(char *);
 void mostrarMenu(void);
+void refrescarPantalla(void);
 
 
 // deprecated
