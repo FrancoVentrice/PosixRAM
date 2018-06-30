@@ -130,7 +130,7 @@ int atenderEjecutarCompactacion() {
 
 	log_info(logger,"Iniciando proceso de compactación de la Instancia.");
 
-	// ToDo acá va todo el proceso (en una función adecuada)
+	realizarCompactacion();
 
 	tPaquete pkgResultadoCompactacion;
 

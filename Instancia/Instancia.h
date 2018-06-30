@@ -108,6 +108,7 @@ char * valorDeEntradaPorClave(char *);
 int procesarClavesYCargarEntradas(char *);
 int existeClave(char *);
 int indiceClave(char *);
+void realizarCompactacion(void);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

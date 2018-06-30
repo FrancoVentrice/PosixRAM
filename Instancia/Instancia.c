@@ -151,8 +151,8 @@ int main(int argc, char *argv[]) {
 			letra = toupper(letra);
 
 			switch (letra) {
-				case 'C':
-					// forzar Compactación
+				case 'C': // forzar Compactación
+					realizarCompactacion();
 				break;
 				case 'D': // forzar Dump
 					volcarEntradasEnArchivos();

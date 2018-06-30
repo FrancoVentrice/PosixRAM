@@ -286,3 +286,47 @@ void storeClave(int indice) {
 
 	tablaDeEntradas[indice].ultimaInstruccion = configuracion.instruccionesProcesadas;
 }
+
+void realizarCompactacion() {
+	/* Compactación. Reacomoda la tabla de entradas y el espacio de almacenamiento, dejando
+	 * todo el espacio libre al final. */
+
+	int indice, proximaOcupada;
+	char * posicionLibre = NULL;
+	char * posicionValor = NULL;
+
+	log_info(logger,"Ejecutando compactación...");
+	mostrarTexto(AMARILLO_T "Ejecutando compactación...");
+
+	log_debug(logger,"...entradas al inicio %d", entradasDisponibles());
+
+	for (indice=0 ; indice < configuracion.cantidadEntradas ; indice++) {
+		if (string_is_empty(tablaDeEntradas[indice].clave)) {
+			// se encontró entrada disponible
+			proximaOcupada = indice + 1;
+			while(string_is_empty(tablaDeEntradas[proximaOcupada].clave) && proximaOcupada < configuracion.cantidadEntradas) {
+				proximaOcupada++;
+			}
+			if (proximaOcupada < configuracion.cantidadEntradas) {
+				// actualizo tabla de entradas
+				strcpy(tablaDeEntradas[indice].clave,tablaDeEntradas[proximaOcupada].clave);
+				tablaDeEntradas[indice].tamanio = tablaDeEntradas[proximaOcupada].tamanio;
+				tablaDeEntradas[indice].ultimaInstruccion = tablaDeEntradas[proximaOcupada].ultimaInstruccion;
+				memset(tablaDeEntradas[proximaOcupada].clave, 0, MAX_LONG_CLAVE);
+				tablaDeEntradas[proximaOcupada].tamanio = 0;
+				tablaDeEntradas[proximaOcupada].ultimaInstruccion = 0;
+
+				// muevo bloqueo de datos
+				posicionLibre = almacenamientoEntradas + (indice * configuracion.tamanioEntrada);
+				posicionValor = almacenamientoEntradas + (proximaOcupada * configuracion.tamanioEntrada);
+				memcpy(posicionLibre, posicionValor, configuracion.tamanioEntrada);
+				memset(posicionValor, 0, configuracion.tamanioEntrada);
+			}
+		}
+	}
+
+	log_info(logger,"Compactación finalizada.");
+	log_debug(logger,"...entradas al finalizar %d", entradasDisponibles());
+	retardoSegundos(2);
+	refrescarPantalla();
+}
