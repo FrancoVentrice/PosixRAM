@@ -710,6 +710,8 @@ void abortarEsiPorId(char *id) {
 			esi->socket = -1;
 			list_remove_and_destroy_element(esisExistentes, index, esiDestroyer);
 		}
+	} else {
+		log_info(logger, "Esi %s no encontrado");
 	}
 	evaluarAptoEjecucion();
 }
@@ -778,37 +780,47 @@ void analizarDeadlock() {
 	void analizarDiccionarioBloqueados(char *clave, t_list *bloqueados) {
 		//esta lista se va guardando los implicados en el posible deadlock
 		t_list * empernados = list_create();
-		if (dictionary_has_key(diccionarioClavesTomadas, clave)) {
-			t_esi *tomadorDeClave = dictionary_get(diccionarioClavesTomadas, clave);
-			//el deadlock va a ser posible si el tomador de la clave esta bloqueado (y la clave esta tomada por un esi)
-			if (tomadorDeClave && tomadorDeClave->bloqueado) {
-				//si no lo tengo en la lista de empernados, es porque no llegue a una dependencia circular
-				if (getIndexDeEsi(empernados, tomadorDeClave) < 0) {
-					list_add(empernados, tomadorDeClave);
-					char *claveQueLoTieneBloqueado;
-					//nombre feo si los hay, pero descriptivo
-					void buscarClaveQueLoTieneBloqueadoAlEsi(char *clave, t_list *bloqueados) {
-						if (getIndexDeEsi(bloqueados, tomadorDeClave) >= 0) {
-							claveQueLoTieneBloqueado = clave;
+		char *claveABuscar = clave;
+		bool buscando = true;
+		while (buscando) {
+			if (dictionary_has_key(diccionarioClavesTomadas, claveABuscar)) {
+				t_esi *tomadorDeClave = NULL;
+				tomadorDeClave = dictionary_get(diccionarioClavesTomadas, claveABuscar);
+				//el deadlock va a ser posible si el tomador de la clave esta bloqueado (y la clave esta tomada por un esi)
+				if (tomadorDeClave != NULL && tomadorDeClave->bloqueado) {
+					//si no lo tengo en la lista de empernados, es porque no llegue a una dependencia circular
+					if (getIndexDeEsi(empernados, tomadorDeClave) < 0) {
+						list_add(empernados, tomadorDeClave);
+						char *claveQueLoTieneBloqueado = NULL;
+						//nombre feo si los hay, pero descriptivo
+						void buscarClaveQueLoTieneBloqueadoAlEsi(char *clave, t_list *bloqueados) {
+							if (getIndexDeEsi(bloqueados, tomadorDeClave) >= 0) {
+								claveQueLoTieneBloqueado = clave;
+							}
 						}
-					}
-					dictionary_iterator(diccionarioBloqueados, buscarClaveQueLoTieneBloqueadoAlEsi);
-					if (claveQueLoTieneBloqueado) {
-					analizarDiccionarioBloqueados(claveQueLoTieneBloqueado, dictionary_get(diccionarioBloqueados, claveQueLoTieneBloqueado));
-					}
-				} else  {
-					//llegue a una dependencia circular! todos los empernados son los participantes de esta barbarie
-					log_error(logger, "\nDEADLOCK ENCONTRADO\n");
-					log_info(logger, "\nLos ESIs implicados son los siguientes:");
-					int i;
-					for (i = 0; i < empernados->elements_count; i++) {
-						t_esi *empernado = list_get(empernados, i);
-						log_info(logger, "\n Id: %s con claves: ", empernado->id);
-						int j;
-						for (j = 0; j < empernado->clavesTomadas->elements_count; j++) {
-							log_info(logger, "\n%s ", list_get(empernado->clavesTomadas, j));
+						dictionary_iterator(diccionarioBloqueados, buscarClaveQueLoTieneBloqueadoAlEsi);
+						if (claveQueLoTieneBloqueado != NULL) {
+							claveABuscar = claveQueLoTieneBloqueado;
 						}
+					} else  {
+						//llegue a una dependencia circular! todos los empernados son los participantes de esta barbarie
+						log_error(logger, "\nDEADLOCK ENCONTRADO\n");
+						log_info(logger, "\nLos ESIs implicados son los siguientes:");
+						int i;
+						for (i = 0; i < empernados->elements_count; i++) {
+							char *registro = string_new();
+							t_esi *empernado = list_get(empernados, i);
+							string_append_with_format(&registro, "\nNombre: %s\nClaves:", empernado->id);
+							int j;
+							for (j = 0; j < empernado->clavesTomadas->elements_count; j++) {
+								string_append_with_format(&registro, "\n- %s ", list_get(empernado->clavesTomadas, j));
+							}
+							log_info(logger, registro);
+						}
+						buscando = false;
 					}
+				} else {
+					buscando = false;
 				}
 			}
 		}

@@ -84,10 +84,14 @@ void esperarOrdenDeEjecucion() {
 	log_info(logger, "Esperando orden de ejecucion...");
 	int bytesRecibidos = recibirPaquete(configuracion->socketPlanificador, &tipoMensajePlanificador, &buffer, logger, "Orden de ejecucion");
 	free(buffer);
+	log_info(logger, "tipo mensaje recibido: %d", tipoMensajePlanificador);
 	if (tipoMensajePlanificador == P_EJECUTAR_LINEA) {
 		log_info(logger, "Orden de lectura recibida en %d bytes", bytesRecibidos);
 	} else if (tipoMensajePlanificador == P_ABORTAR) {
 		log_info(logger, "Orden de abortar recibida en %d bytes", bytesRecibidos);
+		finalizar(EXIT_FAILURE);
+	} else {
+		log_info(logger, "Se rompio el planificador! Arrivederci!! (o como se escriba)");
 		finalizar(EXIT_FAILURE);
 	}
 }
