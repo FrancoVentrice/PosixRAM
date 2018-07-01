@@ -11,17 +11,19 @@ int configValida(t_config* fd_configuracion) {
 }
 
 void bloquearClavesIniciales() {
-	char** claves = string_split(configuracion->clavesInicialmenteBloqueadas, ", ");
-	int i = 0;
-	while (true) {
-		if (claves[i] != NULL) {
-			bloquearClaveSola(claves[i]);
-			i ++;
-		} else  {
-			break;
+	if (configuracion->clavesInicialmenteBloqueadas != NULL) {
+		char** claves = string_split(configuracion->clavesInicialmenteBloqueadas, ", ");
+		int i = 0;
+		while (true) {
+			if (claves[i] != NULL) {
+				bloquearClaveSola(claves[i]);
+				i ++;
+			} else  {
+				break;
+			}
 		}
+		free(claves);
 	}
-	free(claves);
 }
 
 int cargarConfiguracion() {
