@@ -93,6 +93,7 @@ int conectarACoordinador(char **);
 int atenderEstadoClave(char *);
 int atenderStoreClave(char *);
 int atenderEjecutarCompactacion(void);
+int atenderSetClaveValor(char *);
 
 // manejo de entrads [EntradasInstancia.c]
 void prepararTablaDeEntradas(void);
@@ -108,7 +109,7 @@ char * valorDeEntradaPorClave(char *);
 int procesarClavesYCargarEntradas(char *);
 int existeClave(char *);
 int indiceClave(char *);
-void realizarCompactacion(void);
+int realizarCompactacion(void);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

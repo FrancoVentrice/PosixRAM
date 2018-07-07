@@ -287,9 +287,10 @@ void storeClave(int indice) {
 	tablaDeEntradas[indice].ultimaInstruccion = configuracion.instruccionesProcesadas;
 }
 
-void realizarCompactacion() {
+int realizarCompactacion() {
 	/* Compactación. Reacomoda la tabla de entradas y el espacio de almacenamiento, dejando
-	 * todo el espacio libre al final. */
+	 * todo el espacio libre al final.
+	 * Retorna el índice de la primer entrada disponible. */
 
 	int indice, proximaOcupada;
 	char * posicionLibre = NULL;
@@ -298,15 +299,15 @@ void realizarCompactacion() {
 	log_info(logger,"Ejecutando compactación...");
 	mostrarTexto(AMARILLO_T "Ejecutando compactación...");
 
-	log_debug(logger,"...entradas al inicio %d", entradasDisponibles());
+	log_debug(logger,"...entradas disponibles al inicio %d", entradasDisponibles());
 
 	for (indice=0 ; indice < configuracion.cantidadEntradas ; indice++) {
 		if (string_is_empty(tablaDeEntradas[indice].clave)) {
 			// se encontró entrada disponible
 			proximaOcupada = indice + 1;
-			while(string_is_empty(tablaDeEntradas[proximaOcupada].clave) && proximaOcupada < configuracion.cantidadEntradas) {
+			while(string_is_empty(tablaDeEntradas[proximaOcupada].clave) && proximaOcupada < configuracion.cantidadEntradas)
 				proximaOcupada++;
-			}
+
 			if (proximaOcupada < configuracion.cantidadEntradas) {
 				// actualizo tabla de entradas
 				strcpy(tablaDeEntradas[indice].clave,tablaDeEntradas[proximaOcupada].clave);
@@ -325,8 +326,14 @@ void realizarCompactacion() {
 		}
 	}
 
-	log_info(logger,"Compactación finalizada.");
-	log_debug(logger,"...entradas al finalizar %d", entradasDisponibles());
+	indice = 0;
+	while(!string_is_empty(tablaDeEntradas[indice].clave) && indice < configuracion.cantidadEntradas)
+		indice++;
+
+	log_info(logger,"Compactación finalizada. Primer entrada disponible: %d", indice);
+	log_debug(logger,"...entradas disponibles al finalizar %d", entradasDisponibles());
 	retardoSegundos(2);
 	refrescarPantalla();
+
+	return indice;
 }

@@ -4,15 +4,6 @@
  * (c) PosixRAM */
 
 #include "ESI.h"
-#include "..//shared/protocolo.h"
-#include "..//shared/sockets.h"
-#include "..//shared/serializar.h"
-#include "..//shared/libgral.h"
-#include "..//shared/logExtra.h"
-
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
 
 int main(int argn, char *argv[]) {
 	cargarConfiguracion();
@@ -80,11 +71,14 @@ void iniciarConexiones() {
 void esperarOrdenDeEjecucion() {
 	//Recibir orden por parte del Planificador para ejecutar el script
 	tMensaje tipoMensajePlanificador;
-	char *buffer = malloc(20);
+	char *buffer;
+
 	log_info(logger, "Esperando orden de ejecucion...");
 	int bytesRecibidos = recibirPaquete(configuracion->socketPlanificador, &tipoMensajePlanificador, &buffer, logger, "Orden de ejecucion");
 	free(buffer);
+
 	log_info(logger, "tipo mensaje recibido: %d", tipoMensajePlanificador);
+
 	if (tipoMensajePlanificador == P_EJECUTAR_LINEA) {
 		log_info(logger, "Orden de lectura recibida en %d bytes", bytesRecibidos);
 	} else if (tipoMensajePlanificador == P_ABORTAR) {
@@ -99,20 +93,17 @@ void esperarOrdenDeEjecucion() {
 tRespuestaCoordinador * recibirResultadoOperacion() {
 	tRespuestaCoordinador *respuestaCoordinador = malloc(sizeof(tRespuestaCoordinador));
 	tMensaje tipoMensajeCoordinador;
-	char * sPayloadRespuestaCoordinador = malloc(100);
+	char * sPayloadRespuestaCoordinador;
 
 	log_info(logger, "Esperando respuesta de la operacion...");
-	int recibidos = recibirPaquete(configuracion->socketCoordinador,
-			&tipoMensajeCoordinador, &sPayloadRespuestaCoordinador, logger,
-			"Respuesta a la ejecucion");
+	int recibidos = recibirPaquete(configuracion->socketCoordinador,&tipoMensajeCoordinador, &sPayloadRespuestaCoordinador, logger,"Respuesta a la ejecucion");
 	log_info(logger, "RECIBIDOS:%d", recibidos);
 	respuestaCoordinador->mensaje = malloc(100);
 
-	deserializar(sPayloadRespuestaCoordinador, "%s",
-			respuestaCoordinador->mensaje);
+	deserializar(sPayloadRespuestaCoordinador, "%s",respuestaCoordinador->mensaje);
+	free(sPayloadRespuestaCoordinador);
 
-	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
-			respuestaCoordinador->mensaje);
+	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",respuestaCoordinador->mensaje);
 	return respuestaCoordinador;
 }
 
@@ -168,23 +159,19 @@ int leerLinea() {
 				operacion->operacion = OPERACION_SET;
 				operacion->clave = strdup(lineaParseada.argumentos.SET.clave);
 				operacion->valor = strdup(lineaParseada.argumentos.SET.valor);
-
 				break;
 			case STORE:
 				operacion->operacion = OPERACION_STORE;
 				operacion->clave = strdup(lineaParseada.argumentos.STORE.clave);
-
 				break;
 			default:
 				log_error(logger, "No pude interpretar <%s>\n", lineptr);
 				finalizar(EXIT_FAILURE);
 
 			}
-
 			destruir_operacion(lineaParseada);
 
-			log_info(logger, "\noperacion: %d \n clave: %s \n valor: %s\n",
-					operacion->operacion, operacion->clave, operacion->valor);
+			log_info(logger, "\noperacion: %d \n clave: %s \n valor: %s\n",operacion->operacion, operacion->clave, operacion->valor);
 		} else {
 			log_error(logger, "La linea <%s> no es valida\n", lineptr);
 			finalizar(EXIT_FAILURE);
@@ -198,16 +185,14 @@ int leerLinea() {
 void enviarLineaOK() {
 	tPaquete pkgLineaOk;
 	int bytesEnviados;
-	char* lineaOk = malloc(5);
-	strcpy(lineaOk,"OK");
+
 	pkgLineaOk.type = E_LINEA_OK;
 
-	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s", lineaOk);
+	pkgLineaOk.length = serializar(pkgLineaOk.payload, "%s", "OK");
 
-	log_info(logger, "Se envia %s al Planificador", lineaOk);
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgLineaOk, logger, "Se envia OK al Planificador");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);
-	free(lineaOk);
+
 }
 
 void enviarOperacion() {
@@ -220,37 +205,28 @@ void enviarOperacion() {
 	if (operacion->operacion == OPERACION_GET) {
 		pkgSentencia.type = E_SENTENCIA_GET;  //
 
-		pkgSentencia.length = serializar(pkgSentencia.payload, "%s",
-				operacion->clave);
+		pkgSentencia.length = serializar(pkgSentencia.payload, "%s",operacion->clave);
 
 		log_info(logger, "Se envia la instruccion GET al coordinador");
-		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
-				&pkgSentencia, logger,
-				"Se envia la instruccion GET al coordinador");
+		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,&pkgSentencia, logger,"Se envia la instruccion GET al coordinador");
 		log_info(logger, "Se envian %d bytes", bytesEnviados);
 
 	} else if (operacion->operacion == OPERACION_SET) {
 		pkgSentencia.type = E_SENTENCIA_SET;
 
-		pkgSentencia.length = serializar(pkgSentencia.payload, "%s%s",
-				operacion->clave, operacion->valor);
+		pkgSentencia.length = serializar(pkgSentencia.payload, "%s%s",operacion->clave, operacion->valor);
 
 		log_info(logger, "Se envia la instruccion SET al coordinador");
-		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
-				&pkgSentencia, logger,
-				"Se envia la instruccion SET al coordinador");
+		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,&pkgSentencia, logger,"Se envia la instruccion SET al coordinador");
 		log_info(logger, "Se envian %d bytes", bytesEnviados);
 
 	} else if (operacion->operacion == OPERACION_STORE) {
 		pkgSentencia.type = E_SENTENCIA_STORE;  //
 
-		pkgSentencia.length = serializar(pkgSentencia.payload, "%s",
-				operacion->clave);
+		pkgSentencia.length = serializar(pkgSentencia.payload, "%s",operacion->clave);
 
 		log_info(logger, "Se envia la instruccion STORE al coordinador");
-		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,
-				&pkgSentencia, logger,
-				"Se envia la instruccion STORE al coordinador");
+		bytesEnviados = enviarPaquete(configuracion->socketCoordinador,&pkgSentencia, logger,"Se envia la instruccion STORE al coordinador");
 		log_info(logger, "Se envian %d bytes", bytesEnviados);
 
 	}
@@ -262,9 +238,9 @@ void enviarEsiFinalizado() {
 	//y el ESI finalizo su ejecucion
 	tPaquete pkgSentencia;
 	int bytesEnviados;
-	char* mensajeFinalizado =  strdup("FINALIZADO");
+
 	pkgSentencia.type = E_ESI_FINALIZADO;
-	pkgSentencia.length = serializar(pkgSentencia.payload, "%s", mensajeFinalizado);
+	pkgSentencia.length = serializar(pkgSentencia.payload, "%s", "FINALIZADO");
 	log_info(logger, "Se envia respuesta Finalizado");
 	bytesEnviados = enviarPaquete(configuracion->socketPlanificador, &pkgSentencia, logger, "Se envia respuesta Finalizado");
 	log_info(logger, "Se envian %d bytes", bytesEnviados);

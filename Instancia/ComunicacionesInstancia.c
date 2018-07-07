@@ -29,8 +29,7 @@ int conectarACoordinador(char ** clavesSincronizadas) {
 	bytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgHandshake, logger,"Enviando Handshake...");
 	log_debug(logger,"Se enviaron %d bytes", bytesEnviados);
 
-	char * sPayloadRespuesta = (char *)malloc(MAX_BUFFER);
-	memset(sPayloadRespuesta,0,MAX_BUFFER);
+	char * sPayloadRespuesta;
 
 	tMensaje tipoMensaje;
 	bytesLeidos = recibirPaquete(configuracion.fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo respuesta de coordinador...");
@@ -138,4 +137,36 @@ int atenderEjecutarCompactacion() {
 	pkgResultadoCompactacion.length = serializar(pkgResultadoCompactacion.payload, "", NULL);
 
 	return enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoCompactacion, logger, "Se envía fin de compactación al Coordinador");
+}
+
+int atenderSetClaveValor(char * sPayloadRespuesta) {
+
+	int iBytesEnviados;
+	char * claveRecibida = (char *)calloc(1, MAX_LONG_CLAVE);
+	char * valorRecibido = (char *)calloc(1, MAX_BUFFER);
+
+	deserializar(sPayloadRespuesta, "%s%s", claveRecibida, valorRecibido);
+
+	// *************************************************************************
+	// ToDo: lo que sigue es la respuesta
+	// *************************************************************************
+	tPaquete pkgResultadoSet;
+	t_respuestaSet respuestaSet;
+
+	strcpy(respuestaSet.claveReemplazada,claveRecibida);
+	respuestaSet.compactacionRequerida = 0;
+	//tablaDeEntradas[indice].ultimaInstruccion = configuracion.instruccionesProcesadas;
+
+	pkgResultadoSet.type = I_RESULTADO_SET;
+	pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
+
+	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoSet, logger, "Se envía resultado del set al Coordinador");
+	// *************************************************************************
+	// *************************************************************************
+
+	free(claveRecibida);
+	free(valorRecibido);
+
+	return iBytesEnviados;
+
 }

@@ -1,12 +1,18 @@
 #ifndef ESI_H_
 #define ESI_H_
 
-#include <commons/config.h>
-#include <commons/log.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <commons/config.h>
+#include <commons/log.h>
 #include <parsi/parser.h>
+#include "../shared/protocolo.h"
+#include "../shared/sockets.h"
+#include "../shared/serializar.h"
+#include "../shared/libgral.h"
+#include "../shared/logExtra.h"
 
 #define OPERACION_GET 1
 #define OPERACION_SET 2

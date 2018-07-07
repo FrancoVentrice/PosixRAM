@@ -72,10 +72,8 @@ int main(int argc, char *argv[]) {
 			tMensaje tipoMensaje;
 			int iBytesLeidos = 0;
 			int iBytesEnviados;
-			char * claveRecibida;
-			char * valorRecibido;
 
-			char * sPayloadRespuesta = (char *)calloc(configuracion.cantidadEntradas, configuracion.tamanioEntrada);
+			char * sPayloadRespuesta;
 
 			iBytesLeidos = recibirPaquete(configuracion.fdSocketCoordinador, &tipoMensaje, &sPayloadRespuesta, logger, "Recibiendo mensaje desde Coordinador.");
 
@@ -90,36 +88,7 @@ int main(int argc, char *argv[]) {
 			switch (tipoMensaje) {
 				case C_EJECUTAR_SET:
 					log_info(logger,"Recibido mensaje del Coordinador C_EJECUTAR_SET (%d).",C_EJECUTAR_SET);
-					claveRecibida = (char *)malloc(MAX_LONG_CLAVE);
-					valorRecibido = (char *)malloc(iBytesLeidos);
-					memset(valorRecibido,0,iBytesLeidos);
-
-					deserializar(sPayloadRespuesta, "%s%s", claveRecibida, valorRecibido);
-
-
-					//ToDo: ejecutar una funcion que obtenga la posicion para guardar el valor
-					//y cambiarla por el 0 en el llamado de ejecutarSet
-					//  deprecated_ejecutarSet(claveRecibida, valorRecibido, 0);
-					// deprecated_enviarMensajeOK();
-					// *************************************************************************
-					// ToDo: lo que sigue es la respuesta
-					// *************************************************************************
-					tPaquete pkgResultadoSet;
-					t_respuestaSet respuestaSet;
-
-					strcpy(respuestaSet.claveReemplazada,claveRecibida);
-					respuestaSet.compactacionRequerida = 0;
-
-					pkgResultadoSet.type = I_RESULTADO_SET;
-					pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
-
-					iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoSet, logger, "Se envia OK al Planificador");
-					// *************************************************************************
-					// *************************************************************************
-
-					free(claveRecibida);
-					free(valorRecibido);
-					//tablaDeEntradas[indiceClave].ultimaInstruccion = configuracion.instruccionesProcesadas;
+					iBytesEnviados = atenderSetClaveValor(sPayloadRespuesta);
 					break;
 
 				case C_EJECUTAR_STORE:
