@@ -48,24 +48,22 @@ void iniciarConexiones() {
 
 	//Recibo respuesta de Coordinador
 	tMensaje tipoMensajeCoordinador;
-	char *bufferHSCoordinador = malloc(20);
+	char *bufferHSCoordinador;
 	int bytesRecibidosDeCoordinador = recibirPaquete(configuracion->socketCoordinador, &tipoMensajeCoordinador, &bufferHSCoordinador, logger, "HS Respuesta Coordinador");
 	log_info(logger, "Recibido handshake de Coordinador: %d bytes", bytesRecibidosDeCoordinador);
 	if (tipoMensajeCoordinador == C_HANDSHAKE) {
 		log_info(logger, "Hanshake con Coordinador OK");
 	}
-	free(bufferHSCoordinador);
 
 	//Conexion al Planificador
 	configuracion->socketPlanificador = connectToServer(configuracion->ipPlanificador, configuracion->puertoPlanificador, logger);
 	tMensaje tipoMensajePlanificador;
-	char *bufferHSPlanificador = malloc(20);
+	char *bufferHSPlanificador;
 	int bytesRecibidosDePlanificador = recibirPaquete(configuracion->socketPlanificador, &tipoMensajePlanificador, &bufferHSPlanificador, logger, "HS Respuesta Planificador");
 	log_info(logger, "Recibido handshake de Planificador: %d bytes", bytesRecibidosDePlanificador);
 	if (tipoMensajePlanificador == P_HANDSHAKE) {
 		log_info(logger, "Hanshake con Planificador OK");
 	}
-	free(bufferHSPlanificador);
 }
 
 void esperarOrdenDeEjecucion() {
@@ -75,7 +73,6 @@ void esperarOrdenDeEjecucion() {
 
 	log_info(logger, "Esperando orden de ejecucion...");
 	int bytesRecibidos = recibirPaquete(configuracion->socketPlanificador, &tipoMensajePlanificador, &buffer, logger, "Orden de ejecucion");
-	free(buffer);
 
 	log_info(logger, "tipo mensaje recibido: %d", tipoMensajePlanificador);
 
