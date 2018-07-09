@@ -110,6 +110,7 @@ int procesarClavesYCargarEntradas(char *);
 int existeClave(char *);
 int indiceClave(char *);
 int realizarCompactacion(void);
+int buscarEspacioContiguoDeEntradas(int);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

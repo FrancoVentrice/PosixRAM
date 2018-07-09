@@ -337,3 +337,68 @@ int realizarCompactacion() {
 
 	return indice;
 }
+
+int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * respuestaSet) {
+	/* Realiza el set de la clave con el valor requerido. Aplica los algoritmos de reemplazo en caso de ser
+	 * necesario, contempla si la entrada es nueva o no.
+	 * Returno 1 si fue exitoso o 0 en caso de error (solo puede haber error si no pudo reemplazar por
+	 * ser todas las entradas no atómicas) */
+
+	int iEntradasDisponibles, iEntradasRequeridas, iEntradasOcupadas;
+	int indiceOcupado;
+	char * posicionValor;
+
+	strcpy(respuestaSet->claveReemplazada,claveRecibida);
+	respuestaSet->compactacionRequerida = 0;
+
+	iEntradasDisponibles = entradasDisponibles();
+
+	iEntradasRequeridas = (int)(strlen(valorRecibido) / configuracion.tamanioEntrada);
+	if ((strlen(valorRecibido) % configuracion.tamanioEntrada) != 0)
+		iEntradasRequeridas++;
+	log_debug(logger,"Entradas requeridas %d",iEntradasRequeridas);
+
+	/* Todo el algoritmo que sigue lleno de IF es lo más horrible de este TP.
+	 * Chicos, no hagan esto en casa (pero funciona de 10 eh, eso no se discute) */
+	if (existeClave(claveRecibida)) {
+		indiceOcupado = indiceClave(claveRecibida);
+		iEntradasOcupadas =(int)(tablaDeEntradas[indiceOcupado].tamanio / configuracion.tamanioEntrada);
+		if ((tablaDeEntradas[indiceOcupado].tamanio % configuracion.tamanioEntrada) != 0)
+			iEntradasOcupadas++;
+		log_debug(logger,"Entradas ocupadas %d",iEntradasOcupadas);
+
+		if (iEntradasOcupadas == iEntradasRequeridas) {
+			// todo sobreescribir
+		}
+		else if (iEntradasOcupadas > iEntradasRequeridas) {
+			// todo sobreescribir y liberar
+		}
+		else { //iEntradasOcupadas < iEntradasRequeridas
+			if (iEntradasOcupadas + iEntradasDisponibles >= iEntradasRequeridas) {
+				// todo sobreescribir la entrada [1]
+			}
+			else {
+				// todo reemplazar [2]
+			}
+		}
+	}
+	else {
+		if (iEntradasDisponibles >= iEntradasRequeridas) {
+			//indiceOcupado = buscarEspacioContiguoDeEntradas(iEntradasRequeridas);
+			indiceOcupado = 0;
+			if(indiceOcupado < 0) // no se encontró espacio contiguo
+				indiceOcupado = realizarCompactacion();
+
+			// todo escribir la entrada
+			//posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
+
+
+		}
+		else {
+			// todo reemplazar [3]
+		}
+	}
+	tablaDeEntradas[indiceOcupado].ultimaInstruccion = configuracion.instruccionesProcesadas;
+
+	return 1;
+}

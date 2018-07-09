@@ -147,26 +147,30 @@ int atenderSetClaveValor(char * sPayloadRespuesta) {
 
 	deserializar(sPayloadRespuesta, "%s%s", claveRecibida, valorRecibido);
 
-	// *************************************************************************
-	// ToDo: lo que sigue es la respuesta
-	// *************************************************************************
 	tPaquete pkgResultadoSet;
 	t_respuestaSet respuestaSet;
 
-	strcpy(respuestaSet.claveReemplazada,claveRecibida);
-	respuestaSet.compactacionRequerida = 0;
-	//tablaDeEntradas[indice].ultimaInstruccion = configuracion.instruccionesProcesadas;
+	log_info(logger,"Intentando setear la clave: %s",claveRecibida);
 
-	pkgResultadoSet.type = I_RESULTADO_SET;
-	pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
+	if(setClaveValor(claveRecibida,valorRecibido,&respuestaSet)) {
+		log_info(logger,"Clave seteada correctamente.");
+
+		pkgResultadoSet.type = I_RESULTADO_SET;
+		pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
+
+		free(respuestaSet.claveReemplazada);
+	}
+	else {
+		log_error(logger,"No se pudo hacer el set de la clave (posiblemente no existan valores atómicos para reemplazar).");
+
+		pkgResultadoSet.type = I_RESULTADO_ERROR;
+		pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%s", "No se pudo hacer el set de la clave (posiblemente no existan valores atómicos para reemplazar).");
+	}
 
 	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoSet, logger, "Se envía resultado del set al Coordinador");
-	// *************************************************************************
-	// *************************************************************************
 
 	free(claveRecibida);
 	free(valorRecibido);
 
 	return iBytesEnviados;
-
 }
