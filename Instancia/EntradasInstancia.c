@@ -22,7 +22,7 @@ void prepararTablaDeEntradas() {
 	for (i=0 ; i < configuracion.cantidadEntradas ; i++) {
 		log_debug(logger,"... seteando entrada %d",i);
 		memset(tablaDeEntradas[i].clave, 0, MAX_LONG_CLAVE);
-		tablaDeEntradas[i].tamanio = 0;
+		tablaDeEntradas[i].tamanio = (size_t) 0;
 		tablaDeEntradas[i].ultimaInstruccion = 0;
 	}
 }
@@ -170,6 +170,7 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
 				/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
 				int entradasExtraOcupadas;
+				// ToDo revisar bien esta parte porque podría fallar cuando tamanio es múltiplo de tamanioEntrada
 				entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada;
 				while (entradasExtraOcupadas) {
 					i++;
@@ -345,7 +346,7 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 	 * ser todas las entradas no atómicas) */
 
 	int iEntradasDisponibles, iEntradasRequeridas, iEntradasOcupadas;
-	int indiceOcupado;
+	int indiceOcupado, i;
 	char * posicionValor;
 
 	strcpy(respuestaSet->claveReemplazada,claveRecibida);
@@ -368,12 +369,23 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 		log_debug(logger,"Entradas ocupadas %d",iEntradasOcupadas);
 
 		if (iEntradasOcupadas == iEntradasRequeridas) {
-			// todo sobreescribir
+			tablaDeEntradas[indiceOcupado].tamanio = strlen(valorRecibido);
+			posicionValor = almacenamientoEntradas + (indiceOcupado * configuracion.tamanioEntrada);
+			memcpy(posicionValor, valorRecibido, tablaDeEntradas[indiceOcupado].tamanio);
 		}
 		else if (iEntradasOcupadas > iEntradasRequeridas) {
-			// todo sobreescribir y liberar
+			tablaDeEntradas[indiceOcupado].tamanio = strlen(valorRecibido);
+			posicionValor = almacenamientoEntradas + (indiceOcupado * configuracion.tamanioEntrada);
+			memcpy(posicionValor, valorRecibido, tablaDeEntradas[indiceOcupado].tamanio);
+
+			for (i = iEntradasRequeridas; i < iEntradasOcupadas; i++) {
+				memset(tablaDeEntradas[indiceOcupado+i].clave, 0, MAX_LONG_CLAVE);
+				tablaDeEntradas[indiceOcupado+i].tamanio = (size_t) 0;
+				tablaDeEntradas[indiceOcupado+i].ultimaInstruccion = 0;
+			}
 		}
 		else { //iEntradasOcupadas < iEntradasRequeridas
+			// todo parece que este caso no se va a probar (zafamos)
 			if (iEntradasOcupadas + iEntradasDisponibles >= iEntradasRequeridas) {
 				// todo sobreescribir la entrada [1]
 			}
@@ -384,15 +396,16 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 	}
 	else {
 		if (iEntradasDisponibles >= iEntradasRequeridas) {
-			//indiceOcupado = buscarEspacioContiguoDeEntradas(iEntradasRequeridas);
-			indiceOcupado = 0;
-			if(indiceOcupado < 0) // no se encontró espacio contiguo
+			indiceOcupado = buscarEspacioContiguoDeEntradas(iEntradasRequeridas);
+			if(indiceOcupado < 0) {// no se encontró espacio contiguo
 				indiceOcupado = realizarCompactacion();
+				respuestaSet->compactacionRequerida = 0;
+			}
 
-			// todo escribir la entrada
-			//posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
-
-
+			strcpy(tablaDeEntradas[indiceOcupado].clave,claveRecibida);
+			tablaDeEntradas[indiceOcupado].tamanio = strlen(valorRecibido);
+			posicionValor = almacenamientoEntradas + (indiceOcupado * configuracion.tamanioEntrada);
+			memcpy(posicionValor, valorRecibido, tablaDeEntradas[indiceOcupado].tamanio);
 		}
 		else {
 			// todo reemplazar [3]
@@ -401,4 +414,30 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 	tablaDeEntradas[indiceOcupado].ultimaInstruccion = configuracion.instruccionesProcesadas;
 
 	return 1;
+}
+
+
+int buscarEspacioContiguoDeEntradas(int cantRequerida) {
+	/* Busca una cantidad de entradas contiguas disponibles, y retorna el índice o -1 si no lo encuentra */
+
+	int i, j;
+	int encontrado = 0;
+
+	log_debug(logger,"Buscando espacio contiguo para %d entradas", cantRequerida);
+
+	i=0 ;
+	while (i < configuracion.cantidadEntradas && !encontrado) {
+		j = i;
+		while (string_is_empty(tablaDeEntradas[j].clave) && j < configuracion.cantidadEntradas)
+			j++;
+		if ((j - i) >= cantRequerida)
+			encontrado = 1;
+		else
+			i++;
+	}
+
+	if (encontrado)
+		return i;
+	else
+		return -1;
 }

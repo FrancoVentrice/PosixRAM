@@ -158,7 +158,7 @@ int atenderSetClaveValor(char * sPayloadRespuesta) {
 		pkgResultadoSet.type = I_RESULTADO_SET;
 		pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
 
-		free(respuestaSet.claveReemplazada);
+		//free(respuestaSet.claveReemplazada);
 	}
 	else {
 		log_error(logger,"No se pudo hacer el set de la clave (posiblemente no existan valores atómicos para reemplazar).");

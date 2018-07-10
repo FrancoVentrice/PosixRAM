@@ -111,6 +111,7 @@ int existeClave(char *);
 int indiceClave(char *);
 int realizarCompactacion(void);
 int buscarEspacioContiguoDeEntradas(int);
+int setClaveValor(char *, char *, t_respuestaSet *);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
