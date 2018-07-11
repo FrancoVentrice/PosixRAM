@@ -9,6 +9,7 @@
 #include <unistd.h>  // alarm lseek
 #include <ctype.h> // toupper
 #include <dirent.h>
+#include <stdbool.h>
 #include <sys/mman.h> // mmap
 #include <sys/types.h>
 #include <sys/stat.h> // mkdir - stat
@@ -96,22 +97,30 @@ int atenderEjecutarCompactacion(void);
 int atenderSetClaveValor(char *);
 
 // manejo de entrads [EntradasInstancia.c]
+int inicializarPuntoDeMontaje(void);
 void prepararTablaDeEntradas(void);
+int procesarClavesYCargarEntradas(char *);
 void iniciarDumpTimeout(void);
 void volcarEntradasEnArchivos(void);
 void storeClave(int);
-int entradasDisponibles(void);
 void limpiarTablaDeEntradas(void);
-int inicializarPuntoDeMontaje(void);
 void cargarEntradasDesdeArchivos(char *);
+int entradasDisponibles(void);
 char * valorDeEntradaPorIndice(int);
 char * valorDeEntradaPorClave(char *);
-int procesarClavesYCargarEntradas(char *);
 int existeClave(char *);
+bool esEntradaAtomica(int);
 int indiceClave(char *);
 int realizarCompactacion(void);
 int buscarEspacioContiguoDeEntradas(int);
 int setClaveValor(char *, char *, t_respuestaSet *);
+
+// algoritmos de reemplazo [AlgoReemplazoInstancia.c]
+bool existenEntradasAtomicasParaReemplazar(int);
+void ejecutarReemplazo(int);
+void reemplazoBSU(int);
+void reemplazoLRU(int);
+void reemplazoCircular(int);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);
@@ -123,13 +132,5 @@ void pantallaFin(void);
 void mostrarTexto(char *);
 void mostrarMenu(void);
 void refrescarPantalla(void);
-
-
-// deprecated
-void deprecated_cargarEntradasDesdeArchivos(void);
-char * deprecated_sincronizarClavesConCoordinador(void);
-int deprecated_sincronizarClavesYCargarEntradas(void);
-void deprecated_ejecutarSet(char *, char *, int);
-void deprecated_enviarMensajeOK(void);
 
 #endif /* INSTANCIA_H_ */

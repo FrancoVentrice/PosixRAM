@@ -3,6 +3,8 @@
  * TP-1C-2018-ReDistinto
  * (c) PosixRAM */
 
+// TODO agregar los logs que hagan falta
+
 #include "Instancia.h"
 
 void prepararTablaDeEntradas() {
@@ -388,28 +390,33 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 			// todo parece que este caso no se va a probar (zafamos)
 			if (iEntradasOcupadas + iEntradasDisponibles >= iEntradasRequeridas) {
 				// todo sobreescribir la entrada [1]
+				log_debug(logger,"No debería darse este caso!!");
+				exit(1);
 			}
 			else {
 				// todo reemplazar [2]
+				log_debug(logger,"No debería darse este caso!!");
+				exit(1);
 			}
 		}
 	}
 	else {
-		if (iEntradasDisponibles >= iEntradasRequeridas) {
-			indiceOcupado = buscarEspacioContiguoDeEntradas(iEntradasRequeridas);
-			if(indiceOcupado < 0) {// no se encontró espacio contiguo
-				indiceOcupado = realizarCompactacion();
-				respuestaSet->compactacionRequerida = 0;
-			}
+		if (iEntradasDisponibles < iEntradasRequeridas) {
+			if(!existenEntradasAtomicasParaReemplazar(iEntradasRequeridas - iEntradasDisponibles))
+				return 0; // debería ser el único caso de error
+			ejecutarReemplazo(iEntradasRequeridas - iEntradasDisponibles);
+		}
 
-			strcpy(tablaDeEntradas[indiceOcupado].clave,claveRecibida);
-			tablaDeEntradas[indiceOcupado].tamanio = strlen(valorRecibido);
-			posicionValor = almacenamientoEntradas + (indiceOcupado * configuracion.tamanioEntrada);
-			memcpy(posicionValor, valorRecibido, tablaDeEntradas[indiceOcupado].tamanio);
+		indiceOcupado = buscarEspacioContiguoDeEntradas(iEntradasRequeridas);
+		if(indiceOcupado < 0) {// no se encontró espacio contiguo
+			indiceOcupado = realizarCompactacion();
+			respuestaSet->compactacionRequerida = 1;
 		}
-		else {
-			// todo reemplazar [3]
-		}
+
+		strcpy(tablaDeEntradas[indiceOcupado].clave,claveRecibida);
+		tablaDeEntradas[indiceOcupado].tamanio = strlen(valorRecibido);
+		posicionValor = almacenamientoEntradas + (indiceOcupado * configuracion.tamanioEntrada);
+		memcpy(posicionValor, valorRecibido, tablaDeEntradas[indiceOcupado].tamanio);
 	}
 	tablaDeEntradas[indiceOcupado].ultimaInstruccion = configuracion.instruccionesProcesadas;
 
@@ -440,4 +447,11 @@ int buscarEspacioContiguoDeEntradas(int cantRequerida) {
 		return i;
 	else
 		return -1;
+}
+
+bool esEntradaAtomica(int indice) {
+	/* Indica si una entrada es atómica o no */
+
+	return (tablaDeEntradas[indice].tamanio <= configuracion.tamanioEntrada) &&
+			(indice == 0 || (strcmp(tablaDeEntradas[indice].clave , tablaDeEntradas[indice-1].clave)));
 }

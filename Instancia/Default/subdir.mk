@@ -4,34 +4,31 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../AlgoReemplazoInstancia.c \
 ../ComunicacionesInstancia.c \
 ../ConfigInstancia.c \
 ../CoreInstancia.c \
-../DeprecatedInstancia.c \
 ../EntradasInstancia.c \
 ../Instancia.c \
-../PantallaInstancia.c \
-../algoReemplazoInstancia.c 
+../PantallaInstancia.c 
 
 OBJS += \
+./AlgoReemplazoInstancia.o \
 ./ComunicacionesInstancia.o \
 ./ConfigInstancia.o \
 ./CoreInstancia.o \
-./DeprecatedInstancia.o \
 ./EntradasInstancia.o \
 ./Instancia.o \
-./PantallaInstancia.o \
-./algoReemplazoInstancia.o 
+./PantallaInstancia.o 
 
 C_DEPS += \
+./AlgoReemplazoInstancia.d \
 ./ComunicacionesInstancia.d \
 ./ConfigInstancia.d \
 ./CoreInstancia.d \
-./DeprecatedInstancia.d \
 ./EntradasInstancia.d \
 ./Instancia.d \
-./PantallaInstancia.d \
-./algoReemplazoInstancia.d 
+./PantallaInstancia.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
