@@ -99,8 +99,6 @@ int recibirPaquete(int socketReceptor, tMensaje* tipoMensaje, char** psPayload, 
 		return -1;	// ERROR
 	}
 
-	//log_debug(pLogger, "Se recibe header de %d bytes y tipo de mensaje %d", bytesRecibidosHeader, header.type); //TODO borrar esta linea
-
 	*tipoMensaje = (tMensaje) header.type;
 
 	if (header.length > 0) {
@@ -113,7 +111,6 @@ int recibirPaquete(int socketReceptor, tMensaje* tipoMensaje, char** psPayload, 
 			free(*psPayload);	// ERROR, se libera el espacio reservado
 			return -1;
 		}
-		//log_debug(pLogger, "Se reciben %d bytes de payload", bytesRecibidos);//TODO borrar esta linea
 	}
 	return bytesRecibidos + bytesRecibidosHeader;
 }

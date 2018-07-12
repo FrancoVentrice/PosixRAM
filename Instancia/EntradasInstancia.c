@@ -3,8 +3,6 @@
  * TP-1C-2018-ReDistinto
  * (c) PosixRAM */
 
-// TODO agregar los logs que hagan falta
-
 #include "Instancia.h"
 
 void prepararTablaDeEntradas() {
@@ -37,6 +35,7 @@ int entradasDisponibles() {
 	int i;
 
 	log_debug(logger,"Calculando entradas disponibles");
+
 	entradasDisponibles = 0;
 
 	for (i=0 ; i < configuracion.cantidadEntradas ; i++) {
@@ -68,10 +67,10 @@ void volcarEntradasEnArchivos() {
 	while (i < configuracion.cantidadEntradas) {
 		if (!string_is_empty(tablaDeEntradas[i].clave)) {
 			storeClave(i);
-			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada)
-				i = i + (tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada);
+			i = i + entradasOcupadasPorClave(i);
 		}
-		i++;
+		else
+			i++;
 	}
 
 	configuracion.ultimoDump = time(NULL);
@@ -106,10 +105,8 @@ int inicializarPuntoDeMontaje() {
 			mostrarTexto("ERROR: El punto de montaje es un archivo.");
 			return 0;
 		}
-		if (info.st_mode & S_IFDIR) {
+		if (info.st_mode & S_IFDIR)
 			log_info(logger,"Punto de montaje encontrado. Se deberán procesar las entradas existentes.");
-			// cargarEntradasDesdeArchivos(); se desactiva porque se debe sincronizar con el coordinador
-		}
 	}
 	else {
 		if (errno == ENOENT) {
@@ -120,9 +117,8 @@ int inicializarPuntoDeMontaje() {
 				mostrarTexto("ERROR: Se produjo un error al crear el directorio.");
 				return 0;
 			}
-			else {
+			else
 				log_info(logger,"El directorio se creó satisfactoriamente.");
-			}
 		}
 		else {
 			log_error(logger,"Se produjo un error accediendo al punto de montaje. [%d - %s]", errno, strerror(errno));
@@ -145,12 +141,13 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 	char * archivoMapeado;
 	char * posicionValor;
 
+	log_debug(logger,"Cargando archivos desde el punto de montaje");
+
 	entradasACargar = string_split(clavesSincronizadas, ";");
 
     while (entradasACargar[j] != NULL) {
 
     	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
-    	// ToDo revisar esto --->> posicionValor = almacenamientoEntradas[i * configuracion.tamanioEntrada];
 
     	log_info(logger, "Cargando clave: %s", entradasACargar[j]);
     	strcpy(tablaDeEntradas[i].clave,entradasACargar[j]);
@@ -166,14 +163,14 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 				memcpy(posicionValor, archivoMapeado, tablaDeEntradas[i].tamanio);
 				munmap(archivoMapeado, tablaDeEntradas[i].tamanio);
 				close(fdArchivoLeido);
+				log_debug(logger,"Se leyeron %d bytes", (int)tablaDeEntradas[i].tamanio);
 			}
 
 			// unstable code: comparo un size_t con int pero... dale que va
 			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
 				/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
 				int entradasExtraOcupadas;
-				// ToDo revisar bien esta parte porque podría fallar cuando tamanio es múltiplo de tamanioEntrada
-				entradasExtraOcupadas = tablaDeEntradas[i].tamanio / configuracion.tamanioEntrada;
+				entradasExtraOcupadas = entradasOcupadasPorValor(tablaDeEntradas[i].tamanio) - 1;
 				while (entradasExtraOcupadas) {
 					i++;
 					strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
@@ -182,7 +179,7 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 			}
     	}
     	else {
-    		log_info(logger, "No existe el archivo: %s", archivoFullPath);
+    		log_warning(logger, "No existe el archivo: %s", archivoFullPath);
     	}
 		free(archivoFullPath);
     	i++;
@@ -196,6 +193,8 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 int procesarClavesYCargarEntradas(char * clavesSincronizadas) {
 	/* Carga en la tabla de entradas con la lista de claves que recibió del coordinador en el handshake */
 
+	log_debug(logger,"Procesar claves y cargar entradas");
+
 	if (!string_is_empty(clavesSincronizadas)) {
 		cargarEntradasDesdeArchivos(clavesSincronizadas);
 	}
@@ -206,6 +205,8 @@ int procesarClavesYCargarEntradas(char * clavesSincronizadas) {
 
 char * valorDeEntradaPorClave(char * clave) {
 	/* Lee el valor correspondiente a una entrada de clave NNNNN, le agrega el terminador, y lo retorna */
+
+	log_debug(logger,"Valor de la clave: %s", clave);
 
 	int indice;
 	indice = indiceClave(clave);
@@ -220,6 +221,9 @@ char * valorDeEntradaPorIndice(int indice) {
 	/* Lee el valor correspondiente a una entrada i, le agrega el terminador, y lo retorna */
 
 	char * valor;
+
+	log_debug(logger,"Valor para la entrada nro %d", indice);
+
 	valor = (char *)malloc((tablaDeEntradas[indice].tamanio)+1);
 	memcpy(valor,almacenamientoEntradas + (indice * configuracion.tamanioEntrada), tablaDeEntradas[indice].tamanio);
 	valor[tablaDeEntradas[indice].tamanio] = '\0';
@@ -234,6 +238,8 @@ int indiceClave(char * claveBuscada) {
 	int i = 0;
 	int encontrado = -1;
 
+	log_debug(logger,"Buscando índice de la clave %s", claveBuscada);
+
 	while (encontrado < 0 && i < configuracion.cantidadEntradas) {
 		if (strcmp(tablaDeEntradas[i].clave, claveBuscada) == 0)
 			encontrado = i;
@@ -244,13 +250,12 @@ int indiceClave(char * claveBuscada) {
 	return encontrado;
 }
 
-int existeClave(char * claveBuscada) {
-	/* Devuelve 1 si existe la clave en la tabla de entradas o 0 si no existe */
+bool existeClave(char * claveBuscada) {
+	/* Devuelve TRUE si existe la clave en la tabla de entradas o FALSE si no existe */
 
-	if(indiceClave(claveBuscada) < 0)
-		return 0;
-	else
-		return 1;
+	log_debug(logger,"Verificando existencia de clave %s", claveBuscada);
+
+	return (indiceClave(claveBuscada) >= 0);
 }
 
 void storeClave(int indice) {
@@ -263,6 +268,8 @@ void storeClave(int indice) {
 	char * archivoMapeado;
 	char * posicionValor;
 	size_t tamanioValor;
+
+	log_debug(logger,"Guardando clave y valor de entrada nro %d", indice);
 
 	posicionValor = almacenamientoEntradas + (indice * configuracion.tamanioEntrada);
 	tamanioValor = tablaDeEntradas[indice].tamanio;
@@ -283,6 +290,8 @@ void storeClave(int indice) {
 		memcpy(archivoMapeado, posicionValor, tamanioValor);
 		msync(archivoMapeado, tamanioValor, MS_SYNC);
 		munmap(archivoMapeado, tamanioValor);
+
+		log_debug(logger,"Se escribieron %d bytes", (int)tamanioValor);
 	}
 	close(fdArchivoDestino);
 	free(archivoFullPath);
@@ -292,7 +301,7 @@ void storeClave(int indice) {
 
 int realizarCompactacion() {
 	/* Compactación. Reacomoda la tabla de entradas y el espacio de almacenamiento, dejando
-	 * todo el espacio libre al final.
+	 * el espacio libre al final.
 	 * Retorna el índice de la primer entrada disponible. */
 
 	int indice, proximaOcupada;
@@ -302,7 +311,7 @@ int realizarCompactacion() {
 	log_info(logger,"Ejecutando compactación...");
 	mostrarTexto(AMARILLO_T "Ejecutando compactación...");
 
-	log_debug(logger,"...entradas disponibles al inicio %d", entradasDisponibles());
+	log_debug(logger,"...entradas disponibles al inicio: %d", entradasDisponibles());
 
 	for (indice=0 ; indice < configuracion.cantidadEntradas ; indice++) {
 		if (string_is_empty(tablaDeEntradas[indice].clave)) {
@@ -334,7 +343,7 @@ int realizarCompactacion() {
 		indice++;
 
 	log_info(logger,"Compactación finalizada. Primer entrada disponible: %d", indice);
-	log_debug(logger,"...entradas disponibles al finalizar %d", entradasDisponibles());
+	log_debug(logger,"...entradas disponibles al finalizar: %d", entradasDisponibles());
 	retardoSegundos(2);
 	refrescarPantalla();
 
@@ -351,23 +360,24 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 	int indiceOcupado, i;
 	char * posicionValor;
 
+	log_debug(logger,"SET de clave %s y valor %s", claveRecibida, valorRecibido);
+
 	strcpy(respuestaSet->claveReemplazada,claveRecibida);
 	respuestaSet->compactacionRequerida = 0;
 
 	iEntradasDisponibles = entradasDisponibles();
 
-	iEntradasRequeridas = (int)(strlen(valorRecibido) / configuracion.tamanioEntrada);
-	if ((strlen(valorRecibido) % configuracion.tamanioEntrada) != 0)
-		iEntradasRequeridas++;
+	iEntradasRequeridas = entradasOcupadasPorValor(strlen(valorRecibido));
 	log_debug(logger,"Entradas requeridas %d",iEntradasRequeridas);
 
-	/* Todo el algoritmo que sigue lleno de IF es lo más horrible de este TP.
+	/* El algoritmo que sigue, lleno de IF, es lo más horrible de este TP.
 	 * Chicos, no hagan esto en casa (pero funciona de 10 eh, eso no se discute) */
-	if (existeClave(claveRecibida)) {
+
+	if (existeClave(claveRecibida)) { // clave existente
+		log_info(logger,"Realizando SET de clave existente: %s", claveRecibida);
+
 		indiceOcupado = indiceClave(claveRecibida);
-		iEntradasOcupadas =(int)(tablaDeEntradas[indiceOcupado].tamanio / configuracion.tamanioEntrada);
-		if ((tablaDeEntradas[indiceOcupado].tamanio % configuracion.tamanioEntrada) != 0)
-			iEntradasOcupadas++;
+		iEntradasOcupadas = entradasOcupadasPorClave(indiceOcupado);
 		log_debug(logger,"Entradas ocupadas %d",iEntradasOcupadas);
 
 		if (iEntradasOcupadas == iEntradasRequeridas) {
@@ -389,22 +399,25 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 		else { //iEntradasOcupadas < iEntradasRequeridas
 			// todo parece que este caso no se va a probar (zafamos)
 			if (iEntradasOcupadas + iEntradasDisponibles >= iEntradasRequeridas) {
-				// todo sobreescribir la entrada [1]
-				log_debug(logger,"No debería darse este caso!!");
+				log_debug(logger,"No debería darse este caso!! (sobreescribir la entrada [1])");
 				exit(1);
 			}
 			else {
-				// todo reemplazar [2]
-				log_debug(logger,"No debería darse este caso!!");
+				log_debug(logger,"No debería darse este caso!! (reemplazar [2])");
 				exit(1);
 			}
 		}
 	}
-	else {
+	else { // clave nueva
+		log_info(logger, "Realizando SET de clave nueva: %s", claveRecibida);
+
 		if (iEntradasDisponibles < iEntradasRequeridas) {
-			if(!existenEntradasAtomicasParaReemplazar(iEntradasRequeridas - iEntradasDisponibles))
+			if(!existenEntradasAtomicasParaReemplazar(iEntradasRequeridas - iEntradasDisponibles)) {
+				log_error(logger, "No existen entradas atómicas suficientes para realizar el reemplazo.");
 				return 0; // debería ser el único caso de error
+			}
 			ejecutarReemplazo(iEntradasRequeridas - iEntradasDisponibles);
+			// todo actualizar en la respuesta el valor de la clave reemplazada
 		}
 
 		indiceOcupado = buscarEspacioContiguoDeEntradas(iEntradasRequeridas);
@@ -420,6 +433,7 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 	}
 	tablaDeEntradas[indiceOcupado].ultimaInstruccion = configuracion.instruccionesProcesadas;
 
+	log_debug(logger, "SET realizado correctamente");
 	return 1;
 }
 
@@ -452,6 +466,33 @@ int buscarEspacioContiguoDeEntradas(int cantRequerida) {
 bool esEntradaAtomica(int indice) {
 	/* Indica si una entrada es atómica o no */
 
+	log_debug(logger,"Verificando si la entrada nro %d tiene un valor atómico", indice);
+
 	return (tablaDeEntradas[indice].tamanio <= configuracion.tamanioEntrada) &&
 			(indice == 0 || (strcmp(tablaDeEntradas[indice].clave , tablaDeEntradas[indice-1].clave)));
+}
+
+int entradasOcupadasPorClave(int indice) {
+	/* retorna la cantidad de entradas que ocupa el valor almacenado para una clave */
+
+	log_debug(logger,"Calculando entradas ocupadas por clave nro %d", indice);
+
+	if(esEntradaAtomica(indice))
+		return 1;
+	else
+		return entradasOcupadasPorValor(tablaDeEntradas[indice].tamanio);
+}
+
+int entradasOcupadasPorValor(size_t tamanio) {
+	/* retorna la cantidad de entradas requeridas para un cierto tamaño */
+
+	int iEntradasOcupadas;
+
+	log_debug(logger,"Calculando entradas ocupadas para valor de tamaño %d", (int)tamanio);
+
+	iEntradasOcupadas = (int)(tamanio / configuracion.tamanioEntrada);
+	if ((tamanio % configuracion.tamanioEntrada) != 0)
+		iEntradasOcupadas++;
+
+	return iEntradasOcupadas;
 }

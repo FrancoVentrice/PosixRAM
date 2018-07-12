@@ -28,7 +28,7 @@ void mostrarConfiguracion() {
 	fflush(stdout);
 }
 
-void mostrarConexionCoordinador(void) {
+void mostrarConexionCoordinador() {
 	if(parametrosEntrada.logPantalla)
 		return;
 
@@ -38,7 +38,7 @@ void mostrarConexionCoordinador(void) {
 	fflush(stdout);
 }
 
-void mostrarEstadoTablaDeEntradas(void) {
+void mostrarEstadoTablaDeEntradas() {
 	if(parametrosEntrada.logPantalla)
 		return;
 
@@ -53,7 +53,7 @@ void mostrarEstadoTablaDeEntradas(void) {
 	fflush(stdout);
 }
 
-void listarEntradas(void) {
+void listarEntradas() {
 	/* Muestra una tabla con las entradas y sus valores. Usar solo para debug. */
 
 	if(parametrosEntrada.logPantalla)

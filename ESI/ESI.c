@@ -105,8 +105,8 @@ tRespuestaCoordinador * recibirResultadoOperacion() {
 }
 
 void cargarArchivo(char *path) {
-	archivo = fopen(path, "r");
-	if (archivo == NULL) {
+	archivoScript = fopen(path, "r");
+	if (archivoScript == NULL) {
 		log_error(logger, "Error al abrir el archivo: %s", path);
 		finalizar(EXIT_FAILURE);
 	}
@@ -118,6 +118,7 @@ void cargarArchivo(char *path) {
 void ordenRecibida() {
 	if (lecturaRechazada) {
 		enviarLineaOK(); //ENVIO OK AL PLANIFICADOR
+		// todo usleep() ???
 		usleep(20 * 1000);
 		enviarOperacion(); //ENVIO AL COORDINADOR LA SENTENCIA
 	} else {
@@ -142,9 +143,13 @@ int leerLinea() {
 		free(operacion->valor);
 		operacion->valor = NULL;
 	}
-	if ((lectura = getline(&lineptr, &n, archivo)) != -1) {
+	/* ToDo me parece que antes de getline() hay que hacer esto
+	  	linePtr = NULL;
+	    lineLong = 0;
+	 */
+	if ((lectura = getline(&linePtr, &lineLong, archivoScript)) != -1) {
 
-		t_esi_operacion lineaParseada = parse(lineptr);
+		t_esi_operacion lineaParseada = parse(linePtr);
 
 		if (lineaParseada.valido) {
 			switch (lineaParseada.keyword) {
@@ -162,7 +167,7 @@ int leerLinea() {
 				operacion->clave = strdup(lineaParseada.argumentos.STORE.clave);
 				break;
 			default:
-				log_error(logger, "No pude interpretar <%s>\n", lineptr);
+				log_error(logger, "No pude interpretar <%s>\n", linePtr);
 				finalizar(EXIT_FAILURE);
 
 			}
@@ -170,7 +175,7 @@ int leerLinea() {
 
 			log_info(logger, "\noperacion: %d \n clave: %s \n valor: %s\n",operacion->operacion, operacion->clave, operacion->valor);
 		} else {
-			log_error(logger, "La linea <%s> no es valida\n", lineptr);
+			log_error(logger, "La linea <%s> no es valida\n", linePtr);
 			finalizar(EXIT_FAILURE);
 		}
 	} else {

@@ -11,8 +11,8 @@ int cargarConfiguracion() {
 	logger = log_create("LogESI", "ESI", true, LOG_LEVEL_INFO);
 	configuracion = malloc(sizeof(t_configuracion));
 	operacion = malloc(sizeof(t_operacionESI));
-	lineptr = NULL;
-	n = 0;
+	linePtr = NULL;
+	lineLong = 0;
 	lecturaRechazada = false;
 	ejecucion = true;
 
@@ -43,8 +43,8 @@ int cargarConfiguracion() {
 }
 
 void limpiarConfiguracion() {
-	fclose(archivo);
-	free(lineptr);
+	fclose(archivoScript);
+	free(linePtr);
 	free(operacion);
 	free(configuracion);
 	config_destroy(fd_configuracion);

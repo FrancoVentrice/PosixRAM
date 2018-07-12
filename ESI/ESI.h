@@ -27,21 +27,6 @@ typedef struct {
 	int socketPlanificador;
 } t_configuracion;
 
-/* ******************************************** */
-/* ******************************************** */
-/* ¿por qué estas dos estructuras son iguales, y ni siquiera son estructuras porque
- * solo tienen una variable adentro?
- * TODO corregir esto
- */
-
-typedef struct{
-	char * mensaje;
-} tSolicitudESI;
-
-typedef struct{
-	char* mensaje;
-} tRespuestaPlanificador;
-
 typedef struct{
 	char* mensaje;
 } tRespuestaCoordinador;
@@ -51,17 +36,14 @@ typedef struct{
 	char* clave;
 	char* valor;
 } t_operacionESI;
-/* ******************************************** */
-/* ******************************************** */
-
 
 t_configuracion * configuracion;
 t_config * fd_configuracion;
 t_log * logger;
-FILE * archivo;
+FILE * archivoScript;
 
-size_t n; //necesaria para ir leyendo el archivo
-char *lineptr; //necesaria para ir leyendo el archivo
+size_t lineLong; //necesaria para ir leyendo el archivo
+char *linePtr; //necesaria para ir leyendo el archivo
 t_operacionESI *operacion;
 bool lecturaRechazada; //cuando una operacion es rechazada (ej: un get de un recurso tomado), sirve para volver a mandar la misma instruccion
 bool ejecucion;

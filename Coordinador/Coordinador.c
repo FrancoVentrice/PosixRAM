@@ -500,7 +500,8 @@ void nuevaInstanciaConectada(char * nombreInstancia, int socketInst) {
 
 int existeInstanciaConectadaConMismoNombre(char *nombreInstancia) {
 	/* verifica si ya existe una instancia conectada con el mismo nombre */
-	// TODO revisar uso de list_any_satisfy()
+	/* seguro quedaba más lindo con list_any_satisfy() pero no sé cómo se usa */
+
 	int i;
 	for (i = 0; i < list_size(instancias); i++) {
 		t_instancia *instancia = list_get(instancias, i);

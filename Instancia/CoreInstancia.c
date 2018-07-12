@@ -94,7 +94,7 @@ void iniciarLogger(){
 
 void finalizar(int codigo) {
 	/* termina el proceso correctamente liberando recursos */
-	alarm(0);
+
 	if (fd_configuracion != NULL) {
 		desconectarseDe(configuracion.fdSocketCoordinador);
 		close(configuracion.fdTimerDump);
@@ -104,7 +104,7 @@ void finalizar(int codigo) {
 	log_destroy(logger);
 	free(parametrosEntrada.archivoConf);
 
-	void limpiarTablaDeEntradas();
+	limpiarTablaDeEntradas();
 
 	pantallaFin();
 

@@ -69,7 +69,7 @@ typedef struct {
 	char compactacionRequerida;
 } t_respuestaSet;
 
-// TODO revisar si es necesario que todas estas sean globales (mala práctica, muy mala)
+// demasiadas globales (mala práctica, muy mala)
 t_commandLineParameters parametrosEntrada;
 t_confInstancia configuracion;
 t_config * fd_configuracion;
@@ -108,12 +108,14 @@ void cargarEntradasDesdeArchivos(char *);
 int entradasDisponibles(void);
 char * valorDeEntradaPorIndice(int);
 char * valorDeEntradaPorClave(char *);
-int existeClave(char *);
+bool existeClave(char *);
 bool esEntradaAtomica(int);
 int indiceClave(char *);
 int realizarCompactacion(void);
 int buscarEspacioContiguoDeEntradas(int);
 int setClaveValor(char *, char *, t_respuestaSet *);
+int entradasOcupadasPorClave(int indice);
+int entradasOcupadasPorValor(size_t);
 
 // algoritmos de reemplazo [AlgoReemplazoInstancia.c]
 bool existenEntradasAtomicasParaReemplazar(int);

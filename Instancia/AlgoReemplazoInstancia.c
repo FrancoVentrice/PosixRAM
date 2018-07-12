@@ -9,9 +9,6 @@
  *
  * Al estar basados solamente en entradas atómicas, es más sencillo su manejo.*/
 
-
-// TODO agregar los logs que hagan falta
-
 #include "Instancia.h"
 
 bool existenEntradasAtomicasParaReemplazar(int cantEntradas) {
@@ -21,6 +18,8 @@ bool existenEntradasAtomicasParaReemplazar(int cantEntradas) {
 	 * en que se requieren más de una. */
 	int cantEntradasAtomicas = 0;
 	int i = 0;
+
+	log_debug(logger,"Verificando si existen al menos %d entradas atómicas para reemplazar", cantEntradas);
 
 	while (i < configuracion.cantidadEntradas && cantEntradasAtomicas < cantEntradas) {
 		if(esEntradaAtomica(i))
@@ -34,6 +33,8 @@ bool existenEntradasAtomicasParaReemplazar(int cantEntradas) {
 void ejecutarReemplazo(int cantEntradas) {
 	/* Decide qué algoritmo de reemplazo aplicar y lo dispara.
 	 * Los algoritmos no reemplazan efectivamente una entrada, sino que liberan el lugar. */
+
+	log_debug(logger,"Seleccionando algoritmo de reemplazo");
 
 	switch(configuracion.algoritmoDeReemplazo) {
 		case ALGORITMO_CIRC:
@@ -55,6 +56,8 @@ void reemplazoBSU(int cantEntradas) {
 	int i;
 	int indiceBSU;
 	size_t tamanioBSU;
+
+	log_debug(logger,"Ejecutando algoritmo Biggest Space Used");
 
 	while (cantLiberadas < cantEntradas) {
 		tamanioBSU = 0;
@@ -83,6 +86,8 @@ void reemplazoLRU(int cantEntradas) {
 	int indiceLRU;
 	unsigned int instruccionLRU;
 
+	log_debug(logger,"Ejecutando algoritmo Least Recently Used");
+
 	while (cantLiberadas < cantEntradas) {
 		instruccionLRU = configuracion.instruccionesProcesadas;
 
@@ -106,6 +111,8 @@ void reemplazoCircular(int cantEntradas) {
 
 	int cantLiberadas = 0;
 	int i;
+
+	log_debug(logger,"Ejecutando algoritmo Circular");
 
 	i = configuracion.indiceCIRC;
 
