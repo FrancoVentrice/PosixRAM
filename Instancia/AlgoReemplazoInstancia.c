@@ -104,6 +104,23 @@ void reemplazoLRU(int cantEntradas) {
 void reemplazoCircular(int cantEntradas) {
 	/* Circular */
 
-	// ToDo completar!!!
-	log_debug(logger,"nada por aquí");
+	int cantLiberadas = 0;
+	int i;
+
+	i = configuracion.indiceCIRC;
+
+	while (cantLiberadas < cantEntradas) {
+		if(esEntradaAtomica(i)) {
+
+			memset(tablaDeEntradas[i].clave, 0, MAX_LONG_CLAVE);
+			tablaDeEntradas[i].tamanio = (size_t) 0;
+			tablaDeEntradas[i].ultimaInstruccion = 0;
+
+			cantLiberadas++;
+		}
+		i++;
+		if(i == configuracion.cantidadEntradas)
+			i = 0;
+	}
+	configuracion.indiceCIRC = i;
 }

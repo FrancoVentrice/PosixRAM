@@ -53,6 +53,9 @@ void inicializarInstancia() {
 	/* prepara el estado de la instancia */
 	memset(configuracion.czNomProc, 0, 20);
 	strcpy(configuracion.czNomProc,"InstanciaPosixRAM");
+	configuracion.cantidadEntradas = 0;
+	configuracion.tamanioEntrada = 0;
+	configuracion.indiceCIRC = 0;
 	configuracion.instruccionesProcesadas = 0;
 }
 

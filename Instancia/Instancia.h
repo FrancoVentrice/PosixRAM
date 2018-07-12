@@ -44,6 +44,8 @@ typedef struct {
 	int tamanioEntrada; // bytes
 	char *puntoDeMontaje;
 	int algoritmoDeReemplazo;
+	unsigned int instruccionesProcesadas;
+	int indiceCIRC;
 
 	struct itimerspec intervaloDump; // segundos
 	int fdTimerDump;
@@ -52,8 +54,6 @@ typedef struct {
 	char *ipCoordinador;
 	int puertoCoordinador;
 	int fdSocketCoordinador;
-
-	unsigned int instruccionesProcesadas;
 } t_confInstancia;
 
 /* estructura que representa una entrada en la tabla */

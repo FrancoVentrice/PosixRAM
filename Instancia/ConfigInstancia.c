@@ -33,8 +33,6 @@ int cargarConfiguracion() {
 		configuracion.algoritmoDeReemplazo = ALGORITMO_BSU;
 	}
 
-	configuracion.cantidadEntradas = 0;
-	configuracion.tamanioEntrada = 0;
 	configuracion.puntoDeMontaje = config_get_string_value(fd_configuracion, "PUNTO_MONTAJE");
 	configuracion.intervaloDump.it_value.tv_sec = config_get_int_value(fd_configuracion, "INTERVALO_DUMP");
 	configuracion.intervaloDump.it_value.tv_nsec = 0;
