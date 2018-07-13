@@ -141,5 +141,4 @@ void newInstruccion(int instruccion, char *primerParametro, char *segundoParamet
 	instruccionConsola->segundoParametro = segundoParametro;
 	list_add(bufferConsola, instruccionConsola);
 	pthread_mutex_unlock(&mutexEspera);
-	log_info(logger, "mutex unlock en new instruccion");
 }

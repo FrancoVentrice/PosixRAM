@@ -15,14 +15,11 @@ void atenderESI(int iSocketComunicacion) {
 	tPaquete pkgHandshakeRespuesta;
 	pkgHandshakeRespuesta.type = P_HANDSHAKE;
 	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload, "", NULL);
-	log_info(logger, "Se envia respuesta de handshake a ESI");
 	bytesEnviados = enviarPaquete(esiNuevo->socket, &pkgHandshakeRespuesta, logger, "Se envia respuesta de handshake a ESI");
-	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 
 	log_info(logger,"Se agrega ESI a cola de listos: %s con socket: %d", esiNuevo->id, esiNuevo->socket);
 	agregarEsiAColaDeListos(esiNuevo);
 	pthread_mutex_unlock(&mutexEspera);
-	log_info(logger, "mutex unlock en agregar ESI %s a cola de listos", esiNuevo->id);
 }
 
 int main(int argn, char *argv[]) {
@@ -53,7 +50,6 @@ void test() {
 void cicloPrincipal() {
 	while(vivo) {
 		pthread_mutex_lock(&mutexEspera);
-		log_info(logger, "mutex lock en principio de iteracion de ciclo");
 		ejecutarComandosConsola();
 		if (ejecutando && aptoEjecucion) {
 			if (planificacionNecesaria) {
@@ -69,26 +65,22 @@ void cicloDeSentencia() {
 	enviarOrdenDeEjecucion();
 	bool sentenciaActiva = true;
 	while (sentenciaActiva) {
-		log_info(logger, "iteracion de sentenciaActiva");
 		fd_set temp;
 		tMensaje tipoMensaje;
 		char *buffer;
 		int socketMultiplexado = multiplexar(&setSockets, &temp, &maxSock, &tipoMensaje, &buffer, logger);
 		if (socketMultiplexado >= 0) {
-			log_info(logger, "tipo de mensaje %d del socket %d", tipoMensaje, socketMultiplexado);
 			switch (tipoMensaje) {
 			case E_ESI_FINALIZADO:
-				log_info(logger, "ESI finalizado");
+				log_info(logger, "ESI %s finalizado", esiEnEjecucion->id);
 				esiFinalizado();
 				sentenciaActiva = false;
 				break;
 			case E_LINEA_OK:
-				log_info(logger, "Linea OK ESI");
 				break;
 			case C_CONSULTA_OPERACION_GET:
 			case C_CONSULTA_OPERACION_SET:
 			case C_CONSULTA_OPERACION_STORE:
-				log_info(logger, "consulta del coordinador");
 				recibirConsultaOperacion(tipoMensaje, buffer);
 				evaluarConsultaDeOperacion();
 				break;
@@ -107,14 +99,11 @@ void cicloDeSentencia() {
 }
 
 void evaluarNecesidadDeEspera() {
-	log_info(logger, "A punto de evaluar la necesidad de espera");
 	bool parado = false;
 	evaluarAptoEjecucion();
 	parado = !(ejecutando && aptoEjecucion);
-	log_info(logger, "parado? %d", parado);
 	if (!parado) {
 		pthread_mutex_unlock(&mutexEspera);
-		log_info(logger, "mutex unlock en evaluar necesidad de espera");
 	}
 }
 
@@ -126,7 +115,6 @@ void enviarOrdenDeEjecucion() {
 	pkgEjecutarLinea.length = serializar(pkgEjecutarLinea.payload, "", NULL);
 	log_info(logger, "Se envia orden para ejecutar al ESI: %s", esiEnEjecucion->id);
 	int bytesEnviados = enviarPaquete(esiEnEjecucion->socket, &pkgEjecutarLinea, logger, "Se envia orden para ejecutar");
-	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 }
 
 void enviarOrdenDeAborcion(int socket) {
@@ -135,7 +123,6 @@ void enviarOrdenDeAborcion(int socket) {
 	pkgAbortar.length = serializar(pkgAbortar.payload, "", NULL);
 	log_info(logger, "Se envia orden para abortar al ESI");
 	int bytesEnviados = enviarPaquete(socket, &pkgAbortar, logger, "Se envia orden para abortar");
-	log_info(logger, "Se envian %d bytes\n", bytesEnviados);
 }
 
 void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
@@ -143,18 +130,18 @@ void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
 	switch(tipoMensaje) {
 
 	case C_CONSULTA_OPERACION_GET:
-		log_info(logger,"Operacion GET para clave %s", consultaCoordinador->clave);
+		log_info(logger,"Consulta operacion GET para clave %s", consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_GET;
 		break;
 
 	case C_CONSULTA_OPERACION_SET:
-		log_info(logger,"Operacion SET para clave %s", consultaCoordinador->clave);
+		log_info(logger,"Consulta operacion SET para clave %s", consultaCoordinador->clave);
 		consultaCoordinador->operacion = OPERACION_SET;
 		break;
 
 	case C_CONSULTA_OPERACION_STORE:
 		consultaCoordinador->operacion = OPERACION_STORE;
-		log_info(logger,"Operacion STORE para clave %s", consultaCoordinador->clave);
+		log_info(logger,"Consulta operacion STORE para clave %s", consultaCoordinador->clave);
 		break;
 	}
 }
@@ -184,13 +171,11 @@ void realizarHandshakeCoordinador() {
 	pkgHandshakeCoordinador.length = serializar(pkgHandshakeCoordinador.payload, "", NULL);
 	log_info(logger, "Se envia solicitud de handshake con coordinador");
 	int bytesEnviados = enviarPaquete(socketCoordinador, &pkgHandshakeCoordinador, logger, "Se envia solicitud de handshake con coordinador");
-	log_info(logger, "Se envian %d bytes", bytesEnviados);
 
 	//Respuesta del Coordinador
 	tMensaje tipoMensaje;
 	char *payloadRespuestaHand;
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje, &payloadRespuestaHand, logger, "Hand Respuesta");
-	log_info(logger,"RECIBIDOS: %d", bytesRecibidos);
 	if (tipoMensaje == C_HANDSHAKE) {
 		log_info(logger, "Handshake con Coordinador exitoso\n");
 	}
@@ -228,12 +213,11 @@ void recibirResultadoOperacion(char *bufferResultado) {
 	log_info(logger, "RESPUESTA OPERACION DEL COORDINADOR : %s",
 			respuestaCoordinador->mensaje);
 	if (strcmp(respuestaCoordinador->mensaje, "OK") == 0) {
-		log_info(logger, "Sentencia finalizada: saxeeees!");
-		log_info(logger, "El exito fue gracias al ESI %s de socket %d", esiEnEjecucion->id, esiEnEjecucion->socket);
+		log_info(logger, "Sentencia finalizada: saxeeees!\n");
 	} else if (strcmp(respuestaCoordinador->mensaje, "BLOQUEADO") == 0) {
-		log_info(logger, "Sentencia finalizada: BAN HAMMER!!");
+		log_info(logger, "Sentencia finalizada: BAN HAMMER!!\n");
 	} else if (strcmp(respuestaCoordinador->mensaje, "ERROR") == 0) {
-		log_info(logger, "Sentencia finalizada: error :(");
+		log_info(logger, "Sentencia finalizada: error :(\n");
 		abortarEsiPorId(esiEnEjecucion->id);
 	}
 }
@@ -248,10 +232,9 @@ void enviarOperacionValida() {
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta OK");
+		log_info(logger, "Se envia respuesta consulta OK ESI %s", esiEnEjecucion->id);
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
-		log_info(logger, "Se envian %d bytes\n", enviados);
 		free(respuesta);
 }
 
@@ -265,10 +248,9 @@ void enviarOperacionInvalidaBloqueo() {
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta BLOQUEADO");
+		log_info(logger, "Se envia respuesta consulta BLOQUEAR ESI %s", esiEnEjecucion->id);
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
-		log_info(logger, "Se envian %d bytes\n", enviados);
 		free(respuesta);
 }
 
@@ -282,10 +264,9 @@ void enviarOperacionInvalidaError() {
 	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
 			"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta ERROR");
+		log_info(logger, "Se envia respuesta consulta ERROR ESI %s", esiEnEjecucion->id);
 		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
 				logger, "Se envia respuesta consulta");
-		log_info(logger, "Se envian %d bytes\n", enviados);
 		free(respuesta);
 }
 
@@ -303,7 +284,6 @@ void evaluarConsultaDeOperacion() {
 		if (evaluarBloqueoDeClave(clave)) {
 			t_esi *esi = dictionary_get(diccionarioClavesTomadas, clave);
 			if (esi != NULL && strcmp(esiEnEjecucion->id, esi->id) == 0) {
-				log_info(logger, "El ESI %s quiere hacer un GET de la clave %s tomada por el ESI %s", esiEnEjecucion->id, clave, esi->id);
 				enviarOperacionValida();
 			} else {
 				enviarOperacionInvalidaBloqueo();
@@ -346,7 +326,7 @@ void evaluarConsultaDeOperacion() {
 
 void agregarEsiAColaDeListos(t_esi *esi) {
 	pthread_mutex_lock(&mutexColaDeListos);
-	bool previamenteVacia = colaDeListos->elements_count == 0;
+	bool previamenteVacia = colaDeListos->elements_count == 0 && esiEnEjecucion == NULL;
 	list_add(colaDeListos, esi);
 	pthread_mutex_unlock(&mutexColaDeListos);
 	if (configuracion->algoritmoPlanificacion == ALGORITMO_SJF_CD) {
@@ -365,9 +345,9 @@ void agregarEsiAColaDeListos(t_esi *esi) {
 }
 
 void planificar() {
-	log_info(logger, "Planifico: \nESI en ejecucion?: %d", (bool) esiEnEjecucion);
+	log_info(logger, "Planifico: Habia un ESI en ejecucion?: %d", (bool) esiEnEjecucion);
 	if (esiEnEjecucion) {
-		log_info(logger, "\nESI en ejecucion: %s", esiEnEjecucion->id);
+		log_info(logger, "ESI en ejecucion antes de planificar: %s", esiEnEjecucion->id);
 	}
 	//me hago una pasadita para volar los bloqueados
 	pthread_mutex_lock(&mutexColaDeListos);
@@ -479,6 +459,7 @@ void estimar(t_esi *esi) {
 	//se va a ir decrementando con las ejecuciones, y estimacionAnterior queda estatica y
 	//me sirve para la proxima vez que tenga que estimar
 	esi->estimacionAnterior = esi->estimacion;
+	log_info(logger, "Estimacion de %s es %.2f\n", esi->id, esi->estimacion);
 }
 
 //Cuando ESI hace un GET y la clave esta tomada
@@ -510,7 +491,6 @@ void esiTomaClave(t_esi *esi, char *clave) {
 	}
 	dictionary_put(diccionarioClavesTomadas, clave, esi);
 	list_add(esi->clavesTomadas, clave);
-	log_info(logger, "Se agrega la clave %s a la lista de claves tomadas del ESI %s y viceversa", clave, esi->id);
 }
 
 void bloquearClaveSola(char *clave) {
@@ -632,7 +612,7 @@ void clavesTomadasDestroyer(char *clave) {
 }
 
 void finalizarEsiEnEjecucion() {
-	log_info(logger, "finalizando esi en ejecucion: %s", esiEnEjecucion->id);
+	log_info(logger, "finalizando esi en ejecucion: %s\n", esiEnEjecucion->id);
 	liberarClavesDeEsi(esiEnEjecucion);
 	list_add(colaDeFinalizados, esiEnEjecucion);
 	FD_CLR(esiEnEjecucion->socket, &setSockets);
@@ -646,24 +626,30 @@ void ejecutarComandosConsola() {
 		t_instruccion_consola *instruccion = list_get(bufferConsola, 0);
 		switch (instruccion->instruccion) {
 		case INSTRUCCION_BLOQUEAR:
+			log_info(logger, "Instruccion bloquear\n");
 			bloquearEsiPorConsola(instruccion->primerParametro, instruccion->segundoParametro);
 			break;
 		case INSTRUCCION_DESBLOQUEAR:
+			log_info(logger, "Instruccion desbloquear\n");
 			liberarPrimerProcesoBloqueado(instruccion->primerParametro);
 			if (!dictionary_has_key(diccionarioBloqueados, instruccion->primerParametro)) {
 				liberarClave(instruccion->primerParametro);
 			}
 			break;
 		case INSTRUCCION_TERMINAR:
+			log_info(logger, "Instruccion terminar\n");
 			abortarEsiPorId(instruccion->primerParametro);
 			break;
 		case INSTRUCCION_DEADLOCK:
+			log_info(logger, "Instruccion deadlock\n");
 			analizarDeadlock();
 			break;
 		case INSTRUCCION_LISTAR:
+			log_info(logger, "Instruccion listar\n");
 			listarEsisPorRecurso(instruccion->primerParametro);
 			break;
 		case INSTRUCCION_STATUS:
+			log_info(logger, "Instruccion status\n");
 			statusDeClave(instruccion->primerParametro);
 			break;
 		}
@@ -857,7 +843,6 @@ void statusDeClave(char *clave) {
 	pkgConsultaClave.length = serializar(pkgConsultaClave.payload, "%s", clave);
 	log_info(logger, "Se envia consulta de clave %s al coordinador", clave);
 	int enviados = enviarPaquete(socketCoordinador, &pkgConsultaClave, logger, "Se envia consulta de clave al coordinador");
-	log_info(logger, "Se envian %d bytes\n", enviados);
 
 	//Se recibe respuesta de consulta del coordinador
 	tMensaje tipoMensaje;
