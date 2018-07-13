@@ -21,6 +21,7 @@
 #include <commons/string.h>
 #include "../shared/libgral.h"
 #include "../shared/pantalla.h"
+#include "../shared/protocolo.h"
 #include "../shared/sockets.h"
 #include "../shared/serializar.h"
 
