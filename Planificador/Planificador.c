@@ -414,6 +414,7 @@ int planificarHRRN() {
 		int tiempoEspera = calcularTiempoEspera(esiActual);
 		float responseRatio = 0.0f;
 		responseRatio = ((float) tiempoEspera + (float) esiActual->estimacion) / (float) esiActual->estimacion;
+		log_info(logger, "\nNombre: %s\nWait: %d\nEstimacion: %.2f\nResponse ratio: %.2f", esiActual->id, tiempoEspera, esiActual->estimacion, responseRatio);
 
 		if (responseRatio > RRMayor) {
 			RRMayor = responseRatio;
@@ -444,6 +445,7 @@ int planificarSJF() {
 	//si es con desalojo, tengo en cuenta al esi en ejecucion
 	//si no es con desalojo, entonces no hizo falta llamar a este metodo
 	if (configuracion->algoritmoPlanificacion == ALGORITMO_SJF_CD
+			&& esiEnEjecucion != NULL
 			&& esiMasCorto->estimacion >= esiEnEjecucion->estimacion) {
 		indexDelESIMasCorto = -1;
 	}
