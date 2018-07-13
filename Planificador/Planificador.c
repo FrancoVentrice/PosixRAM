@@ -796,6 +796,7 @@ void analizarDeadlock() {
 					} else  {
 						//llegue a una dependencia circular! todos los empernados son los participantes de esta barbarie
 						log_error(logger, "\nDEADLOCK ENCONTRADO\n");
+						log_info(logger, "\nRecurso en disputa: %s", clave);
 						log_info(logger, "\nLos ESIs implicados son los siguientes:");
 						int i;
 						for (i = 0; i < empernados->elements_count; i++) {
