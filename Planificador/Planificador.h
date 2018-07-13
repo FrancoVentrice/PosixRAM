@@ -8,9 +8,13 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-#include "..//shared/protocolo.h"
-
+#include <readline/readline.h>
+#include <readline/history.h>
+#include "../shared/protocolo.h"
+#include "../shared/sockets.h"
+#include "../shared/serializar.h"
 
 #define ALGORITMO_SJF_CD 1
 #define ALGORITMO_SJF_SD 2
@@ -165,8 +169,8 @@ int calcularTiempoEspera(t_esi *);
 int planificarSJF();
 
 //metodos de la consola
-void pause();
-void play();
+void pausarEjecucion(void);
+void reanudarEjecucion(void);
 void lock(char *);
 void unlock(char *);
 void list(char *);

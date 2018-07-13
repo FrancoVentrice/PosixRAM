@@ -16,10 +16,10 @@ void consola() {
 		char *comando = readline("Ingrese un comando: ");
 		if (strcmp(comando, "pause") == 0) {
 			printf("Planificador pausado\n");
-			pause();
+			pausarEjecucion();
 		} else if (strcmp(comando, "play") == 0) {
 			printf("Planificador reanudado\n");
-			play();
+			reanudarEjecucion();
 		} else if (string_starts_with(comando, "lock")) {
 			lock(comando);
 		} else if (string_starts_with(comando, "unlock")) {
@@ -59,11 +59,11 @@ char* obtenerSegundoParametro(char *comando) {
 	return palabras[2];
 }
 
-void pause() {
+void pausarEjecucion() {
 	ejecutando = false;
 }
 
-void play() {
+void reanudarEjecucion() {
 	ejecutando = true;
 	pthread_mutex_unlock(&mutexEspera);
 }

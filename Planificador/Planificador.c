@@ -16,6 +16,7 @@ void atenderESI(int iSocketComunicacion) {
 	pkgHandshakeRespuesta.type = P_HANDSHAKE;
 	pkgHandshakeRespuesta.length = serializar(pkgHandshakeRespuesta.payload, "", NULL);
 	bytesEnviados = enviarPaquete(esiNuevo->socket, &pkgHandshakeRespuesta, logger, "Se envia respuesta de handshake a ESI");
+	log_debug(logger,"Se enviaron %d bytes",bytesEnviados);
 
 	log_info(logger,"Se agrega ESI a cola de listos: %s con socket: %d", esiNuevo->id, esiNuevo->socket);
 	agregarEsiAColaDeListos(esiNuevo);
@@ -90,9 +91,12 @@ void cicloDeSentencia() {
 				break;
 			case DESCONEXION:
 				esiDesconectado(socketMultiplexado);
-				if (!esiEnEjecucion) {
+				if (!esiEnEjecucion)
 					sentenciaActiva = false;
-				}
+				break;
+			default:
+				log_warning(logger,"Se recibió un tipo de mensaje no esperado: %d", tipoMensaje);
+				break;
 			}
 		}
 	}
@@ -115,14 +119,19 @@ void enviarOrdenDeEjecucion() {
 	pkgEjecutarLinea.length = serializar(pkgEjecutarLinea.payload, "", NULL);
 	log_info(logger, "Se envia orden para ejecutar al ESI: %s", esiEnEjecucion->id);
 	int bytesEnviados = enviarPaquete(esiEnEjecucion->socket, &pkgEjecutarLinea, logger, "Se envia orden para ejecutar");
+	log_debug(logger,"Se enviaron %d bytes",bytesEnviados);
 }
 
 void enviarOrdenDeAborcion(int socket) {
 	tPaquete pkgAbortar;
+
 	pkgAbortar.type = P_ABORTAR;
 	pkgAbortar.length = serializar(pkgAbortar.payload, "", NULL);
+
 	log_info(logger, "Se envia orden para abortar al ESI");
+
 	int bytesEnviados = enviarPaquete(socket, &pkgAbortar, logger, "Se envia orden para abortar");
+	log_debug(logger,"Se enviaron %d bytes",bytesEnviados);
 }
 
 void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
@@ -142,6 +151,9 @@ void recibirConsultaOperacion(tMensaje tipoMensaje, char *sPayloadConsulta) {
 	case C_CONSULTA_OPERACION_STORE:
 		consultaCoordinador->operacion = OPERACION_STORE;
 		log_info(logger,"Consulta operacion STORE para clave %s", consultaCoordinador->clave);
+		break;
+	default:
+		log_warning(logger,"Se recibió un tipo de mensaje no esperado: %d", tipoMensaje);
 		break;
 	}
 }
@@ -171,11 +183,13 @@ void realizarHandshakeCoordinador() {
 	pkgHandshakeCoordinador.length = serializar(pkgHandshakeCoordinador.payload, "", NULL);
 	log_info(logger, "Se envia solicitud de handshake con coordinador");
 	int bytesEnviados = enviarPaquete(socketCoordinador, &pkgHandshakeCoordinador, logger, "Se envia solicitud de handshake con coordinador");
+	log_debug(logger,"Se enviaron %d bytes",bytesEnviados);
 
 	//Respuesta del Coordinador
 	tMensaje tipoMensaje;
 	char *payloadRespuestaHand;
 	int bytesRecibidos = recibirPaquete(socketCoordinador, &tipoMensaje, &payloadRespuestaHand, logger, "Hand Respuesta");
+	log_debug(logger,"Se recibieron %d bytes",bytesRecibidos);
 	if (tipoMensaje == C_HANDSHAKE) {
 		log_info(logger, "Handshake con Coordinador exitoso\n");
 	}
@@ -229,13 +243,12 @@ void enviarOperacionValida() {
 	strcpy(respuesta,"OK");
 	pkgOperacionValida.type = P_RESPUESTA_CONSULTA;
 
-	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
-			"%s",respuesta);
+	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta OK ESI %s", esiEnEjecucion->id);
-		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
-				logger, "Se envia respuesta consulta");
-		free(respuesta);
+	log_info(logger, "Se envia respuesta consulta OK ESI %s", esiEnEjecucion->id);
+	enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,logger, "Se envia respuesta consulta");
+	log_debug(logger,"Se enviaron %d bytes",enviados);
+	free(respuesta);
 }
 
 void enviarOperacionInvalidaBloqueo() {
@@ -245,13 +258,12 @@ void enviarOperacionInvalidaBloqueo() {
 	strcpy(respuesta,"BLOQUEADO");
 	pkgOperacionValida.type = P_RESPUESTA_CONSULTA;
 
-	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
-			"%s",respuesta);
+	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta BLOQUEAR ESI %s", esiEnEjecucion->id);
-		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
-				logger, "Se envia respuesta consulta");
-		free(respuesta);
+	log_info(logger, "Se envia respuesta consulta BLOQUEAR ESI %s", esiEnEjecucion->id);
+	enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,logger, "Se envia respuesta consulta");
+	log_debug(logger,"Se enviaron %d bytes",enviados);
+	free(respuesta);
 }
 
 void enviarOperacionInvalidaError() {
@@ -261,13 +273,12 @@ void enviarOperacionInvalidaError() {
 	strcpy(respuesta,"ERROR");
 	pkgOperacionValida.type = P_RESPUESTA_CONSULTA;
 
-	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,
-			"%s",respuesta);
+	pkgOperacionValida.length = serializar(pkgOperacionValida.payload,"%s",respuesta);
 
-		log_info(logger, "Se envia respuesta consulta ERROR ESI %s", esiEnEjecucion->id);
-		enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,
-				logger, "Se envia respuesta consulta");
-		free(respuesta);
+	log_info(logger, "Se envia respuesta consulta ERROR ESI %s", esiEnEjecucion->id);
+	enviados = enviarPaquete(socketCoordinador, &pkgOperacionValida,logger, "Se envia respuesta consulta");
+	log_debug(logger,"Se enviaron %d bytes",enviados);
+	free(respuesta);
 }
 
 void evaluarConsultaDeOperacion() {
@@ -849,6 +860,7 @@ void statusDeClave(char *clave) {
 	pkgConsultaClave.length = serializar(pkgConsultaClave.payload, "%s", clave);
 	log_info(logger, "Se envia consulta de clave %s al coordinador", clave);
 	int enviados = enviarPaquete(socketCoordinador, &pkgConsultaClave, logger, "Se envia consulta de clave al coordinador");
+	log_debug(logger,"Se enviaron %d bytes",enviados);
 
 	//Se recibe respuesta de consulta del coordinador
 	tMensaje tipoMensaje;
@@ -869,8 +881,6 @@ void statusDeClave(char *clave) {
 }
 
 void evaluarAptoEjecucion() {
-	aptoEjecucion = !((esiEnEjecucion == NULL
-			|| esiEnEjecucion->bloqueado)
-	&& (colaDeListos->elements_count == 0
-			|| list_all_satisfy(colaDeListos, evaluarBloqueoDeEsi)));
+	aptoEjecucion = !((esiEnEjecucion == NULL || esiEnEjecucion->bloqueado)
+			&& (colaDeListos->elements_count == 0 || list_all_satisfy(colaDeListos, evaluarBloqueoDeEsi)));
 }
