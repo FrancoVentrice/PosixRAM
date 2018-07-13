@@ -766,6 +766,9 @@ void analizarDeadlock() {
 	//esta funcion hace el analisis del deadlock por una entrada en el diccionario de bloqueados
 	//se usa con la funcion de iteracion de diccionario sobre el diccionario de bloqueados
 	void analizarDiccionarioBloqueados(char *clave, t_list *bloqueados) {
+		if (bloqueados == NULL || bloqueados->elements_count == 0) {
+			return;
+		}
 		//esta lista se va guardando los implicados en el posible deadlock
 		t_list * empernados = list_create();
 		char *claveABuscar = clave;
