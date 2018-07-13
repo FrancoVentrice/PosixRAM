@@ -145,7 +145,7 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 
 	entradasACargar = string_split(clavesSincronizadas, ";");
 
-    while (entradasACargar[j] != NULL) {
+    while (entradasACargar[j] != NULL && i < configuracion.cantidadEntradas) {
 
     	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
 
@@ -166,17 +166,14 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 				log_debug(logger,"Se leyeron %d bytes", (int)tablaDeEntradas[i].tamanio);
 			}
 
-			// unstable code: comparo un size_t con int pero... dale que va
-			if (tablaDeEntradas[i].tamanio > configuracion.tamanioEntrada) {
-				/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
-				int entradasExtraOcupadas;
-				entradasExtraOcupadas = entradasOcupadasPorValor(tablaDeEntradas[i].tamanio) - 1;
-				while (entradasExtraOcupadas) {
-					i++;
-					strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
-					entradasExtraOcupadas--;
-				}
+			/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
+			int entradasExtraOcupadas = entradasOcupadasPorValor(tablaDeEntradas[i].tamanio) - 1;
+			while (entradasExtraOcupadas) {
+				i++;
+				strcpy(tablaDeEntradas[i].clave,tablaDeEntradas[i-1].clave);
+				entradasExtraOcupadas--;
 			}
+
     	}
     	else {
     		log_warning(logger, "No existe el archivo: %s", archivoFullPath);
@@ -430,6 +427,14 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 		tablaDeEntradas[indiceOcupado].tamanio = strlen(valorRecibido);
 		posicionValor = almacenamientoEntradas + (indiceOcupado * configuracion.tamanioEntrada);
 		memcpy(posicionValor, valorRecibido, tablaDeEntradas[indiceOcupado].tamanio);
+
+		/* si el valor ocupa más de una entrada tengo que reflejarlo en la tabla */
+		int entradasExtraOcupadas = entradasOcupadasPorValor(tablaDeEntradas[indiceOcupado].tamanio) - 1;
+		while (entradasExtraOcupadas) {
+			strcpy(tablaDeEntradas[indiceOcupado + entradasExtraOcupadas].clave,tablaDeEntradas[indiceOcupado].clave);
+			entradasExtraOcupadas--;
+		}
+
 	}
 	tablaDeEntradas[indiceOcupado].ultimaInstruccion = configuracion.instruccionesProcesadas;
 
