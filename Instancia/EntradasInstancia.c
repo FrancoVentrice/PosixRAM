@@ -416,7 +416,7 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 				strcpy(respuestaSet->claveReemplazada,"Entradas atómicas insuficientes");
 				return 0; // debería ser el único caso de error válido
 			}
-			ejecutarReemplazo(iEntradasRequeridas - iEntradasDisponibles);
+			ejecutarReemplazo(iEntradasRequeridas - iEntradasDisponibles,respuestaSet);
 			// todo actualizar en la respuesta el valor de la clave reemplazada
 		}
 

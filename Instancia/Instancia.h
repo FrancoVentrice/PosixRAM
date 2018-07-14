@@ -120,10 +120,10 @@ int entradasOcupadasPorValor(size_t);
 
 // algoritmos de reemplazo [AlgoReemplazoInstancia.c]
 bool existenEntradasAtomicasParaReemplazar(int);
-void ejecutarReemplazo(int);
-void reemplazoBSU(int);
-void reemplazoLRU(int);
-void reemplazoCircular(int);
+void ejecutarReemplazo(int, t_respuestaSet *);
+void reemplazoBSU(int, t_respuestaSet *);
+void reemplazoLRU(int, t_respuestaSet *);
+void reemplazoCircular(int, t_respuestaSet *);
 
 // pantalla [PantallaInstancia.c]
 void pantallaInicio(void);

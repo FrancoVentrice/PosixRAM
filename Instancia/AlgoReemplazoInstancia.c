@@ -30,7 +30,7 @@ bool existenEntradasAtomicasParaReemplazar(int cantEntradas) {
 	return cantEntradasAtomicas >= cantEntradas;
 }
 
-void ejecutarReemplazo(int cantEntradas) {
+void ejecutarReemplazo(int cantEntradas, t_respuestaSet * respuestaSet) {
 	/* Decide qué algoritmo de reemplazo aplicar y lo dispara.
 	 * Los algoritmos no reemplazan efectivamente una entrada, sino que liberan el lugar. */
 
@@ -38,18 +38,18 @@ void ejecutarReemplazo(int cantEntradas) {
 
 	switch(configuracion.algoritmoDeReemplazo) {
 		case ALGORITMO_CIRC:
-			reemplazoCircular(cantEntradas);
+			reemplazoCircular(cantEntradas, respuestaSet);
 			break;
 		case ALGORITMO_LRU:
-			reemplazoLRU(cantEntradas);
+			reemplazoLRU(cantEntradas, respuestaSet);
 			break;
 		case ALGORITMO_BSU:
-			reemplazoBSU(cantEntradas);
+			reemplazoBSU(cantEntradas, respuestaSet);
 			break;
 	}
 }
 
-void reemplazoBSU(int cantEntradas) {
+void reemplazoBSU(int cantEntradas, t_respuestaSet * respuestaSet) {
 	/* Biggest Space Used */
 
 	int cantLiberadas = 0;
@@ -70,6 +70,8 @@ void reemplazoBSU(int cantEntradas) {
 			}
 		}
 
+		log_info(logger,"Reemplazada clave: %s", tablaDeEntradas[indiceBSU].clave);
+		strcpy(respuestaSet->claveReemplazada,tablaDeEntradas[indiceBSU].clave);
 		memset(tablaDeEntradas[indiceBSU].clave, 0, MAX_LONG_CLAVE);
 		tablaDeEntradas[indiceBSU].tamanio = (size_t) 0;
 		tablaDeEntradas[indiceBSU].ultimaInstruccion = 0;
@@ -78,7 +80,7 @@ void reemplazoBSU(int cantEntradas) {
 	}
 }
 
-void reemplazoLRU(int cantEntradas) {
+void reemplazoLRU(int cantEntradas, t_respuestaSet * respuestaSet) {
 	/* Least Recently Used */
 
 	int cantLiberadas = 0;
@@ -98,6 +100,8 @@ void reemplazoLRU(int cantEntradas) {
 			}
 		}
 
+		log_info(logger,"Reemplazada clave: %s", tablaDeEntradas[indiceLRU].clave);
+		strcpy(respuestaSet->claveReemplazada,tablaDeEntradas[indiceLRU].clave);
 		memset(tablaDeEntradas[indiceLRU].clave, 0, MAX_LONG_CLAVE);
 		tablaDeEntradas[indiceLRU].tamanio = (size_t) 0;
 		tablaDeEntradas[indiceLRU].ultimaInstruccion = 0;
@@ -106,7 +110,7 @@ void reemplazoLRU(int cantEntradas) {
 	}
 }
 
-void reemplazoCircular(int cantEntradas) {
+void reemplazoCircular(int cantEntradas, t_respuestaSet * respuestaSet) {
 	/* Circular */
 
 	int cantLiberadas = 0;
@@ -119,6 +123,8 @@ void reemplazoCircular(int cantEntradas) {
 	while (cantLiberadas < cantEntradas) {
 		if(esEntradaAtomica(i)) {
 
+			log_info(logger,"Reemplazada clave: %s", tablaDeEntradas[i].clave);
+			strcpy(respuestaSet->claveReemplazada,tablaDeEntradas[i].clave);
 			memset(tablaDeEntradas[i].clave, 0, MAX_LONG_CLAVE);
 			tablaDeEntradas[i].tamanio = (size_t) 0;
 			tablaDeEntradas[i].ultimaInstruccion = 0;

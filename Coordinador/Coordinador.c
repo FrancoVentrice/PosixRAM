@@ -97,8 +97,8 @@ void escucharConexiones() {
 }
 
 void cicloPrincipal() {
-	operacion->clave=malloc(MAX_LONG_CLAVE);
-	operacion->valor=malloc(100);
+	operacion->clave = (char *)malloc(MAX_LONG_CLAVE);
+	operacion->valor = (char *)malloc(100);
 	char *sPayloadRespuesta;
 
 	while (1) {
@@ -155,7 +155,7 @@ void cicloPrincipal() {
 
 			case P_ESTADO_CLAVE:
 				log_info(logger,"Consulta estado de clave");
-				char *claveConsultada = malloc(MAX_LONG_CLAVE);
+				char *claveConsultada = (char *)malloc(MAX_LONG_CLAVE);
 				deserializar(sPayloadRespuesta, "%s", claveConsultada);
 				evaluarEstadoDeClave(claveConsultada);
 				break;
@@ -264,7 +264,7 @@ void recibirOperacionDeInstancia() {
 
 	if (tipoMensaje == I_RESULTADO_SET) {
 		int entradasLibres = 0;
-		char* clave = malloc(41);
+		char* clave = (char *)malloc(MAX_LONG_CLAVE);
 		char charCompactacion = 0;
 		deserializar(resultadoInstancia, "%d%s%c", &entradasLibres, clave, &charCompactacion);
 		instanciaElegida->cantidadDeEntradasDisponibles = entradasLibres;

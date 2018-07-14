@@ -6,6 +6,7 @@
 #include "ESI.h"
 
 int main(int argn, char *argv[]) {
+	printf("\e[2J\e[1;1H"); // limpiamos la pantalla
 	cargarConfiguracion();
 	cargarArchivo(argv[1]);
 	iniciarConexiones();
