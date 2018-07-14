@@ -38,6 +38,10 @@ echo "***********************************************************************"
 cd $HOME/tp-2018-1c-PosixRAM/Coordinador/Default
 make clean all
 echo "***********************************************************************"
-cd $HOME/tp-2018-1c-PosixRAM/pruebas
-chmod -R a+wrx *.sh
 cd $HOME
+chmod -R a+wrx $HOME/tp-2018-1c-PosixRAM/pruebas/PruebaDeadlock/prepararPrueba.sh
+chmod -R a+wrx $HOME/tp-2018-1c-PosixRAM/pruebas/PruebaDistribucion/prepararPrueba.sh
+chmod -R a+wrx $HOME/tp-2018-1c-PosixRAM/pruebas/PruebaEstres/prepararPrueba.sh
+chmod -R a+wrx $HOME/tp-2018-1c-PosixRAM/pruebas/PruebaMinima/prepararPrueba.sh
+chmod -R a+wrx $HOME/tp-2018-1c-PosixRAM/pruebas/PruebaPlanificacion/prepararPrueba.sh
+chmod -R a+wrx $HOME/tp-2018-1c-PosixRAM/pruebas/PruebaReemplazoCompactacion/prepararPrueba.sh

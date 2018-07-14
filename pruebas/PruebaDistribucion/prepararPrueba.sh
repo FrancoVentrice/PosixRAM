@@ -1,9 +1,9 @@
-cp -f Coordinador.conf $HOME/tp-2018-1c-PosixRAM/Coordinador/
-cp -f Planificador.conf $HOME/tp-2018-1c-PosixRAM/Planificador/
-cp ESI.conf $HOME/tp-2018-1c-PosixRAM/ESI/
-rm -f $HOME/tp-2018-1c-PosixRAM/ESI/ESI_*
-cp -f ESI_* $HOME/tp-2018-1c-PosixRAM/ESI/
-cp Inst1.conf $HOME/tp-2018-1c-PosixRAM/Instancia/
-cp Inst2.conf $HOME/tp-2018-1c-PosixRAM/Instancia/
+cp -f Coordinador.conf $HOME/tp-2018-1c-PosixRAM/Coordinador/Default/
+cp -f Planificador.conf $HOME/tp-2018-1c-PosixRAM/Planificador/Default/
+cp ESI.conf $HOME/tp-2018-1c-PosixRAM/ESI/Default/
+rm -f $HOME/tp-2018-1c-PosixRAM/ESI/Default/ESI_*
+cp -f ESI_* $HOME/tp-2018-1c-PosixRAM/ESI/Default/
+cp Inst1.conf $HOME/tp-2018-1c-PosixRAM/Instancia/Default/
+cp Inst2.conf $HOME/tp-2018-1c-PosixRAM/Instancia/Default/
 rm -f -r -d /home/utnso/inst1/
 rm -f -r -d /home/utnso/inst2/
