@@ -145,7 +145,7 @@ void cargarEntradasDesdeArchivos(char * clavesSincronizadas) {
 
 	entradasACargar = string_split(clavesSincronizadas, ";");
 
-    while (entradasACargar[j] != NULL && i < configuracion.cantidadEntradas) {
+    while (i < configuracion.cantidadEntradas && entradasACargar[j] != NULL) {
 
     	posicionValor = almacenamientoEntradas + (i * configuracion.tamanioEntrada);
 
@@ -237,7 +237,7 @@ int indiceClave(char * claveBuscada) {
 
 	log_debug(logger,"Buscando índice de la clave %s", claveBuscada);
 
-	while (encontrado < 0 && i < configuracion.cantidadEntradas) {
+	while (i < configuracion.cantidadEntradas && encontrado < 0) {
 		if (strcmp(tablaDeEntradas[i].clave, claveBuscada) == 0)
 			encontrado = i;
 		else
@@ -314,7 +314,7 @@ int realizarCompactacion() {
 		if (string_is_empty(tablaDeEntradas[indice].clave)) {
 			// se encontró entrada disponible
 			proximaOcupada = indice + 1;
-			while(string_is_empty(tablaDeEntradas[proximaOcupada].clave) && proximaOcupada < configuracion.cantidadEntradas)
+			while(proximaOcupada < configuracion.cantidadEntradas && string_is_empty(tablaDeEntradas[proximaOcupada].clave))
 				proximaOcupada++;
 
 			if (proximaOcupada < configuracion.cantidadEntradas) {
@@ -336,7 +336,7 @@ int realizarCompactacion() {
 	}
 
 	indice = 0;
-	while(!string_is_empty(tablaDeEntradas[indice].clave) && indice < configuracion.cantidadEntradas)
+	while(indice < configuracion.cantidadEntradas && !string_is_empty(tablaDeEntradas[indice].clave))
 		indice++;
 
 	log_info(logger,"Compactación finalizada. Primer entrada disponible: %d", indice);
@@ -350,7 +350,7 @@ int realizarCompactacion() {
 int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * respuestaSet) {
 	/* Realiza el set de la clave con el valor requerido. Aplica los algoritmos de reemplazo en caso de ser
 	 * necesario, contempla si la entrada es nueva o no.
-	 * Returno 1 si fue exitoso o 0 en caso de error (solo puede haber error si no pudo reemplazar por
+	 * Retorna 1 si fue exitoso o 0 en caso de error (solo puede haber error si no pudo reemplazar por
 	 * ser todas las entradas no atómicas) */
 
 	int iEntradasDisponibles, iEntradasRequeridas, iEntradasOcupadas;
@@ -394,14 +394,16 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 			}
 		}
 		else { //iEntradasOcupadas < iEntradasRequeridas
-			// todo parece que este caso no se va a probar (zafamos)
+			// Caso no contemplado en el alcance (complica demasiado el algoritmo)
 			if (iEntradasOcupadas + iEntradasDisponibles >= iEntradasRequeridas) {
-				log_debug(logger,"No debería darse este caso!! (sobreescribir la entrada [1])");
-				exit(1);
+				log_error(logger,"No debería darse este caso!! (sobreescribir la entrada [1])");
+				strcpy(respuestaSet->claveReemplazada,"Caso de reemplazo no esperado");
+				return 0;
 			}
 			else {
-				log_debug(logger,"No debería darse este caso!! (reemplazar [2])");
-				exit(1);
+				log_error(logger,"No debería darse este caso!! (reemplazar [2])");
+				strcpy(respuestaSet->claveReemplazada,"Caso de reemplazo no esperado");
+				return 0;
 			}
 		}
 	}
@@ -411,7 +413,8 @@ int setClaveValor(char * claveRecibida, char * valorRecibido, t_respuestaSet * r
 		if (iEntradasDisponibles < iEntradasRequeridas) {
 			if(!existenEntradasAtomicasParaReemplazar(iEntradasRequeridas - iEntradasDisponibles)) {
 				log_error(logger, "No existen entradas atómicas suficientes para realizar el reemplazo.");
-				return 0; // debería ser el único caso de error
+				strcpy(respuestaSet->claveReemplazada,"Entradas atómicas insuficientes");
+				return 0; // debería ser el único caso de error válido
 			}
 			ejecutarReemplazo(iEntradasRequeridas - iEntradasDisponibles);
 			// todo actualizar en la respuesta el valor de la clave reemplazada
@@ -454,7 +457,7 @@ int buscarEspacioContiguoDeEntradas(int cantRequerida) {
 	i=0 ;
 	while (i < configuracion.cantidadEntradas && !encontrado) {
 		j = i;
-		while (string_is_empty(tablaDeEntradas[j].clave) && j < configuracion.cantidadEntradas)
+		while (j < configuracion.cantidadEntradas && string_is_empty(tablaDeEntradas[j].clave))
 			j++;
 		if ((j - i) >= cantRequerida)
 			encontrado = 1;

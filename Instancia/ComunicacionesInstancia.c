@@ -159,10 +159,10 @@ int atenderSetClaveValor(char * sPayloadRespuesta) {
 		pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%d%s%c", entradasDisponibles(), respuestaSet.claveReemplazada, respuestaSet.compactacionRequerida);
 	}
 	else {
-		log_error(logger,"No se pudo hacer el set de la clave (posiblemente no existan valores atómicos para reemplazar).");
+		log_error(logger,"No se pudo hacer el set de la clave.");
 
 		pkgResultadoSet.type = I_RESULTADO_ERROR;
-		pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%s", "No se pudo hacer el set de la clave (posiblemente no existan valores atómicos para reemplazar).");
+		pkgResultadoSet.length = serializar(pkgResultadoSet.payload, "%s", respuestaSet.claveReemplazada);
 	}
 
 	iBytesEnviados = enviarPaquete(configuracion.fdSocketCoordinador, &pkgResultadoSet, logger, "Se envía resultado del set al Coordinador");
