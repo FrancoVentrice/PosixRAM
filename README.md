@@ -31,6 +31,8 @@
 
 4- Compilar todo el TP: `source prepareEnvironment.sh`
 
+5- En cada nueva consola exportar el path de librería: `source exportPath.sh`
+
 ### Ejecución de pruebas
 Para cada prueba...
 

@@ -1,0 +1,1 @@
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$HOME/tp-2018-1c-PosixRAM/shared/Default
