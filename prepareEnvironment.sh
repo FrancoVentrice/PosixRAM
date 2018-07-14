@@ -38,4 +38,6 @@ echo "***********************************************************************"
 cd $HOME/tp-2018-1c-PosixRAM/Coordinador/Default
 make clean all
 echo "***********************************************************************"
+cd $HOME/tp-2018-1c-PosixRAM/pruebas
+chmod -R a+wrx *.sh
 cd $HOME

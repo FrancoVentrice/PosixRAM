@@ -19,3 +19,27 @@
 | Nombre                    | Legajo   | E-mail                      | Curso  |
 | ------------------------- |:--------:| --------------------------- | ------ |
 | Juan Paulo Vispo          | 120573-0 | juanpaulovispo@yahoo.com.ar | K-3052 |
+
+
+### Despliegue automático
+
+1- Descargar el repositorio: `git clone https://github.com/sisoputnfrba/tp-2018-1c-PosixRAM.git`
+
+2- Asignar permisos de ejecución a los scripts bash: `chmod a+wrx *.sh`
+
+3- Descargar los repositorios necesarios e instalar las dependencias: `./getResources.sh`
+
+4- Compilar todo el TP: `source prepareEnvironment.sh`
+
+### Ejecución de pruebas
+Para cada prueba...
+
+1- Ingresar al directorio que corresponda.
+
+2- Preparar los archivos para las pruebas: `./prepararPrueba.sh`
+
+3- Ingresar a cada componente y revisar los archivos de configuración.
+
+### Limpieza
+
+Para eliminar todos los directorios y dejar todo como estaba: `./cleanAll.sh`
